@@ -1,19 +1,15 @@
 import * as joint from '@joint/core';
-import { NetworkLink } from './NetworkLink';
-import { NetworkNode } from './NetworkNode';
+import { FontIconElement } from './FontIconElement';
+import { ImageIconElement } from './ImageIconElement';
+import { LinkElement } from './LinkElement';
 
-const shapesRecord = joint.shapes as unknown as Record<string, unknown>;
-const maybeTopology = shapesRecord.topology;
-const existingTopology: Record<string, unknown> =
-  typeof maybeTopology === 'object' && maybeTopology !== null
-    ? (maybeTopology as Record<string, unknown>)
-    : {};
+const shapesRecord = joint.shapes as Record<string, unknown>;
 
 export const cellNamespace: Record<string, unknown> = {
+  noc: {
+    FontIconElement,
+    ImageIconElement,
+    LinkElement
+  },
   ...shapesRecord,
-  topology: {
-    ...existingTopology,
-    NetworkNode,
-    NetworkLink
-  }
 };

@@ -26,6 +26,9 @@ export interface NodeData {
   height?: number;
   label: string;
   status?: string;
+  iconUnicode?: string;
+  iconSizeClass?: string;
+  iconStatusClass?: string;
   iconHref?: string;
   attrs?: Record<string, unknown>;
 }

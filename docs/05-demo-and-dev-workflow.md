@@ -67,4 +67,4 @@ docker compose down
 - Если в браузере ошибки bare specifier, проверить importmap и наличие `dist/vendor/*`.
 - Если модуль блокируется MIME type, проверить `nginx.conf` (`.mjs` -> `application/javascript`).
 - Если после изменений нет обновления страницы, проверить что `build:watch` жив и `dist/__reload.txt` меняется.
-- Если ломается восстановление графа из JSON, проверить `cellNamespace` и типы `topology.NetworkNode`/`topology.NetworkLink`.
+- Если ломается восстановление графа из JSON, проверить `cellNamespace` и типы `noc.FontIconElement`/`noc.LinkElement`.

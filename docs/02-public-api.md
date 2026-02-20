@@ -31,6 +31,9 @@ export interface NodeData {
   height?: number;
   label: string;
   status?: string;
+  iconUnicode?: string;
+  iconSizeClass?: string;
+  iconStatusClass?: string;
   iconHref?: string;
   attrs?: Record<string, unknown>;
 }
@@ -80,7 +83,7 @@ fromJSON(data: object): void
 
 Поведение `fromJSON`:
 - принимает envelope или raw graph JSON;
-- корректно восстанавливает custom типы через `cellNamespace`;
+- корректно восстанавливает `noc.*` типы через `cellNamespace`;
 - если `preserveViewportOnLoad !== true`, применяет viewport из JSON или сбрасывает к initial.
 
 ### Режимы и взаимодействие

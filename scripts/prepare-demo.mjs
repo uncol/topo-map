@@ -10,6 +10,8 @@ const htmlSourcePath = resolve(root, 'examples/vanilla-index.html');
 const htmlDistPath = resolve(root, 'dist/vanilla-index.html');
 const vendorDistPath = resolve(root, 'dist/vendor/joint-core');
 const jointCoreSourcePath = resolve(root, 'node_modules/@joint/core');
+const gufoFontDistPath = resolve(root, 'dist/vendor/gufo-font');
+const gufoFontSourcePath = resolve(root, 'node_modules/@gufo-labs/font');
 const rbushDistPath = resolve(root, 'dist/vendor/rbush');
 const rbushSourcePath = resolve(root, 'node_modules/rbush');
 const quickselectDistPath = resolve(root, 'dist/vendor/quickselect');
@@ -28,10 +30,15 @@ writeFileSync(launchDistPath, launchDist);
 writeFileSync(htmlDistPath, htmlDist);
 
 rmSync(vendorDistPath, { recursive: true, force: true });
+rmSync(gufoFontDistPath, { recursive: true, force: true });
 rmSync(rbushDistPath, { recursive: true, force: true });
 rmSync(quickselectDistPath, { recursive: true, force: true });
 mkdirSync(resolve(root, 'dist/vendor'), { recursive: true });
 cpSync(jointCoreSourcePath, vendorDistPath, {
+  recursive: true,
+  dereference: true
+});
+cpSync(gufoFontSourcePath, gufoFontDistPath, {
   recursive: true,
   dereference: true
 });

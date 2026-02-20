@@ -13,7 +13,7 @@
 | Раздел ТЗ | Статус | Примечание |
 |---|---|---|
 | 1. Общие положения | Выполнено | Модуль независим от ExtJS, принимает DOM-контейнеры. |
-| 2.1 Отображение графа | Выполнено | Кастомные `NetworkNode` и `NetworkLink`, `cellNamespace`. |
+| 2.1 Отображение графа | Выполнено | Кастомные `noc.FontIconElement`/`noc.ImageIconElement` и `noc.LinkElement`, `cellNamespace`. |
 | 2.2 Zoom | Выполнено | Колесо мыши + API (`zoomIn`, `zoomOut`, `resetView`), ограничение min/max. |
 | 2.3 Pan | Выполнено | Pan работает по blank и по элементам, с ограничением границ. |
 | 2.4 Zoom to area | Выполнено | Резиновый прямоугольник, минимальный размер, корректный переход local/paper координат. |
@@ -40,7 +40,7 @@
 
 - Bare specifier для `@joint/core`/`rbush` в браузере.
 - MIME type для модулей.
-- `cellNamespace` и восстановление custom shapes из JSON.
+- `cellNamespace` и восстановление noc-shapes из JSON.
 - Ошибки `markup required` для link view.
 - Расхождения координат в minimap, zoom-to-area, guides.
 - Зацикленный resize и схлопывание paper.

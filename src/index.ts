@@ -21,8 +21,6 @@ import { ZoomManager } from './managers/ZoomManager';
 import { EditMode } from './modes/EditMode';
 import { PanMode } from './modes/PanMode';
 import { ZoomToAreaMode } from './modes/ZoomToAreaMode';
-import './shapes/NetworkLink';
-import './shapes/NetworkNode';
 
 const DEFAULT_INITIAL_SCALE = 1;
 const DEFAULT_MIN_SCALE = 0.1;
@@ -31,6 +29,10 @@ const DEFAULT_GRID_SIZE = 20;
 const DEFAULT_GUIDE_THRESHOLD = 5;
 const DEFAULT_BOUNDS_PADDING = 12;
 const DEFAULT_SCHEMA_VERSION = '1.0.0';
+const DEFAULT_FONT_ICON_UNICODE = '\uE003';
+const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
+const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
+const DEFAULT_NODE_SIZE = 64;
 
 interface GraphEnvelope {
   graph: joint.dia.Graph.JSON;
@@ -211,23 +213,37 @@ export class TopologyMap {
     this.logDebug('loadData:start', { nodes: nodes.length, links: links.length });
     const cells: Array<Record<string, unknown>> = [
       ...nodes.map((node) => {
-        const attrs = {
-          label: { text: node.label },
-          status: { text: node.status ?? '' },
-          icon: { 'xlink:href': node.iconHref ?? '' }
-        };
+        const customAttrs = node.attrs ?? {};
+        const customIconAttrs = isObject(customAttrs.icon) ? customAttrs.icon : {};
+        const customTitleAttrs = isObject(customAttrs.title) ? customAttrs.title : {};
+        const customIpaddrAttrs = isObject(customAttrs.ipaddr) ? customAttrs.ipaddr : {};
+        const titleText =
+          typeof node.status === 'string' && node.status.length > 0 ? `${node.label}\n${node.status}` : node.label;
 
         return {
           id: node.id,
-          type: 'topology.NetworkNode',
+          type: 'noc.FontIconElement',
           position: { x: node.x, y: node.y },
           size: {
-            width: node.width ?? 170,
-            height: node.height ?? 64
+            width: node.width ?? DEFAULT_NODE_SIZE,
+            height: node.height ?? DEFAULT_NODE_SIZE
           },
           attrs: {
-            ...attrs,
-            ...(node.attrs ?? {})
+            ...customAttrs,
+            icon: {
+              text: node.iconUnicode ?? DEFAULT_FONT_ICON_UNICODE,
+              size: node.iconSizeClass ?? DEFAULT_FONT_ICON_SIZE_CLASS,
+              status: node.iconStatusClass ?? DEFAULT_FONT_ICON_STATUS_CLASS,
+              ...customIconAttrs
+            },
+            title: {
+              text: titleText,
+              ...customTitleAttrs
+            },
+            ipaddr: {
+              text: '',
+              ...customIpaddrAttrs
+            }
           }
         };
       }),
@@ -248,7 +264,7 @@ export class TopologyMap {
 
         return {
           id: link.id,
-          type: 'topology.NetworkLink',
+          type: 'noc.LinkElement',
           source: { id: link.sourceId },
           target: { id: link.targetId },
           labels,

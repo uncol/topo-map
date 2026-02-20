@@ -32,7 +32,7 @@
 
 ### Shapes
 
-- `NetworkNode`, `NetworkLink`, `cellNamespace`.
+- `FontIconElement`, `ImageIconElement`, `LinkElement`, `cellNamespace`.
 
 ## Ключевые принципы
 
@@ -55,7 +55,7 @@
 
 ### Загрузка данных
 
-1. `loadData` формирует `cells` с типами `topology.NetworkNode`/`topology.NetworkLink`.
+1. `loadData` формирует `cells` с типами `noc.FontIconElement`/`noc.LinkElement` по умолчанию.
 2. `DiagramService.fromJSON` загружает граф с `cellNamespace`.
 3. `ViewportManager.rebuildIndex` перестраивает RBush.
 4. `ViewportState.enforceConstraints` применяет границы pan.
