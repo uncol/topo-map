@@ -3,6 +3,7 @@ import { ResetViewCommand } from './commands/ResetViewCommand';
 import { ZoomInCommand } from './commands/ZoomInCommand';
 import { ZoomOutCommand } from './commands/ZoomOutCommand';
 import { DiagramService } from './core/DiagramService';
+import { getEventClientPoint, isPrimaryMouseButton } from './core/events';
 import type {
   LinkData,
   NodeData,
@@ -33,6 +34,14 @@ const DEFAULT_FONT_ICON_UNICODE = '\uE003';
 const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
 const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
 const DEFAULT_NODE_SIZE = 64;
+const LINK_DEFAULT_STROKE = '#000000';
+const LINK_DEFAULT_STROKE_WIDTH = 1;
+const LINK_DEFAULT_CURSOR = 'default';
+const LINK_HOVER_STROKE = '#2563eb';
+const LINK_HOVER_STROKE_WIDTH = 2;
+const ELEMENT_HIGHLIGHT_ID = 'topology-element-highlight';
+const TOPOLOGY_ELEMENT_CLICK_EVENT = 'topology:element:click';
+const TOPOLOGY_LINK_CLICK_EVENT = 'topology:link:click';
 
 interface GraphEnvelope {
   graph: joint.dia.Graph.JSON;
@@ -50,8 +59,23 @@ interface EventEmitterLike {
   off(eventName: string, callback: DebugHandler): void;
 }
 
+interface LinkHoverStyleSnapshot {
+  lineStroke: string;
+  lineStrokeWidth: number;
+  lineCursor: string;
+  outlineCursor: string;
+}
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function toStringValue(value: unknown, fallback: string): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function toNumericValue(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
 function toGraphEnvelope(input: object): GraphEnvelope {
@@ -129,6 +153,36 @@ export class TopologyMap {
 
   private lastMinimapHeight = -1;
 
+  private readonly linkHoverStyles = new Map<string, LinkHoverStyleSnapshot>();
+
+  private highlightedElementView: joint.dia.ElementView | null = null;
+
+  private readonly onLinkMouseEnterBound = (linkView: joint.dia.LinkView): void => {
+    this.applyLinkHoverStyle(linkView);
+  };
+
+  private readonly onLinkMouseLeaveBound = (linkView: joint.dia.LinkView): void => {
+    this.restoreLinkHoverStyle(linkView);
+  };
+
+  private readonly onElementPointerClickBound = (
+    elementView: joint.dia.ElementView,
+    event: joint.dia.Event,
+    x: number,
+    y: number
+  ): void => {
+    this.handleElementPointerClick(elementView, event, x, y);
+  };
+
+  private readonly onLinkPointerClickBound = (
+    linkView: joint.dia.LinkView,
+    event: joint.dia.Event,
+    x: number,
+    y: number
+  ): void => {
+    this.handleLinkPointerClick(linkView, event, x, y);
+  };
+
   public constructor(config: TopologyMapConfig) {
     this.config = {
       mainContainer: config.mainContainer,
@@ -204,6 +258,7 @@ export class TopologyMap {
     this.zoomOutCommand = new ZoomOutCommand(this.zoomManager);
     this.resetViewCommand = new ResetViewCommand(this.zoomManager);
 
+    this.setupInteractionEvents();
     this.setupDebugLogs();
     this.config.onReady?.();
     this.logDebug('initialized', this.config);
@@ -211,6 +266,7 @@ export class TopologyMap {
 
   public loadData(nodes: NodeData[], links: LinkData[]): void {
     this.logDebug('loadData:start', { nodes: nodes.length, links: links.length });
+    this.clearInteractionState();
     const cells: Array<Record<string, unknown>> = [
       ...nodes.map((node) => {
         const customAttrs = node.attrs ?? {};
@@ -295,6 +351,7 @@ export class TopologyMap {
 
   public fromJSON(data: object): void {
     this.logDebug('fromJSON:start');
+    this.clearInteractionState();
     const envelope = toGraphEnvelope(data);
 
     this.diagramService.fromJSON(envelope.graph);
@@ -388,6 +445,8 @@ export class TopologyMap {
 
   public destroy(): void {
     this.logDebug('destroy:start');
+    this.teardownInteractionEvents();
+    this.clearInteractionState();
     this.teardownDebugLogs();
     this.modeManager.destroy();
     this.zoomManager.destroy();
@@ -478,6 +537,153 @@ export class TopologyMap {
       return;
     }
     console.log('[TopologyMap]', message, ...payload);
+  }
+
+  private setupInteractionEvents(): void {
+    const paper = this.diagramService.getPaper();
+    paper.on('link:mouseenter', this.onLinkMouseEnterBound);
+    paper.on('link:mouseleave', this.onLinkMouseLeaveBound);
+    paper.on('element:pointerclick', this.onElementPointerClickBound);
+    paper.on('link:pointerclick', this.onLinkPointerClickBound);
+  }
+
+  private teardownInteractionEvents(): void {
+    const paper = this.diagramService.getPaper();
+    paper.off('link:mouseenter', this.onLinkMouseEnterBound);
+    paper.off('link:mouseleave', this.onLinkMouseLeaveBound);
+    paper.off('element:pointerclick', this.onElementPointerClickBound);
+    paper.off('link:pointerclick', this.onLinkPointerClickBound);
+  }
+
+  private clearInteractionState(): void {
+    this.clearElementHighlight();
+    this.linkHoverStyles.clear();
+  }
+
+  private applyLinkHoverStyle(linkView: joint.dia.LinkView): void {
+    const link = linkView.model;
+    const linkId = String(link.id);
+    if (!this.linkHoverStyles.has(linkId)) {
+      this.linkHoverStyles.set(linkId, {
+        lineStroke: toStringValue(link.attr('line/stroke'), LINK_DEFAULT_STROKE),
+        lineStrokeWidth: toNumericValue(link.attr('line/strokeWidth'), LINK_DEFAULT_STROKE_WIDTH),
+        lineCursor: toStringValue(link.attr('line/cursor'), LINK_DEFAULT_CURSOR),
+        outlineCursor: toStringValue(link.attr('outline/cursor'), LINK_DEFAULT_CURSOR)
+      });
+    }
+
+    link.attr({
+      line: {
+        stroke: LINK_HOVER_STROKE,
+        strokeWidth: LINK_HOVER_STROKE_WIDTH,
+        cursor: 'pointer'
+      },
+      outline: {
+        cursor: 'pointer'
+      }
+    });
+  }
+
+  private restoreLinkHoverStyle(linkView: joint.dia.LinkView): void {
+    const link = linkView.model;
+    const linkId = String(link.id);
+    const snapshot = this.linkHoverStyles.get(linkId);
+    if (!snapshot) {
+      return;
+    }
+
+    link.attr({
+      line: {
+        stroke: snapshot.lineStroke,
+        strokeWidth: snapshot.lineStrokeWidth,
+        cursor: snapshot.lineCursor
+      },
+      outline: {
+        cursor: snapshot.outlineCursor
+      }
+    });
+    this.linkHoverStyles.delete(linkId);
+  }
+
+  private handleElementPointerClick(
+    elementView: joint.dia.ElementView,
+    event: joint.dia.Event,
+    x: number,
+    y: number
+  ): void {
+    if (!isPrimaryMouseButton(event)) {
+      return;
+    }
+
+    this.highlightElement(elementView);
+    const clientPoint = getEventClientPoint(event);
+    this.emitBubbledClickEvent(TOPOLOGY_ELEMENT_CLICK_EVENT, {
+      id: String(elementView.model.id),
+      type: elementView.model.get('type'),
+      x,
+      y,
+      clientX: clientPoint?.x ?? null,
+      clientY: clientPoint?.y ?? null
+    });
+  }
+
+  private handleLinkPointerClick(linkView: joint.dia.LinkView, event: joint.dia.Event, x: number, y: number): void {
+    if (!isPrimaryMouseButton(event)) {
+      return;
+    }
+
+    const link = linkView.model;
+    const source = link.get('source');
+    const target = link.get('target');
+    const sourceId = isObject(source) && 'id' in source ? String(source.id ?? '') : '';
+    const targetId = isObject(target) && 'id' in target ? String(target.id ?? '') : '';
+    const clientPoint = getEventClientPoint(event);
+
+    this.emitBubbledClickEvent(TOPOLOGY_LINK_CLICK_EVENT, {
+      id: String(link.id),
+      type: link.get('type'),
+      sourceId,
+      targetId,
+      x,
+      y,
+      clientX: clientPoint?.x ?? null,
+      clientY: clientPoint?.y ?? null
+    });
+  }
+
+  private highlightElement(elementView: joint.dia.ElementView): void {
+    if (this.highlightedElementView && this.highlightedElementView !== elementView) {
+      joint.highlighters.mask.remove(this.highlightedElementView, ELEMENT_HIGHLIGHT_ID);
+    }
+
+    joint.highlighters.mask.add(elementView, 'root', ELEMENT_HIGHLIGHT_ID, {
+      padding: 8,
+      attrs: {
+        stroke: '#f59e0b',
+        strokeWidth: 2,
+        fill: 'none',
+        pointerEvents: 'none'
+      }
+    });
+    this.highlightedElementView = elementView;
+  }
+
+  private clearElementHighlight(): void {
+    if (!this.highlightedElementView) {
+      return;
+    }
+    joint.highlighters.mask.remove(this.highlightedElementView, ELEMENT_HIGHLIGHT_ID);
+    this.highlightedElementView = null;
+  }
+
+  private emitBubbledClickEvent(eventName: string, detail: Record<string, unknown>): void {
+    this.config.mainContainer.dispatchEvent(
+      new CustomEvent(eventName, {
+        bubbles: true,
+        composed: true,
+        detail
+      })
+    );
   }
 }
 

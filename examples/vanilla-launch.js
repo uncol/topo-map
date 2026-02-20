@@ -90,6 +90,9 @@ const resetViewBtn = document.getElementById('reset-view');
 const boundsPadding = document.getElementById('bounds-padding');
 const boundsPaddingValue = document.getElementById('bounds-padding-value');
 const renderStats = document.getElementById('render-stats');
+const TOPOLOGY_ELEMENT_CLICK_EVENT = 'topology:element:click';
+const TOPOLOGY_LINK_CLICK_EVENT = 'topology:link:click';
+let lastInteractionText = '';
 
 modePan?.addEventListener('click', () => topologyMap.setMode('pan'));
 modeZoomArea?.addEventListener('click', () => topologyMap.setMode('zoomToArea'));
@@ -143,9 +146,10 @@ function updateRenderStats() {
   }
   const visibleElements = mainContainer.querySelectorAll('.joint-element').length;
   const visibleLinks = mainContainer.querySelectorAll('.joint-link').length;
+  const interactionSuffix = lastInteractionText.length > 0 ? ` | ${lastInteractionText}` : '';
   renderStats.textContent =
     `Visible E: ${visibleElements} L: ${visibleLinks} | ` +
-    `Total E: ${nodes.length} L: ${links.length}`;
+    `Total E: ${nodes.length} L: ${links.length}${interactionSuffix}`;
 }
 
 function scheduleRenderStatsUpdate() {
@@ -167,6 +171,31 @@ renderObserver.observe(mainContainer, {
   subtree: true
 });
 scheduleRenderStatsUpdate();
+
+function onElementClick(event) {
+  if (!(event instanceof CustomEvent)) {
+    return;
+  }
+  const detail = event.detail ?? {};
+  lastInteractionText = `Element click: ${detail.id ?? 'unknown'}`;
+  console.log('[demo] element click', detail);
+  scheduleRenderStatsUpdate();
+}
+
+function onLinkClick(event) {
+  if (!(event instanceof CustomEvent)) {
+    return;
+  }
+  const detail = event.detail ?? {};
+  const source = detail.sourceId ?? '?';
+  const target = detail.targetId ?? '?';
+  lastInteractionText = `Link click: ${detail.id ?? 'unknown'} (${source} -> ${target})`;
+  console.log('[demo] link click', detail);
+  scheduleRenderStatsUpdate();
+}
+
+mainContainer.addEventListener(TOPOLOGY_ELEMENT_CLICK_EVENT, onElementClick);
+mainContainer.addEventListener(TOPOLOGY_LINK_CLICK_EVENT, onLinkClick);
 
 let rafResizeId = 0;
 let prevMainWidth = -1;
@@ -216,6 +245,8 @@ window.addEventListener('beforeunload', () => {
   renderObserver.disconnect();
   resizeObserver.disconnect();
   window.removeEventListener('resize', scheduleResize);
+  mainContainer.removeEventListener(TOPOLOGY_ELEMENT_CLICK_EVENT, onElementClick);
+  mainContainer.removeEventListener(TOPOLOGY_LINK_CLICK_EVENT, onLinkClick);
   if (rafResizeId !== 0) {
     window.cancelAnimationFrame(rafResizeId);
   }
