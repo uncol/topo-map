@@ -7,9 +7,11 @@ import { getEventClientPoint, isPrimaryMouseButton } from './core/events';
 import type {
   LinkData,
   NodeData,
+  Rect,
   SerializedTopologyMap,
   TopologyMapConfig,
-  TopologyMode
+  TopologyMode,
+  ViewportSnapshot
 } from './core/types';
 import { ViewportState } from './core/ViewportState';
 import { GuidesManager } from './managers/GuidesManager';
@@ -397,6 +399,45 @@ export class TopologyMap {
     this.viewportState.enforceConstraints();
   }
 
+  public setZoom(scale: number): void {
+    if (!Number.isFinite(scale) || scale <= 0) {
+      return;
+    }
+
+    const snapshot = this.viewportState.getSnapshot();
+    const size = this.diagramService.getSize();
+    if (size.width <= 1 || size.height <= 1) {
+      this.viewportState.setScale(scale);
+      return;
+    }
+
+    const centerX = size.width / 2;
+    const centerY = size.height / 2;
+    const localX = (centerX - snapshot.tx) / snapshot.scale;
+    const localY = (centerY - snapshot.ty) / snapshot.scale;
+    const nextTx = centerX - localX * scale;
+    const nextTy = centerY - localY * scale;
+
+    this.logDebug('setZoom', { scale });
+    this.viewportState.setViewport(scale, nextTx, nextTy);
+  }
+
+  public fitToPage(padding = 24): void {
+    this.fitToContent('page', padding);
+  }
+
+  public fitToWidth(padding = 24): void {
+    this.fitToContent('width', padding);
+  }
+
+  public fitToHeight(padding = 24): void {
+    this.fitToContent('height', padding);
+  }
+
+  public getViewportSnapshot(): ViewportSnapshot {
+    return this.viewportState.getSnapshot();
+  }
+
   public zoomIn(): void {
     this.logDebug('zoomIn');
     this.zoomInCommand.execute();
@@ -684,6 +725,36 @@ export class TopologyMap {
         detail
       })
     );
+  }
+
+  private fitToContent(mode: 'page' | 'width' | 'height', padding: number): void {
+    const bbox = this.diagramService.getGraph().getBBox();
+    if (!bbox) {
+      return;
+    }
+
+    const safePadding = Number.isFinite(padding) ? Math.max(0, padding) : 0;
+    const size = this.diagramService.getSize();
+    const availableWidth = Math.max(1, size.width - safePadding * 2);
+    const availableHeight = Math.max(1, size.height - safePadding * 2);
+    const targetRect: Rect = {
+      x: bbox.x,
+      y: bbox.y,
+      width: Math.max(1, bbox.width),
+      height: Math.max(1, bbox.height)
+    };
+
+    const scaleX = availableWidth / targetRect.width;
+    const scaleY = availableHeight / targetRect.height;
+    const rawScale = mode === 'width' ? scaleX : mode === 'height' ? scaleY : Math.min(scaleX, scaleY);
+    const snapshot = this.viewportState.getSnapshot();
+    const nextScale = Math.min(snapshot.maxScale, Math.max(snapshot.minScale, rawScale));
+    const tx = size.width / 2 - (targetRect.x + targetRect.width / 2) * nextScale;
+    const ty = size.height / 2 - (targetRect.y + targetRect.height / 2) * nextScale;
+
+    const fitModeName = mode === 'page' ? 'Page' : mode === 'width' ? 'Width' : 'Height';
+    this.logDebug(`fitTo${fitModeName}`, { padding: safePadding, scale: nextScale });
+    this.viewportState.setViewport(nextScale, tx, ty);
   }
 }
 
