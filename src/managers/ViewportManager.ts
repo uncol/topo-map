@@ -61,7 +61,7 @@ export class ViewportManager {
 
     const cell = modelCandidate;
     if (cell.isLink()) {
-      return true;
+      return this.isLinkVisible(cell);
     }
     if (!cell.isElement()) {
       return true;
@@ -149,5 +149,21 @@ export class ViewportManager {
       height: height / snapshot.scale
     };
     return inflateRect(viewport, this.bufferPx / snapshot.scale);
+  }
+
+  private isLinkVisible(link: joint.dia.Link): boolean {
+    const viewportRect = this.getBufferedViewportRect();
+    const bbox = link.getBBox();
+
+    const linkRect: Rect = {
+      x: bbox.x,
+      y: bbox.y,
+      width: bbox.width,
+      height: bbox.height
+    };
+
+    const snapshot = this.viewportState.getSnapshot();
+    const edgeMargin = 8 / Math.max(snapshot.scale, 0.0001);
+    return intersects(inflateRect(linkRect, edgeMargin), viewportRect);
   }
 }

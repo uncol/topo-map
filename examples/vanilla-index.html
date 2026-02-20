@@ -49,6 +49,14 @@
       background: #eff6ff;
     }
 
+    .toolbar .stats {
+      margin-left: auto;
+      align-self: center;
+      font-size: 13px;
+      color: #334155;
+      white-space: nowrap;
+    }
+
     .layout {
       display: grid;
       grid-template-columns: minmax(360px, 1fr) 280px;
@@ -100,6 +108,7 @@
       <input id="bounds-padding" type="range" min="0" max="48" step="1" value="12" />
       <span id="bounds-padding-value">12</span>px
     </label>
+    <span id="render-stats" class="stats">Visible E: 0 L: 0 | Total E: 0 L: 0</span>
   </div>
   <div class="layout">
     <div id="topology-main"></div>

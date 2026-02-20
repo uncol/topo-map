@@ -21,23 +21,61 @@ const topologyMap = new TopologyMap({
   gridSize: 20,
   boundsPadding: 12,
   snapThreshold: 5,
-  asyncRendering: false,
-  enableViewportCulling: false,
-  debugLogs: true
+  asyncRendering: true,
+  enableViewportCulling: true,
+  debugLogs: false
 });
 
-const nodes = [
-  { id: 'r1', x: 80, y: 60, label: 'Router 1', status: 'UP' },
-  { id: 'sw1', x: 360, y: 80, label: 'Switch 1', status: 'UP' },
-  { id: 'fw1', x: 220, y: 230, label: 'Firewall', status: 'WARN' },
-  { id: 'srv1', x: 520, y: 250, label: 'Server 1', status: 'DOWN' }
-];
+function generateTopology(rows, cols) {
+  const nodes = [];
+  const links = [];
+  const spacingX = 220;
+  const spacingY = 120;
+  const startX = 80;
+  const startY = 60;
+  let linkSeq = 1;
 
-const links = [
-  { id: 'l1', sourceId: 'r1', targetId: 'sw1', label: '10G' },
-  { id: 'l2', sourceId: 'sw1', targetId: 'fw1', label: '1G' },
-  { id: 'l3', sourceId: 'fw1', targetId: 'srv1', label: '1G' }
-];
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      const index = row * cols + col;
+      const id = `n${index + 1}`;
+      const status = index % 23 === 0 ? 'DOWN' : index % 7 === 0 ? 'WARN' : 'UP';
+
+      nodes.push({
+        id,
+        x: startX + col * spacingX,
+        y: startY + row * spacingY,
+        label: `Node ${index + 1}`,
+        status
+      });
+
+      if (col < cols - 1) {
+        links.push({
+          id: `l${linkSeq}`,
+          sourceId: id,
+          targetId: `n${index + 2}`,
+          label: '1G'
+        });
+        linkSeq += 1;
+      }
+
+      if (row < rows - 1) {
+        links.push({
+          id: `l${linkSeq}`,
+          sourceId: id,
+          targetId: `n${index + cols + 1}`,
+          label: '10G'
+        });
+        linkSeq += 1;
+      }
+    }
+  }
+
+  return { nodes, links };
+}
+
+const { nodes, links } = generateTopology(40, 50);
+console.log('[demo] generated topology', { nodes: nodes.length, links: links.length });
 
 topologyMap.loadData(nodes, links);
 
@@ -51,6 +89,7 @@ const zoomOutBtn = document.getElementById('zoom-out');
 const resetViewBtn = document.getElementById('reset-view');
 const boundsPadding = document.getElementById('bounds-padding');
 const boundsPaddingValue = document.getElementById('bounds-padding-value');
+const renderStats = document.getElementById('render-stats');
 
 modePan?.addEventListener('click', () => topologyMap.setMode('pan'));
 modeZoomArea?.addEventListener('click', () => topologyMap.setMode('zoomToArea'));
@@ -96,6 +135,39 @@ if (boundsPadding instanceof HTMLInputElement) {
   applyBoundsPadding(Number(boundsPadding.value));
 }
 
+let statsRafId = 0;
+
+function updateRenderStats() {
+  if (!(renderStats instanceof HTMLElement)) {
+    return;
+  }
+  const visibleElements = mainContainer.querySelectorAll('.joint-element').length;
+  const visibleLinks = mainContainer.querySelectorAll('.joint-link').length;
+  renderStats.textContent =
+    `Visible E: ${visibleElements} L: ${visibleLinks} | ` +
+    `Total E: ${nodes.length} L: ${links.length}`;
+}
+
+function scheduleRenderStatsUpdate() {
+  if (statsRafId !== 0) {
+    return;
+  }
+  statsRafId = window.requestAnimationFrame(() => {
+    statsRafId = 0;
+    updateRenderStats();
+  });
+}
+
+const renderObserver = new MutationObserver(() => {
+  scheduleRenderStatsUpdate();
+});
+
+renderObserver.observe(mainContainer, {
+  childList: true,
+  subtree: true
+});
+scheduleRenderStatsUpdate();
+
 let rafResizeId = 0;
 let prevMainWidth = -1;
 let prevMainHeight = -1;
@@ -121,6 +193,8 @@ function applyResize() {
     prevMiniHeight = miniHeight;
     topologyMap.resizeMinimap(miniWidth, miniHeight);
   }
+
+  scheduleRenderStatsUpdate();
 }
 
 function scheduleResize() {
@@ -139,10 +213,14 @@ window.addEventListener('resize', scheduleResize, { passive: true });
 scheduleResize();
 
 window.addEventListener('beforeunload', () => {
+  renderObserver.disconnect();
   resizeObserver.disconnect();
   window.removeEventListener('resize', scheduleResize);
   if (rafResizeId !== 0) {
     window.cancelAnimationFrame(rafResizeId);
+  }
+  if (statsRafId !== 0) {
+    window.cancelAnimationFrame(statsRafId);
   }
   topologyMap.destroy();
 });

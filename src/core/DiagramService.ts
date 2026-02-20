@@ -77,9 +77,7 @@ export class DiagramService {
 
   public setViewportPredicate(predicate: ((view: joint.mvc.View<joint.mvc.Model, SVGElement>) => boolean) | null): void {
     this.viewportPredicate = predicate;
-    if (this.asyncRendering) {
-      this.paper.unfreeze();
-    }
+    this.refreshVisibility();
   }
 
   public setDrawGrid(enabled: boolean, size: number): void {
@@ -97,9 +95,7 @@ export class DiagramService {
 
   public resize(width: number, height: number): void {
     this.paper.setDimensions(width, height);
-    if (this.asyncRendering) {
-      this.paper.unfreeze();
-    }
+    this.refreshVisibility();
   }
 
   public setBoundsPadding(padding: number): void {
@@ -119,9 +115,7 @@ export class DiagramService {
 
   public fromJSON(data: joint.dia.Graph.JSON): void {
     this.graph.fromJSON(data, { cellNamespace });
-    if (this.asyncRendering) {
-      this.paper.unfreeze();
-    }
+    this.refreshVisibility();
   }
 
   public fitRect(rect: Rect, minScale: number, maxScale: number, padding = 24): void {
@@ -211,6 +205,7 @@ export class DiagramService {
   private applyViewport(snapshot: ViewportSnapshot): void {
     this.paper.scale(snapshot.scale, snapshot.scale);
     this.paper.translate(snapshot.tx, snapshot.ty);
+    this.refreshVisibility();
   }
 
   private normalizePadding(value: number): number {
@@ -228,5 +223,16 @@ export class DiagramService {
     host.style.position = 'relative';
     container.append(host);
     return host;
+  }
+
+  private refreshVisibility(): void {
+    if (this.asyncRendering) {
+      this.paper.unfreeze();
+      return;
+    }
+
+    if (this.viewportPredicate) {
+      this.paper.updateCellsVisibility();
+    }
   }
 }
