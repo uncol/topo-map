@@ -83,7 +83,16 @@ function getString(record: Record<string, unknown>, key: string): string {
 
 function getNumber(record: Record<string, unknown>, key: string, fallback: number): number {
   const value = record[key];
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return fallback;
 }
 
 function calcLabelBg(text: string, breakWidth: number): { x: number; y: number; width: number; height: number } {
@@ -205,6 +214,13 @@ export const ImageIconElement = joint.dia.Element.define(
         const nextStatus = getString(currentIconAttrs, 'status');
         if (nextStatus.length > 0) {
           this.setStatus(nextStatus);
+        } else {
+          this.attr('icon/filter', null);
+          const embeddedCells = this.getEmbeddedCells();
+          embeddedCells.forEach((badge) => {
+            badge.attr('body/filter', null);
+            badge.attr('text/filter', null);
+          });
         }
       });
     },
@@ -242,4 +258,3 @@ export const ImageIconElement = joint.dia.Element.define(
     }
   }
 );
-
