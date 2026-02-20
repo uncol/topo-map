@@ -13,6 +13,7 @@ export interface TopologyMapConfig {
   boundsPadding?: number;
   onReady?: () => void;
   preserveViewportOnLoad?: boolean;
+  fitToPageOnLoad?: boolean;
   enableViewportCulling?: boolean;
   asyncRendering?: boolean;
   debugLogs?: boolean;

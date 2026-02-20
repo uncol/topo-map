@@ -54,6 +54,7 @@ Open: `http://localhost:8080` (serves `/vanilla-index.html` from `dist`).
 ### Viewport restore behavior
 
 `fromJSON(data)` reads `data.viewport` and restores it by default. Set `preserveViewportOnLoad: true` in config to keep current viewport on load.
+Set `fitToPageOnLoad: true` to auto-fit the graph on `loadData()` and on `fromJSON()` when saved viewport is absent.
 
 ## Launch examples
 

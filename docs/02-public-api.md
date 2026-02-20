@@ -18,6 +18,7 @@ export interface TopologyMapConfig {
   boundsPadding?: number;
   onReady?: () => void;
   preserveViewportOnLoad?: boolean;
+  fitToPageOnLoad?: boolean;
   enableViewportCulling?: boolean;
   asyncRendering?: boolean;
   debugLogs?: boolean;
@@ -84,7 +85,7 @@ fromJSON(data: object): void
 Поведение `fromJSON`:
 - принимает envelope или raw graph JSON;
 - корректно восстанавливает `noc.*` типы через `cellNamespace`;
-- если `preserveViewportOnLoad !== true`, применяет viewport из JSON или сбрасывает к initial.
+- если `preserveViewportOnLoad !== true`, применяет viewport из JSON; если viewport нет и `fitToPageOnLoad === true` — делает `fit to page`, иначе сбрасывает к initial.
 
 ### Режимы и взаимодействие
 

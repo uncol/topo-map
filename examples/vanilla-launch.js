@@ -3,6 +3,7 @@ import { TopologyMap } from '../dist/index.js';
 const mainContainer = document.getElementById('topology-main');
 const minimapContainer = document.getElementById('topology-minimap');
 const layoutContainer = document.querySelector('.layout');
+const FIT_TO_PAGE_ON_LOAD = true;
 
 if (
   !(mainContainer instanceof HTMLElement) ||
@@ -21,6 +22,7 @@ const topologyMap = new TopologyMap({
   gridSize: 20,
   boundsPadding: 12,
   snapThreshold: 5,
+  fitToPageOnLoad: FIT_TO_PAGE_ON_LOAD,
   asyncRendering: false,
   enableViewportCulling: true,
   debugLogs: false

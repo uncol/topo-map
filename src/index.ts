@@ -196,6 +196,7 @@ export class TopologyMap {
       snapThreshold: config.snapThreshold ?? DEFAULT_GUIDE_THRESHOLD,
       boundsPadding: config.boundsPadding ?? DEFAULT_BOUNDS_PADDING,
       preserveViewportOnLoad: config.preserveViewportOnLoad ?? false,
+      fitToPageOnLoad: config.fitToPageOnLoad ?? false,
       enableViewportCulling: config.enableViewportCulling ?? false,
       asyncRendering: config.asyncRendering ?? false,
       debugLogs: config.debugLogs ?? false,
@@ -334,6 +335,9 @@ export class TopologyMap {
     this.diagramService.fromJSON({ cells } as joint.dia.Graph.JSON);
     this.viewportManager.rebuildIndex();
     this.viewportState.enforceConstraints();
+    if (this.config.fitToPageOnLoad) {
+      this.fitToPage();
+    }
     this.logDebug('loadData:done');
   }
 
@@ -367,6 +371,12 @@ export class TopologyMap {
     if (envelope.viewport) {
       this.viewportState.setViewport(envelope.viewport.scale, envelope.viewport.tx, envelope.viewport.ty);
       this.logDebug('fromJSON:applied-viewport', envelope.viewport);
+      return;
+    }
+
+    if (this.config.fitToPageOnLoad) {
+      this.fitToPage();
+      this.logDebug('fromJSON:fit-to-page');
       return;
     }
 
