@@ -1,7 +1,8 @@
 import * as joint from '@joint/core';
 import { calcLabelBg, elementMarkup, labelBgAttrs, resolveBgDisplay, TEXT_LABEL_BG, textLabelBg } from './labeling';
 
-const DEFAULT_FONT_ICON_UNICODE = '\uE003';
+// const DEFAULT_FONT_ICON_UNICODE = '\uE003'; // brand-gufolabs-s
+const DEFAULT_FONT_ICON_UNICODE = '\uF20A';
 const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
 const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
 
