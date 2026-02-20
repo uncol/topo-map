@@ -21,7 +21,7 @@ const topologyMap = new TopologyMap({
   gridSize: 20,
   boundsPadding: 12,
   snapThreshold: 5,
-  asyncRendering: true,
+  asyncRendering: false,
   enableViewportCulling: true,
   debugLogs: false
 });

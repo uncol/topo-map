@@ -1,57 +1,7 @@
 import * as joint from '@joint/core';
-
-const TEXT_LABEL_BG = 'stroke' as 'stroke' | 'rect';
-const LABEL_FONT_SIZE = 12;
-const LABEL_PADDING = 2;
+import { calcLabelBg, elementMarkup, labelBgAttrs, resolveBgDisplay, TEXT_LABEL_BG, textLabelBg } from './labeling';
 
 let stencilDir = '/stencils';
-
-const textLabelBg =
-  TEXT_LABEL_BG === 'stroke'
-    ? {
-        stroke: '#FFFFFF',
-        strokeWidth: 3,
-        paintOrder: 'stroke fill'
-      }
-    : {};
-
-const elementMarkup =
-  TEXT_LABEL_BG === 'rect'
-    ? [
-        { tagName: 'rect', selector: 'titleBg' },
-        { tagName: 'text', selector: 'title', className: 'rotatable' },
-        { tagName: 'rect', selector: 'ipaddrBg' },
-        { tagName: 'text', selector: 'ipaddr', className: 'rotatable' }
-      ]
-    : [
-        { tagName: 'text', selector: 'title', className: 'rotatable' },
-        { tagName: 'text', selector: 'ipaddr', className: 'rotatable' }
-      ];
-
-const labelBgAttrs =
-  TEXT_LABEL_BG === 'rect'
-    ? {
-        titleBg: {
-          fill: '#FFFFFF',
-          ref: 'icon',
-          refX: '50%',
-          refY: '100%',
-          rx: 2,
-          width: 0,
-          height: 0
-        },
-        ipaddrBg: {
-          fill: '#FFFFFF',
-          ref: 'icon',
-          refX: '50%',
-          refY: '100%',
-          rx: 2,
-          width: 0,
-          height: 0,
-          display: 'none'
-        }
-      }
-    : {};
 
 interface ImageIconElementMethods {
   toggleLabel: () => void;
@@ -93,18 +43,6 @@ function getNumber(record: Record<string, unknown>, key: string, fallback: numbe
     }
   }
   return fallback;
-}
-
-function calcLabelBg(text: string, breakWidth: number): { x: number; y: number; width: number; height: number } {
-  const lines = text ? text.split('\n').length : 1;
-  const width = breakWidth + LABEL_PADDING * 2;
-  const height = lines * LABEL_FONT_SIZE + LABEL_PADDING * 2;
-  return {
-    x: -width / 2,
-    y: -LABEL_FONT_SIZE * 0.75 - LABEL_PADDING,
-    width,
-    height
-  };
 }
 
 export function setStencilDir(dir: string): void {
@@ -232,11 +170,8 @@ export const ImageIconElement = joint.dia.Element.define(
       const newIpaddrDisplay = ipaddrDisplay === 'none' ? 'block' : 'none';
       this.attr('title/display', newTitleDisplay);
       this.attr('ipaddr/display', newIpaddrDisplay);
-
-      if (TEXT_LABEL_BG === 'rect') {
-        this.attr('titleBg/display', newTitleDisplay);
-        this.attr('ipaddrBg/display', newIpaddrDisplay);
-      }
+      this.attr('titleBg/display', resolveBgDisplay(newTitleDisplay));
+      this.attr('ipaddrBg/display', resolveBgDisplay(newIpaddrDisplay));
     },
 
     setStatus: function (this: ImageIconElementInstance, filter: string): void {

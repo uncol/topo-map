@@ -1,58 +1,9 @@
 import * as joint from '@joint/core';
+import { calcLabelBg, elementMarkup, labelBgAttrs, resolveBgDisplay, TEXT_LABEL_BG, textLabelBg } from './labeling';
 
-const TEXT_LABEL_BG = 'stroke' as 'stroke' | 'rect';
-const LABEL_FONT_SIZE = 12;
-const LABEL_PADDING = 2;
 const DEFAULT_FONT_ICON_UNICODE = '\uE003';
 const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
 const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
-
-const textLabelBg =
-  TEXT_LABEL_BG === 'stroke'
-    ? {
-        stroke: '#FFFFFF',
-        strokeWidth: 3,
-        paintOrder: 'stroke fill'
-      }
-    : {};
-
-const elementMarkup =
-  TEXT_LABEL_BG === 'rect'
-    ? [
-        { tagName: 'rect', selector: 'titleBg' },
-        { tagName: 'text', selector: 'title', className: 'rotatable' },
-        { tagName: 'rect', selector: 'ipaddrBg' },
-        { tagName: 'text', selector: 'ipaddr', className: 'rotatable' }
-      ]
-    : [
-        { tagName: 'text', selector: 'title', className: 'rotatable' },
-        { tagName: 'text', selector: 'ipaddr', className: 'rotatable' }
-      ];
-
-const labelBgAttrs =
-  TEXT_LABEL_BG === 'rect'
-    ? {
-        titleBg: {
-          fill: '#FFFFFF',
-          ref: 'icon',
-          refX: '50%',
-          refY: '100%',
-          rx: 2,
-          width: 0,
-          height: 0
-        },
-        ipaddrBg: {
-          fill: '#FFFFFF',
-          ref: 'icon',
-          refX: '50%',
-          refY: '100%',
-          rx: 2,
-          width: 0,
-          height: 0,
-          display: 'none'
-        }
-      }
-    : {};
 
 interface FontIconElementMethods {
   toggleLabel: () => void;
@@ -80,18 +31,6 @@ function getNestedRecord(parent: unknown, key: string): Record<string, unknown> 
 function getString(record: Record<string, unknown>, key: string): string {
   const value = record[key];
   return typeof value === 'string' ? value : '';
-}
-
-function calcLabelBg(text: string, breakWidth: number): { x: number; y: number; width: number; height: number } {
-  const lines = text ? text.split('\n').length : 1;
-  const width = breakWidth + LABEL_PADDING * 2;
-  const height = lines * LABEL_FONT_SIZE + LABEL_PADDING * 2;
-  return {
-    x: -width / 2,
-    y: -LABEL_FONT_SIZE * 0.75 - LABEL_PADDING,
-    width,
-    height
-  };
 }
 
 export const FontIconElement = joint.dia.Element.define(
@@ -184,11 +123,8 @@ export const FontIconElement = joint.dia.Element.define(
       const newIpaddrDisplay = ipaddrDisplay === 'none' ? 'block' : 'none';
       this.attr('title/display', newTitleDisplay);
       this.attr('ipaddr/display', newIpaddrDisplay);
-
-      if (TEXT_LABEL_BG === 'rect') {
-        this.attr('titleBg/display', newTitleDisplay);
-        this.attr('ipaddrBg/display', newIpaddrDisplay);
-      }
+      this.attr('titleBg/display', resolveBgDisplay(newTitleDisplay));
+      this.attr('ipaddrBg/display', resolveBgDisplay(newIpaddrDisplay));
     },
 
     setClass: function (this: FontIconElementInstance, size?: string, status?: string): void {
@@ -203,4 +139,3 @@ export const FontIconElement = joint.dia.Element.define(
     }
   }
 );
-
