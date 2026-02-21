@@ -10,32 +10,45 @@ TypeScript module for an interactive network topology map with:
 ## Install
 
 ```bash
-npm install
+pnpm install
 ```
 
 ## Build
 
 ```bash
-npm run typecheck
-npm run build
-```
-
-Watch mode:
-
-```bash
-pnpm run build:watch
-```
-
-`build:watch` updates `dist/__reload.txt`, and demo page auto-reloads in browser.
-
-## Run Demo In Docker
-
-```bash
+pnpm run typecheck
 pnpm run build
+```
+
+`build` now uses Vite library mode and generates:
+- `dist/index.js` (ES module),
+- `dist/index.umd.js` (UMD bundle),
+- `dist/**/*.d.ts` (TypeScript declarations).
+
+## Run Demo (Vite dev server)
+
+```bash
+pnpm run demo
+```
+
+Open: `http://localhost:5173/vanilla-index.html`
+
+## Build Demo (static)
+
+```bash
+pnpm run demo:build
+```
+
+Output: `dist/demo`
+
+### Optional: serve built demo in Docker
+
+```bash
+pnpm run demo:build
 docker compose up -d
 ```
 
-Open: `http://localhost:8080` (serves `/vanilla-index.html` from `dist`).
+Open: `http://localhost:8080`
 
 ## Public API
 

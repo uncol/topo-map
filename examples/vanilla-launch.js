@@ -1,4 +1,5 @@
-import { TopologyMap } from '../dist/index.js';
+import '@gufo-labs/font/gufo-font.css';
+import { TopologyMap } from '../src/index.ts';
 
 const mainContainer = document.getElementById('topology-main');
 const minimapContainer = document.getElementById('topology-minimap');

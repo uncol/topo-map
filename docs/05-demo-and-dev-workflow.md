@@ -1,11 +1,11 @@
 # Demo и рабочий цикл разработки
 
-Документ описывает актуальный запуск demo и повседневный workflow.
+Документ описывает актуальный запуск demo и повседневный workflow после миграции на Vite.
 
 ## Требования
 
 - Node.js + pnpm.
-- Docker и Docker Compose для nginx demo.
+- Docker и Docker Compose только если нужно отдать собранный demo через nginx.
 
 ## Установка
 
@@ -13,7 +13,7 @@
 pnpm install
 ```
 
-## Проверка и сборка
+## Проверка и сборка библиотеки
 
 ```bash
 pnpm run typecheck
@@ -21,33 +21,40 @@ pnpm run build
 ```
 
 Что делает `build`:
-- компилирует TypeScript в `dist`;
-- копирует и адаптирует demo-файлы;
-- подготавливает browser vendor-модули (`@joint/core`, `rbush`, `quickselect`);
-- обновляет `dist/__reload.txt`.
+- собирает библиотеку через Vite (library mode);
+- пишет JS-бандлы в `dist/index.js` и `dist/index.umd.js`;
+- генерирует `*.d.ts` через TypeScript в `dist/**`.
 
-## Watch + autoreload
+## Локальный запуск demo (Vite)
 
 ```bash
-pnpm run build:watch
+pnpm run demo
 ```
 
-Поведение:
-- `tsc --watch` в polling-режиме;
-- после успешной компиляции запускается `scripts/prepare-demo.mjs`;
-- маркер `dist/__reload.txt` обновляется;
-- `vanilla-index.html` опрашивает маркер и перезагружает страницу автоматически.
+Открыть:
+- `http://localhost:5173/vanilla-index.html`
 
-## Запуск demo через nginx
+Поведение:
+- hot reload и обновление страницы обеспечиваются Vite;
+- ручной `dist/__reload.txt` и importmap/vendor-копирование больше не используются.
+
+## Сборка demo (static)
+
+```bash
+pnpm run demo:build
+```
+
+Результат:
+- статический demo в `dist/demo`.
+
+## Запуск собранного demo через nginx (опционально)
 
 ```bash
 docker compose up -d
 ```
 
 Проверка:
-- открыть `http://localhost:8080`;
-- root отдает `vanilla-index.html` из `dist`;
-- модули и vendor-файлы отдаются напрямую из `dist`.
+- открыть `http://localhost:8080`.
 
 Остановить:
 
@@ -59,12 +66,11 @@ docker compose down
 
 - Источник библиотеки: `src/**`.
 - Vanilla demo: `examples/vanilla-index.html`, `examples/vanilla-launch.js`.
-- Локальный веб-рантайм: `nginx.conf`, `docker-compose.yml`.
-- Скрипты сборки demo: `scripts/prepare-demo.mjs`, `scripts/watch-with-autoreload.mjs`.
+- Vite-конфиги: `vite.config.mjs`, `vite.demo.config.mjs`.
 
 ## Быстрая диагностика
 
-- Если в браузере ошибки bare specifier, проверить importmap и наличие `dist/vendor/*`.
-- Если модуль блокируется MIME type, проверить `nginx.conf` (`.mjs` -> `application/javascript`).
-- Если после изменений нет обновления страницы, проверить что `build:watch` жив и `dist/__reload.txt` меняется.
+- Если demo не стартует, проверить `pnpm run demo` и порт 5173.
+- Если не генерируются типы, проверить `pnpm run build:types`.
+- Если не открывается docker demo, убедиться что был `pnpm run demo:build` и в `dist/demo` есть `vanilla-index.html`.
 - Если ломается восстановление графа из JSON, проверить `cellNamespace` и типы `noc.FontIconElement`/`noc.LinkElement`.

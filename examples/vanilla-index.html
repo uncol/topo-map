@@ -5,7 +5,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Topology Map - Vanilla JS Example</title>
-  <link rel="stylesheet" href="/vendor/gufo-font/gufo-font.css" />
   <style>
     * {
       box-sizing: border-box;
@@ -142,46 +141,7 @@
     <div id="topology-minimap"></div>
   </div>
 
-  <script type="importmap">
-      {
-        "imports": {
-          "@joint/core": "/vendor/joint-core/joint.mjs",
-          "rbush": "/vendor/rbush/index.js",
-          "quickselect": "/vendor/quickselect/index.js"
-        }
-      }
-    </script>
-  <script>
-      (function () {
-        if (window.location.search.includes('noreload=1')) {
-          return;
-        }
-
-        let marker = '';
-
-        async function checkReload() {
-          try {
-            const response = await fetch(`/__reload.txt?ts=${Date.now()}`, { cache: 'no-store' });
-            if (!response.ok) {
-              return;
-            }
-
-            const nextMarker = await response.text();
-            if (marker && marker !== nextMarker) {
-              window.location.reload();
-              return;
-            }
-            marker = nextMarker;
-          } catch {
-            // ignore temporary network errors while restarting nginx/watch
-          }
-        }
-
-        setInterval(checkReload, 1200);
-        checkReload();
-      })();
-    </script>
-  <script type="module" src="/examples/vanilla-launch.js"></script>
+  <script type="module" src="./vanilla-launch.js"></script>
 </body>
 
 </html>

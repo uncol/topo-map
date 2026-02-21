@@ -10,8 +10,11 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "tsc -p tsconfig.build.json && node ./scripts/prepare-demo.mjs",
-    "build:watch": "node ./scripts/watch-with-autoreload.mjs",
+    "build:lib": "vite build",
+    "build:types": "tsc -p tsconfig.types.json",
+    "build": "pnpm run clean && pnpm run build:lib && pnpm run build:types",
+    "demo": "vite --config vite.demo.config.mjs",
+    "demo:build": "vite build --config vite.demo.config.mjs",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -20,6 +23,7 @@
     "rbush": "4.0.1"
   },
   "devDependencies": {
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vite": "^7.1.5"
   }
 }
