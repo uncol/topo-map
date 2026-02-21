@@ -37,11 +37,10 @@ const DEFAULT_FONT_ICON_UNICODE = '\uF20A';
 const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
 const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
 const DEFAULT_NODE_SIZE = 64;
-const LINK_DEFAULT_STROKE = '#000000';
-const LINK_DEFAULT_STROKE_WIDTH = 1;
-const LINK_DEFAULT_CURSOR = 'default';
-const LINK_HOVER_STROKE = '#2563eb';
-const LINK_HOVER_STROKE_WIDTH = 2;
+const LINK_HOVER_STROKE = '#3498db';
+const LINK_HOVER_STROKE_WIDTH = 3;
+const LINK_HOVER_OPACITY = 0.6;
+const LINK_HOVER_HIGHLIGHT_ID = 'topology-link-hover-highlight';
 const ELEMENT_HIGHLIGHT_ID = 'topology-element-highlight';
 const TOPOLOGY_ELEMENT_CLICK_EVENT = 'topology:element:click';
 const TOPOLOGY_LINK_CLICK_EVENT = 'topology:link:click';
@@ -62,23 +61,8 @@ interface EventEmitterLike {
   off(eventName: string, callback: DebugHandler): void;
 }
 
-interface LinkHoverStyleSnapshot {
-  lineStroke: string;
-  lineStrokeWidth: number;
-  lineCursor: string;
-  outlineCursor: string;
-}
-
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
-}
-
-function toStringValue(value: unknown, fallback: string): string {
-  return typeof value === 'string' ? value : fallback;
-}
-
-function toNumericValue(value: unknown, fallback: number): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
 function toGraphEnvelope(input: object): GraphEnvelope {
@@ -155,8 +139,6 @@ export class TopologyMap {
   private lastMinimapWidth = -1;
 
   private lastMinimapHeight = -1;
-
-  private readonly linkHoverStyles = new Map<string, LinkHoverStyleSnapshot>();
 
   private highlightedElementView: joint.dia.ElementView | null = null;
 
@@ -609,52 +591,24 @@ export class TopologyMap {
 
   private clearInteractionState(): void {
     this.clearElementHighlight();
-    this.linkHoverStyles.clear();
+    this.clearLinkHoverStyles();
   }
 
   private applyLinkHoverStyle(linkView: joint.dia.LinkView): void {
-    const link = linkView.model;
-    const linkId = String(link.id);
-    if (!this.linkHoverStyles.has(linkId)) {
-      this.linkHoverStyles.set(linkId, {
-        lineStroke: toStringValue(link.attr('line/stroke'), LINK_DEFAULT_STROKE),
-        lineStrokeWidth: toNumericValue(link.attr('line/strokeWidth'), LINK_DEFAULT_STROKE_WIDTH),
-        lineCursor: toStringValue(link.attr('line/cursor'), LINK_DEFAULT_CURSOR),
-        outlineCursor: toStringValue(link.attr('outline/cursor'), LINK_DEFAULT_CURSOR)
-      });
-    }
-
-    link.attr({
-      line: {
+    joint.highlighters.mask.add(linkView, 'line', LINK_HOVER_HIGHLIGHT_ID, {
+      padding: 1,
+      attrs: {
         stroke: LINK_HOVER_STROKE,
         strokeWidth: LINK_HOVER_STROKE_WIDTH,
-        cursor: 'pointer'
-      },
-      outline: {
-        cursor: 'pointer'
+        opacity: LINK_HOVER_OPACITY
       }
     });
+    this.diagramService.getPaper().el.style.cursor = 'pointer';
   }
 
   private restoreLinkHoverStyle(linkView: joint.dia.LinkView): void {
-    const link = linkView.model;
-    const linkId = String(link.id);
-    const snapshot = this.linkHoverStyles.get(linkId);
-    if (!snapshot) {
-      return;
-    }
-
-    link.attr({
-      line: {
-        stroke: snapshot.lineStroke,
-        strokeWidth: snapshot.lineStrokeWidth,
-        cursor: snapshot.lineCursor
-      },
-      outline: {
-        cursor: snapshot.outlineCursor
-      }
-    });
-    this.linkHoverStyles.delete(linkId);
+    joint.highlighters.mask.remove(linkView, LINK_HOVER_HIGHLIGHT_ID);
+    this.diagramService.getPaper().el.style.cursor = 'grab';
   }
 
   private handleElementPointerClick(
@@ -726,6 +680,10 @@ export class TopologyMap {
     }
     joint.highlighters.mask.remove(this.highlightedElementView, ELEMENT_HIGHLIGHT_ID);
     this.highlightedElementView = null;
+  }
+
+  private clearLinkHoverStyles(): void {
+    joint.highlighters.mask.removeAll(this.diagramService.getPaper(), LINK_HOVER_HIGHLIGHT_ID);
   }
 
   private emitBubbledClickEvent(eventName: string, detail: Record<string, unknown>): void {

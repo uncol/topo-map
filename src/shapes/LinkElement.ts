@@ -8,7 +8,7 @@ export const LinkElement = joint.shapes.standard.Link.define('noc.LinkElement', 
       selector: 'outline',
       attributes: {
         fill: 'none',
-        cursor: 'default',
+        cursor: 'pointer',
         stroke: 'transparent',
         'stroke-linecap': 'round'
       }
