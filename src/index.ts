@@ -8,8 +8,8 @@ import type {
   LinkData,
   NodeData,
   Rect,
-  SerializedTopologyMap,
-  TopologyMapConfig,
+  SerializedTopology,
+  TopologyConfig,
   TopologyMode,
   ViewportSnapshot
 } from './core/types';
@@ -95,8 +95,8 @@ function toGraphEnvelope(input: object): GraphEnvelope {
   return { graph: input as joint.dia.Graph.JSON };
 }
 
-export class TopologyMap {
-  private readonly config: Required<Omit<TopologyMapConfig, 'onReady'>> & { onReady: (() => void) | undefined };
+export class Topology {
+  private readonly config: Required<Omit<TopologyConfig, 'onReady'>> & { onReady: (() => void) | undefined };
 
   private readonly viewportState: ViewportState;
 
@@ -168,7 +168,7 @@ export class TopologyMap {
     this.handleLinkPointerClick(linkView, event, x, y);
   };
 
-  public constructor(config: TopologyMapConfig) {
+  public constructor(config: TopologyConfig) {
     this.config = {
       mainContainer: config.mainContainer,
       minimapContainer: config.minimapContainer,
@@ -326,7 +326,7 @@ export class TopologyMap {
 
   public toJSON(): object {
     const snapshot = this.viewportState.getSnapshot();
-    const payload: SerializedTopologyMap = {
+    const payload: SerializedTopology = {
       schemaVersion: DEFAULT_SCHEMA_VERSION,
       viewport: {
         scale: snapshot.scale,
@@ -570,7 +570,7 @@ export class TopologyMap {
     if (!this.debugLogsEnabled) {
       return;
     }
-    console.log('[TopologyMap]', message, ...payload);
+    console.log('[Topology]', message, ...payload);
   }
 
   private setupInteractionEvents(): void {
@@ -727,4 +727,4 @@ export class TopologyMap {
   }
 }
 
-export type { LinkData, NodeData, TopologyMapConfig, TopologyMode } from './core/types';
+export type { LinkData, NodeData, TopologyConfig, TopologyMode } from './core/types';

@@ -1,5 +1,5 @@
 import '@gufo-labs/font/gufo-font.css';
-import { TopologyMap } from '../src/index.ts';
+import { Topology } from '../src/index.ts';
 
 const mainContainer = document.getElementById('topology-main');
 const minimapContainer = document.getElementById('topology-minimap');
@@ -14,7 +14,7 @@ if (
   throw new Error('Required containers .layout, #topology-main and #topology-minimap were not found.');
 }
 
-const topologyMap = new TopologyMap({
+const Topology = new Topology({
   mainContainer,
   minimapContainer,
   initialScale: 1,
@@ -80,7 +80,7 @@ function generateTopology(rows, cols) {
 const { nodes, links } = generateTopology(40, 50);
 console.log('[demo] generated topology', { nodes: nodes.length, links: links.length });
 
-topologyMap.loadData(nodes, links);
+Topology.loadData(nodes, links);
 
 const modePan = document.getElementById('mode-pan');
 const modeZoomArea = document.getElementById('mode-zoom-area');
@@ -100,16 +100,16 @@ const ZOOM_CUSTOM_OPTION_VALUE = '__custom__';
 const ZOOM_PRESET_TOLERANCE = 0.001;
 let lastInteractionText = '';
 
-modePan?.addEventListener('click', () => topologyMap.setMode('pan'));
-modeZoomArea?.addEventListener('click', () => topologyMap.setMode('zoomToArea'));
-modeEdit?.addEventListener('click', () => topologyMap.setMode('edit'));
+modePan?.addEventListener('click', () => Topology.setMode('pan'));
+modeZoomArea?.addEventListener('click', () => Topology.setMode('zoomToArea'));
+modeEdit?.addEventListener('click', () => Topology.setMode('edit'));
 
 function applyToggleState() {
   if (snapToggle instanceof HTMLInputElement) {
-    topologyMap.setSnapToGrid(snapToggle.checked);
+    Topology.setSnapToGrid(snapToggle.checked);
   }
   if (guidesToggle instanceof HTMLInputElement) {
-    topologyMap.setGuidesEnabled(guidesToggle.checked);
+    Topology.setGuidesEnabled(guidesToggle.checked);
   }
 }
 
@@ -120,8 +120,8 @@ applyToggleState();
 let zoomSelectRafId = 0;
 
 function getCurrentScale() {
-  if (typeof topologyMap.getViewportSnapshot === 'function') {
-    const snapshot = topologyMap.getViewportSnapshot();
+  if (typeof Topology.getViewportSnapshot === 'function') {
+    const snapshot = Topology.getViewportSnapshot();
     if (snapshot && typeof snapshot.scale === 'number') {
       return snapshot.scale;
     }
@@ -178,17 +178,17 @@ function scheduleZoomSelectorSync() {
 
 function applyZoomSelection(value) {
   if (value === 'fit-page') {
-    topologyMap.fitToPage();
+    Topology.fitToPage();
     scheduleZoomSelectorSync();
     return;
   }
   if (value === 'fit-width') {
-    topologyMap.fitToWidth();
+    Topology.fitToWidth();
     scheduleZoomSelectorSync();
     return;
   }
   if (value === 'fit-height') {
-    topologyMap.fitToHeight();
+    Topology.fitToHeight();
     scheduleZoomSelectorSync();
     return;
   }
@@ -201,20 +201,20 @@ function applyZoomSelection(value) {
     return;
   }
 
-  topologyMap.setZoom(scale);
+  Topology.setZoom(scale);
   scheduleZoomSelectorSync();
 }
 
 const onZoomInClick = () => {
-  topologyMap.zoomIn();
+  Topology.zoomIn();
   scheduleZoomSelectorSync();
 };
 const onZoomOutClick = () => {
-  topologyMap.zoomOut();
+  Topology.zoomOut();
   scheduleZoomSelectorSync();
 };
 const onResetViewClick = () => {
-  topologyMap.resetView();
+  Topology.resetView();
   scheduleZoomSelectorSync();
 };
 const onZoomSelectChange = (event) => {
@@ -240,7 +240,7 @@ function applyBoundsPadding(value) {
     return;
   }
   const normalized = Math.max(0, Math.round(value));
-  topologyMap.setBoundsPadding(normalized);
+  Topology.setBoundsPadding(normalized);
   if (boundsPaddingValue instanceof HTMLElement) {
     boundsPaddingValue.textContent = String(normalized);
   }
@@ -334,13 +334,13 @@ function applyResize() {
   if (mainWidth !== prevMainWidth || mainHeight !== prevMainHeight) {
     prevMainWidth = mainWidth;
     prevMainHeight = mainHeight;
-    topologyMap.resizeMain(mainWidth, mainHeight);
+    Topology.resizeMain(mainWidth, mainHeight);
   }
 
   if (miniWidth !== prevMiniWidth || miniHeight !== prevMiniHeight) {
     prevMiniWidth = miniWidth;
     prevMiniHeight = miniHeight;
-    topologyMap.resizeMinimap(miniWidth, miniHeight);
+    Topology.resizeMinimap(miniWidth, miniHeight);
   }
 
   scheduleRenderStatsUpdate();
@@ -382,5 +382,5 @@ window.addEventListener('beforeunload', () => {
   if (statsRafId !== 0) {
     window.cancelAnimationFrame(statsRafId);
   }
-  topologyMap.destroy();
+  Topology.destroy();
 });

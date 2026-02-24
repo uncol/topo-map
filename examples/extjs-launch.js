@@ -1,7 +1,7 @@
 Ext.application({
   name: 'TopoMapApp',
   launch: function () {
-    var topologyMap = null;
+    var Topology = null;
 
     Ext.create('Ext.container.Viewport', {
       layout: 'border',
@@ -17,20 +17,20 @@ Ext.application({
               var minimapPanel = panel.up('viewport').down('#topology-minimap-panel');
               var minimapEl = minimapPanel.getEl().down('#topology-minimap') || minimapPanel.getEl().down('div');
 
-              topologyMap = new TopologyMap({
+              Topology = new Topology({
                 mainContainer: mainEl.dom,
                 minimapContainer: minimapEl.dom
               });
             },
             resize: function (_panel, width, height) {
-              if (topologyMap) {
-                topologyMap.resizeMain(width, height);
+              if (Topology) {
+                Topology.resizeMain(width, height);
               }
             },
             beforedestroy: function () {
-              if (topologyMap) {
-                topologyMap.destroy();
-                topologyMap = null;
+              if (Topology) {
+                Topology.destroy();
+                Topology = null;
               }
             }
           }
@@ -44,8 +44,8 @@ Ext.application({
           html: '<div id="topology-minimap" style="width:100%;height:100%"></div>',
           listeners: {
             resize: function (_panel, width, height) {
-              if (topologyMap) {
-                topologyMap.resizeMinimap(width, height);
+              if (Topology) {
+                Topology.resizeMinimap(width, height);
               }
             }
           }

@@ -8,7 +8,7 @@ export default defineConfig({
     sourcemap: true,
     lib: {
       entry: resolve(process.cwd(), 'src/index.ts'),
-      name: 'TopologyMap',
+      name: 'map',
       formats: ['es', 'umd'],
       fileName: (format) => (format === 'es' ? 'index.js' : 'index.umd.js')
     }

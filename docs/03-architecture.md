@@ -44,8 +44,8 @@
 
 ## Поток инициализации
 
-1. `TopologyMap` создает `ViewportState`.
-2. `TopologyMap` создает `DiagramService` с основным paper.
+1. `Topology` создает `ViewportState`.
+2. `Topology` создает `DiagramService` с основным paper.
 3. Регистрируется `translateBoundsResolver` для ограничения pan.
 4. Поднимаются `ViewportManager`, `ZoomManager`, `PanManager`, `GuidesManager`, `SnapManager`, `MinimapManager`.
 5. Создаются режимы и передаются в `ModeManager`.

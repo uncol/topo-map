@@ -2,7 +2,7 @@ import type * as joint from '@joint/core';
 
 export type TopologyMode = 'pan' | 'zoomToArea' | 'edit';
 
-export interface TopologyMapConfig {
+export interface TopologyConfig {
   mainContainer: HTMLElement;
   minimapContainer: HTMLElement;
   initialScale?: number;
@@ -59,7 +59,7 @@ export interface TranslateBounds {
 
 export type TranslateBoundsResolver = (snapshot: ViewportSnapshot) => TranslateBounds | null;
 
-export interface SerializedTopologyMap {
+export interface SerializedTopology {
   schemaVersion: string;
   viewport: Pick<ViewportSnapshot, 'scale' | 'tx' | 'ty'>;
   graph: joint.dia.Graph.JSON;

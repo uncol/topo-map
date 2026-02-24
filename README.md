@@ -52,7 +52,7 @@ Open: `http://localhost:8080`
 
 ## Public API
 
-- `new TopologyMap(config)`
+- `new Topology(config)`
 - `loadData(nodes, links)`
 - `toJSON()`
 - `fromJSON(data)`

@@ -7,7 +7,7 @@
 ```ts
 export type TopologyMode = 'pan' | 'zoomToArea' | 'edit';
 
-export interface TopologyMapConfig {
+export interface TopologyConfig {
   mainContainer: HTMLElement;
   minimapContainer: HTMLElement;
   initialScale?: number;
@@ -48,12 +48,12 @@ export interface LinkData {
 }
 ```
 
-## Класс `TopologyMap`
+## Класс `Topology`
 
 ### Конструктор
 
 ```ts
-new TopologyMap(config: TopologyMapConfig)
+new Topology(config: TopologyConfig)
 ```
 
 Назначение:
@@ -136,9 +136,9 @@ destroy(): void
 ## Минимальный пример
 
 ```ts
-import { TopologyMap } from '../dist/index.js';
+import { Topology } from '../dist/index.js';
 
-const map = new TopologyMap({
+const map = new Topology({
   mainContainer: document.getElementById('topology-main')!,
   minimapContainer: document.getElementById('topology-minimap')!,
   minScale: 0.1,
