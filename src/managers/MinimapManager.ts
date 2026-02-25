@@ -116,6 +116,7 @@ export class MinimapManager {
 
     graph.on('add', this.onGraphChangeBound);
     graph.on('remove', this.onGraphChangeBound);
+    graph.on('reset', this.onGraphChangeBound);
     graph.on('change:position', this.onGraphChangeBound);
     graph.on('change:size', this.onGraphChangeBound);
 
@@ -129,6 +130,10 @@ export class MinimapManager {
 
   public resize(width: number, height: number): void {
     this.paper.setDimensions(width, height);
+    this.refresh();
+  }
+
+  public refresh(): void {
     this.syncPaperTransform();
     this.updateViewportRect();
   }
@@ -138,6 +143,7 @@ export class MinimapManager {
 
     this.graph.off('add', this.onGraphChangeBound);
     this.graph.off('remove', this.onGraphChangeBound);
+    this.graph.off('reset', this.onGraphChangeBound);
     this.graph.off('change:position', this.onGraphChangeBound);
     this.graph.off('change:size', this.onGraphChangeBound);
 

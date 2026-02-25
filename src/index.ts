@@ -321,6 +321,7 @@ export class Topology {
     if (this.config.fitToPageOnLoad) {
       this.fitToPage();
     }
+    this.minimapManager.refresh();
     this.logDebug('loadData:done');
   }
 
@@ -346,6 +347,7 @@ export class Topology {
     this.diagramService.fromJSON(envelope.graph);
     this.viewportManager.rebuildIndex();
     this.viewportState.enforceConstraints();
+    this.minimapManager.refresh();
 
     if (this.config.preserveViewportOnLoad) {
       return;
