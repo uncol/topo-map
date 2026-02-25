@@ -14,7 +14,7 @@ if (
   throw new Error('Required containers .layout, #topology-main and #topology-minimap were not found.');
 }
 
-const Topology = new Topology({
+const instance = new Topology({
   mainContainer,
   minimapContainer,
   initialScale: 1,
@@ -77,10 +77,10 @@ function generateTopology(rows, cols) {
   return { nodes, links };
 }
 
-const { nodes, links } = generateTopology(40, 50);
+const { nodes, links } = generateTopology(10, 10);
 console.log('[demo] generated topology', { nodes: nodes.length, links: links.length });
 
-Topology.loadData(nodes, links);
+instance.loadData(nodes, links);
 
 const modePan = document.getElementById('mode-pan');
 const modeZoomArea = document.getElementById('mode-zoom-area');
@@ -100,16 +100,16 @@ const ZOOM_CUSTOM_OPTION_VALUE = '__custom__';
 const ZOOM_PRESET_TOLERANCE = 0.001;
 let lastInteractionText = '';
 
-modePan?.addEventListener('click', () => Topology.setMode('pan'));
-modeZoomArea?.addEventListener('click', () => Topology.setMode('zoomToArea'));
-modeEdit?.addEventListener('click', () => Topology.setMode('edit'));
+modePan?.addEventListener('click', () => instance.setMode('pan'));
+modeZoomArea?.addEventListener('click', () => instance.setMode('zoomToArea'));
+modeEdit?.addEventListener('click', () => instance.setMode('edit'));
 
 function applyToggleState() {
   if (snapToggle instanceof HTMLInputElement) {
-    Topology.setSnapToGrid(snapToggle.checked);
+    instance.setSnapToGrid(snapToggle.checked);
   }
   if (guidesToggle instanceof HTMLInputElement) {
-    Topology.setGuidesEnabled(guidesToggle.checked);
+    instance.setGuidesEnabled(guidesToggle.checked);
   }
 }
 
@@ -120,8 +120,8 @@ applyToggleState();
 let zoomSelectRafId = 0;
 
 function getCurrentScale() {
-  if (typeof Topology.getViewportSnapshot === 'function') {
-    const snapshot = Topology.getViewportSnapshot();
+  if (typeof instance.getViewportSnapshot === 'function') {
+    const snapshot = instance.getViewportSnapshot();
     if (snapshot && typeof snapshot.scale === 'number') {
       return snapshot.scale;
     }
@@ -178,17 +178,17 @@ function scheduleZoomSelectorSync() {
 
 function applyZoomSelection(value) {
   if (value === 'fit-page') {
-    Topology.fitToPage();
+    instance.fitToPage();
     scheduleZoomSelectorSync();
     return;
   }
   if (value === 'fit-width') {
-    Topology.fitToWidth();
+    instance.fitToWidth();
     scheduleZoomSelectorSync();
     return;
   }
   if (value === 'fit-height') {
-    Topology.fitToHeight();
+    instance.fitToHeight();
     scheduleZoomSelectorSync();
     return;
   }
@@ -201,20 +201,20 @@ function applyZoomSelection(value) {
     return;
   }
 
-  Topology.setZoom(scale);
+  instance.setZoom(scale);
   scheduleZoomSelectorSync();
 }
 
 const onZoomInClick = () => {
-  Topology.zoomIn();
+  instance.zoomIn();
   scheduleZoomSelectorSync();
 };
 const onZoomOutClick = () => {
-  Topology.zoomOut();
+  instance.zoomOut();
   scheduleZoomSelectorSync();
 };
 const onResetViewClick = () => {
-  Topology.resetView();
+  instance.resetView();
   scheduleZoomSelectorSync();
 };
 const onZoomSelectChange = (event) => {
@@ -240,7 +240,7 @@ function applyBoundsPadding(value) {
     return;
   }
   const normalized = Math.max(0, Math.round(value));
-  Topology.setBoundsPadding(normalized);
+  instance.setBoundsPadding(normalized);
   if (boundsPaddingValue instanceof HTMLElement) {
     boundsPaddingValue.textContent = String(normalized);
   }
@@ -334,13 +334,13 @@ function applyResize() {
   if (mainWidth !== prevMainWidth || mainHeight !== prevMainHeight) {
     prevMainWidth = mainWidth;
     prevMainHeight = mainHeight;
-    Topology.resizeMain(mainWidth, mainHeight);
+    instance.resizeMain(mainWidth, mainHeight);
   }
 
   if (miniWidth !== prevMiniWidth || miniHeight !== prevMiniHeight) {
     prevMiniWidth = miniWidth;
     prevMiniHeight = miniHeight;
-    Topology.resizeMinimap(miniWidth, miniHeight);
+    instance.resizeMinimap(miniWidth, miniHeight);
   }
 
   scheduleRenderStatsUpdate();
@@ -382,5 +382,5 @@ window.addEventListener('beforeunload', () => {
   if (statsRafId !== 0) {
     window.cancelAnimationFrame(statsRafId);
   }
-  Topology.destroy();
+  instance.destroy();
 });
