@@ -66,12 +66,10 @@ export class ZoomManager {
 
   private handleWheel(event: WheelEvent): void {
     event.preventDefault();
+    event.stopPropagation();
 
-    const paperRect = this.diagramService.getPaper().el.getBoundingClientRect();
-    const x = event.clientX - paperRect.left;
-    const y = event.clientY - paperRect.top;
     const factor = event.deltaY < 0 ? this.zoomStep : 1 / this.zoomStep;
-    this.zoomByFactor(factor, x, y);
+    this.zoomByClientPoint(factor, event.clientX, event.clientY);
   }
 
   private zoomByFactor(factor: number, centerX: number, centerY: number): void {
@@ -85,6 +83,24 @@ export class ZoomManager {
     const localY = (centerY - snapshot.ty) / snapshot.scale;
     const nextTx = centerX - localX * nextScale;
     const nextTy = centerY - localY * nextScale;
+
+    this.viewportState.setViewport(nextScale, nextTx, nextTy);
+  }
+
+  private zoomByClientPoint(factor: number, clientX: number, clientY: number): void {
+    const snapshot = this.viewportState.getSnapshot();
+    const nextScale = clamp(snapshot.scale * factor, snapshot.minScale, snapshot.maxScale);
+    if (nextScale === snapshot.scale) {
+      return;
+    }
+
+    const paper = this.diagramService.getPaper();
+    const paperRect = paper.el.getBoundingClientRect();
+    const pointInPaperX = clientX - paperRect.left;
+    const pointInPaperY = clientY - paperRect.top;
+    const localPoint = paper.clientToLocalPoint({ x: clientX, y: clientY });
+    const nextTx = pointInPaperX - localPoint.x * nextScale;
+    const nextTy = pointInPaperY - localPoint.y * nextScale;
 
     this.viewportState.setViewport(nextScale, nextTx, nextTy);
   }
