@@ -148,7 +148,7 @@ export class DiagramService {
     const snapshot = this.viewportState.getSnapshot();
     const area = this.getVisibleLocalRect(snapshot);
     const size = element.size();
-    const paddingLocal = this.boundsPadding / Math.max(snapshot.scale, 0.0001);
+    const paddingLocal = this.boundsPadding;
 
     const minX = area.x + paddingLocal;
     const minY = area.y + paddingLocal;
@@ -163,6 +163,7 @@ export class DiagramService {
 
   public getTranslateBounds(scale: number): TranslateBounds {
     const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+    const paddingViewport = this.boundsPadding * safeScale;
     const size = this.getSize();
     if (size.width <= 1 || size.height <= 1 || this.graph.getCells().length === 0) {
       return { minTx: 0, maxTx: 0, minTy: 0, maxTy: 0 };
@@ -177,16 +178,16 @@ export class DiagramService {
     const contentWidth = Math.max(0, bbox.width * safeScale);
     const contentHeight = Math.max(0, bbox.height * safeScale);
 
-    let minTx = size.width - (minX + contentWidth) - this.boundsPadding;
-    let maxTx = -minX + this.boundsPadding;
+    let minTx = size.width - (minX + contentWidth) - paddingViewport;
+    let maxTx = -minX + paddingViewport;
     if (contentWidth <= size.width) {
       const centeredTx = (size.width - contentWidth) / 2 - minX;
       minTx = centeredTx;
       maxTx = centeredTx;
     }
 
-    let minTy = size.height - (minY + contentHeight) - this.boundsPadding;
-    let maxTy = -minY + this.boundsPadding;
+    let minTy = size.height - (minY + contentHeight) - paddingViewport;
+    let maxTy = -minY + paddingViewport;
     if (contentHeight <= size.height) {
       const centeredTy = (size.height - contentHeight) / 2 - minY;
       minTy = centeredTy;
