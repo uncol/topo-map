@@ -1,6 +1,7 @@
 import type * as joint from '@joint/core';
 
 export type TopologyMode = 'pan' | 'zoomToArea' | 'edit';
+export type LabelWrapMode = 'svg' | 'foreignObject';
 
 export interface TopologyConfig {
   mainContainer: HTMLElement;
@@ -17,6 +18,7 @@ export interface TopologyConfig {
   enableViewportCulling?: boolean;
   asyncRendering?: boolean;
   debugLogs?: boolean;
+  labelWrapMode?: LabelWrapMode;
 }
 
 export interface NodeData {

@@ -2,7 +2,6 @@ import * as joint from '@joint/core';
 import type { Point, Rect, Size, TranslateBounds, ViewportSnapshot } from './types';
 import { clamp } from './geometry';
 import { ViewportState } from './ViewportState';
-import { cellNamespace } from '../shapes/cellNamespace';
 
 const DEFAULT_BACKGROUND_COLOR = '#f8fafc';
 
@@ -17,6 +16,8 @@ export class DiagramService {
 
   private readonly asyncRendering: boolean;
 
+  private readonly cellNamespace: Record<string, unknown>;
+
   private boundsPadding: number;
 
   private viewportPredicate: ((view: joint.mvc.View<joint.mvc.Model, SVGElement>) => boolean) | null = null;
@@ -28,19 +29,21 @@ export class DiagramService {
     viewportState: ViewportState,
     gridSize: number,
     asyncRendering: boolean,
-    boundsPadding: number
+    boundsPadding: number,
+    cellNamespace: Record<string, unknown>
   ) {
     this.container = container;
     this.viewportState = viewportState;
     this.asyncRendering = asyncRendering;
+    this.cellNamespace = cellNamespace;
     this.boundsPadding = this.normalizePadding(boundsPadding);
-    this.graph = new joint.dia.Graph({}, { cellNamespace });
+    this.graph = new joint.dia.Graph({}, { cellNamespace: this.cellNamespace });
     const paperHost = this.createPaperHost(container, 'topology-main-paper-host');
 
     this.paper = new joint.dia.Paper({
       el: paperHost,
       model: this.graph,
-      cellViewNamespace: cellNamespace,
+      cellViewNamespace: this.cellNamespace,
       width: paperHost.clientWidth,
       height: paperHost.clientHeight,
       async: asyncRendering,
@@ -114,7 +117,7 @@ export class DiagramService {
   }
 
   public fromJSON(data: joint.dia.Graph.JSON): void {
-    this.graph.fromJSON(data, { cellNamespace });
+    this.graph.fromJSON(data, { cellNamespace: this.cellNamespace });
     this.refreshVisibility();
   }
 

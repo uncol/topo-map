@@ -24,6 +24,8 @@ import { ZoomManager } from './managers/ZoomManager';
 import { EditMode } from './modes/EditMode';
 import { PanMode } from './modes/PanMode';
 import { ZoomToAreaMode } from './modes/ZoomToAreaMode';
+import { setLabelWrapMode } from './shapes/labeling';
+import { createCellNamespace } from './shapes/cellNamespace';
 
 const DEFAULT_INITIAL_SCALE = 1;
 const DEFAULT_MIN_SCALE = 0.1;
@@ -31,6 +33,7 @@ const DEFAULT_MAX_SCALE = 5;
 const DEFAULT_GRID_SIZE = 20;
 const DEFAULT_GUIDE_THRESHOLD = 5;
 const DEFAULT_BOUNDS_PADDING = 12;
+const DEFAULT_LABEL_WRAP_MODE = 'svg';
 const DEFAULT_SCHEMA_VERSION = '1.0.0';
 // const DEFAULT_FONT_ICON_UNICODE = '\uE003'; // brand-gufolabs-s
 const DEFAULT_FONT_ICON_UNICODE = '\uF20A';
@@ -183,9 +186,12 @@ export class Topology {
       enableViewportCulling: config.enableViewportCulling ?? false,
       asyncRendering: config.asyncRendering ?? false,
       debugLogs: config.debugLogs ?? false,
+      labelWrapMode: config.labelWrapMode ?? DEFAULT_LABEL_WRAP_MODE,
       onReady: config.onReady
     };
     this.debugLogsEnabled = this.config.debugLogs;
+    setLabelWrapMode(this.config.labelWrapMode);
+    const cellNamespace = createCellNamespace();
 
     this.viewportState = new ViewportState(this.config.initialScale, this.config.minScale, this.config.maxScale);
     this.diagramService = new DiagramService(
@@ -193,7 +199,8 @@ export class Topology {
       this.viewportState,
       this.config.gridSize,
       this.config.asyncRendering,
-      this.config.boundsPadding
+      this.config.boundsPadding,
+      cellNamespace
     );
     this.viewportState.setTranslateBoundsResolver((snapshot) => this.diagramService.getTranslateBounds(snapshot.scale));
 
@@ -222,7 +229,8 @@ export class Topology {
       this.diagramService.getGraph(),
       this.diagramService.getPaper(),
       this.viewportState,
-      this.config.asyncRendering
+      this.config.asyncRendering,
+      cellNamespace
     );
 
     const panMode = new PanMode(this.panManager, this.diagramService);

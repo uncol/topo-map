@@ -2,7 +2,6 @@ import * as joint from '@joint/core';
 import type { Point, Rect } from '../core/types';
 import { ViewportState } from '../core/ViewportState';
 import { containsPoint } from '../core/geometry';
-import { cellNamespace } from '../shapes/cellNamespace';
 
 interface MinimapRect {
   rect: Rect;
@@ -66,7 +65,8 @@ export class MinimapManager {
     graph: joint.dia.Graph,
     mainPaper: joint.dia.Paper,
     viewportState: ViewportState,
-    asyncRendering: boolean
+    asyncRendering: boolean,
+    cellNamespace: Record<string, unknown>
   ) {
     this.container = container;
     this.vector = joint.V;

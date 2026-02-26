@@ -26,7 +26,8 @@ const instance = new Topology({
   fitToPageOnLoad: FIT_TO_PAGE_ON_LOAD,
   asyncRendering: false,
   enableViewportCulling: true,
-  debugLogs: false
+  debugLogs: false,
+  labelWrapMode: 'foreignObject',
 });
 
 function generateTopology(rows, cols) {
