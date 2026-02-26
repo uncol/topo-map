@@ -1,5 +1,5 @@
-import * as joint from '@joint/core';
-import { calcLabelBg, elementMarkup, labelBgAttrs, resolveBgDisplay, TEXT_LABEL_BG, textLabelBg } from './labeling';
+import { labelBgAttrs, textLabelBg } from './labeling';
+import { createIconElement, getString, IconElementInstance } from './iconElementFactory';
 
 // const DEFAULT_FONT_ICON_UNICODE = '\uE003'; // brand-gufolabs-s
 const DEFAULT_FONT_ICON_UNICODE = '\uF20A';
@@ -7,105 +7,49 @@ const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
 const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
 
 interface FontIconElementMethods {
-  toggleLabel: () => void;
   setClass: (size?: string, status?: string) => void;
   getSizeFromClass: (sizeClass: string) => number;
 }
 
-type FontIconElementInstance = joint.dia.Element & FontIconElementMethods;
+type FontIconElementInstance = IconElementInstance<FontIconElementMethods>;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-
-function getNestedRecord(parent: unknown, key: string): Record<string, unknown> {
-  if (!isRecord(parent)) {
-    return {};
-  }
-  const value = parent[key];
-  if (!isRecord(value)) {
-    return {};
-  }
-  return value;
-}
-
-function getString(record: Record<string, unknown>, key: string): string {
-  const value = record[key];
-  return typeof value === 'string' ? value : '';
-}
-
-export const FontIconElement = joint.dia.Element.define(
-  'noc.FontIconElement',
-  {
-    type: 'noc.FontIconElement',
-    z: 100,
-    attrs: {
-      icon: {
-        text: DEFAULT_FONT_ICON_UNICODE,
-        size: DEFAULT_FONT_ICON_SIZE_CLASS,
-        status: DEFAULT_FONT_ICON_STATUS_CLASS
-      },
-      title: {
-        ref: 'icon',
-        refX: '50%',
-        refY: '100%',
-        textAnchor: 'middle',
-        display: 'block',
-        fill: '#000000',
-        ...textLabelBg
-      },
-      ipaddr: {
-        ref: 'icon',
-        refX: '50%',
-        refY: '100%',
-        textAnchor: 'middle',
-        display: 'none',
-        fill: '#000000',
-        ...textLabelBg
-      },
-      ...labelBgAttrs
-    }
-  },
-  {
-    markup: [...elementMarkup, { tagName: 'text', selector: 'icon', className: 'scalable' }],
-
-    initialize: function (this: FontIconElementInstance, ...args: joint.dia.Element.Attributes[]) {
-      joint.dia.Element.prototype.initialize.apply(this, args as [joint.dia.Element.Attributes]);
-
-      const attrs = this.get('attrs');
-      const iconAttrs = getNestedRecord(attrs, 'icon');
-      this.setClass(getString(iconAttrs, 'size'), getString(iconAttrs, 'status'));
-
-      const iconWidth = this.getSizeFromClass(getString(iconAttrs, 'size'));
-      const breakWidth = iconWidth * 2;
-
-      const titleAttrs = getNestedRecord(attrs, 'title');
-      const titleText = getString(titleAttrs, 'text');
-      if (titleText.length > 0) {
-        const brokenText = joint.util.breakText(titleText, { width: breakWidth });
-        this.attr('title/text', brokenText);
-        if (TEXT_LABEL_BG === 'rect') {
-          this.attr('titleBg', calcLabelBg(brokenText, breakWidth));
-        }
-      }
-
-      const ipaddrAttrs = getNestedRecord(attrs, 'ipaddr');
-      const ipaddrText = getString(ipaddrAttrs, 'text');
-      if (ipaddrText.length > 0) {
-        const brokenText = joint.util.breakText(ipaddrText, { width: breakWidth });
-        this.attr('ipaddr/text', brokenText);
-        if (TEXT_LABEL_BG === 'rect') {
-          this.attr('ipaddrBg', calcLabelBg(brokenText, breakWidth));
-        }
-      }
-
-      this.on('change:attrs', () => {
-        const currentAttrs = this.get('attrs');
-        const currentIconAttrs = getNestedRecord(currentAttrs, 'icon');
-        this.setClass(getString(currentIconAttrs, 'size'), getString(currentIconAttrs, 'status'));
-      });
+export const FontIconElement = createIconElement<FontIconElementMethods>({
+  type: 'noc.FontIconElement',
+  attrs: {
+    icon: {
+      text: DEFAULT_FONT_ICON_UNICODE,
+      size: DEFAULT_FONT_ICON_SIZE_CLASS,
+      status: DEFAULT_FONT_ICON_STATUS_CLASS
     },
-
+    title: {
+      ref: 'icon',
+      refX: '50%',
+      refY: '100%',
+      textAnchor: 'middle',
+      display: 'block',
+      fill: '#000000',
+      ...textLabelBg
+    },
+    ipaddr: {
+      ref: 'icon',
+      refX: '50%',
+      refY: '100%',
+      textAnchor: 'middle',
+      display: 'none',
+      fill: '#000000',
+      ...textLabelBg
+    },
+    ...labelBgAttrs
+  },
+  iconMarkup: { tagName: 'text', selector: 'icon', className: 'scalable' },
+  getBreakWidth: (instance, iconAttrs) => instance.getSizeFromClass(getString(iconAttrs, 'size')) * 2,
+  onIconInit: (instance, iconAttrs) => {
+    instance.setClass(getString(iconAttrs, 'size'), getString(iconAttrs, 'status'));
+  },
+  onIconAttrsChange: (instance, iconAttrs) => {
+    instance.setClass(getString(iconAttrs, 'size'), getString(iconAttrs, 'status'));
+  },
+  methods: {
     getSizeFromClass: function (this: FontIconElementInstance, sizeClass: string): number {
       const tempElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       tempElement.setAttribute('class', ['gf', sizeClass].filter(Boolean).join(' '));
@@ -115,17 +59,6 @@ export const FontIconElement = joint.dia.Element.define(
       const fontSize = Number.parseFloat(computedStyle.fontSize) || 32;
       document.body.removeChild(tempElement);
       return fontSize;
-    },
-
-    toggleLabel: function (this: FontIconElementInstance): void {
-      const titleDisplay = this.attr('title/display');
-      const ipaddrDisplay = this.attr('ipaddr/display');
-      const newTitleDisplay = titleDisplay === 'none' ? 'block' : 'none';
-      const newIpaddrDisplay = ipaddrDisplay === 'none' ? 'block' : 'none';
-      this.attr('title/display', newTitleDisplay);
-      this.attr('ipaddr/display', newIpaddrDisplay);
-      this.attr('titleBg/display', resolveBgDisplay(newTitleDisplay));
-      this.attr('ipaddrBg/display', resolveBgDisplay(newIpaddrDisplay));
     },
 
     setClass: function (this: FontIconElementInstance, size?: string, status?: string): void {
@@ -139,4 +72,4 @@ export const FontIconElement = joint.dia.Element.define(
       });
     }
   }
-);
+});

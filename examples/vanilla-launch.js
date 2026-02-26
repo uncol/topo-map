@@ -38,17 +38,22 @@ function generateTopology(rows, cols) {
   const startY = 60;
   let linkSeq = 1;
 
+  const lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+
   for (let row = 0; row < rows; row += 1) {
     for (let col = 0; col < cols; col += 1) {
       const index = row * cols + col;
       const id = `n${index + 1}`;
       const status = index % 23 === 0 ? 'DOWN' : index % 7 === 0 ? 'WARN' : 'UP';
+      
+      const textLen = Math.floor(Math.random() * 30);
+      const loremText = lorem.slice(0, textLen);
 
       nodes.push({
         id,
         x: startX + col * spacingX,
         y: startY + row * spacingY,
-        label: `Node ${index + 1}`,
+        label: `Node ${index + 1} ${loremText}`,
         status
       });
 
