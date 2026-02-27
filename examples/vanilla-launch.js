@@ -54,7 +54,12 @@ function generateTopology(rows, cols) {
         x: startX + col * spacingX,
         y: startY + row * spacingY,
         label: `Node ${index + 1} ${loremText}`,
-        status
+        status,
+        attrs: {
+          ipaddr: {
+            text: `10.42.${row + 1}.${col + 1}`
+          }
+        }
       });
 
       if (col < cols - 1) {
@@ -90,6 +95,7 @@ instance.loadData(nodes, links);
 const modePan = document.getElementById('mode-pan');
 const modeZoomArea = document.getElementById('mode-zoom-area');
 const modeEdit = document.getElementById('mode-edit');
+const toggleNodeLabelsBtn = document.getElementById('toggle-node-labels');
 const snapToggle = document.getElementById('snap-toggle');
 const guidesToggle = document.getElementById('guides-toggle');
 const zoomInBtn = document.getElementById('zoom-in');
@@ -108,6 +114,7 @@ let lastInteractionText = '';
 modePan?.addEventListener('click', () => instance.setMode('pan'));
 modeZoomArea?.addEventListener('click', () => instance.setMode('zoomToArea'));
 modeEdit?.addEventListener('click', () => instance.setMode('edit'));
+toggleNodeLabelsBtn?.addEventListener('click', () => instance.toggleNodeLabelMode());
 
 function applyToggleState() {
   if (snapToggle instanceof HTMLInputElement) {

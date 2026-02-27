@@ -389,6 +389,17 @@ export class Topology {
     this.editMode.setGuidesEnabled(enabled);
   }
 
+  public toggleNodeLabelMode(): void {
+    this.logDebug('toggleNodeLabelMode');
+    this.diagramService
+      .getGraph()
+      .getElements()
+      .forEach((element) => {
+        const toggleable = element as joint.dia.Element & { toggleLabel?: () => void };
+        toggleable.toggleLabel?.();
+      });
+  }
+
   public setBoundsPadding(padding: number): void {
     this.logDebug('setBoundsPadding', padding);
     this.diagramService.setBoundsPadding(padding);
