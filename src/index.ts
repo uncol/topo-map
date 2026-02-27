@@ -258,10 +258,6 @@ export class Topology {
       ...nodes.map((node) => {
         const customAttrs = node.attrs ?? {};
         const customIconAttrs = isObject(customAttrs.icon) ? customAttrs.icon : {};
-        const customTitleAttrs = isObject(customAttrs.title) ? customAttrs.title : {};
-        const customIpaddrAttrs = isObject(customAttrs.ipaddr) ? customAttrs.ipaddr : {};
-        const titleText =
-          typeof node.status === 'string' && node.status.length > 0 ? `${node.label}\n${node.status}` : node.label;
 
         return {
           id: node.id,
@@ -278,14 +274,6 @@ export class Topology {
               size: node.iconSizeClass ?? DEFAULT_FONT_ICON_SIZE_CLASS,
               status: node.iconStatusClass ?? DEFAULT_FONT_ICON_STATUS_CLASS,
               ...customIconAttrs
-            },
-            title: {
-              text: titleText,
-              ...customTitleAttrs
-            },
-            ipaddr: {
-              text: '',
-              ...customIpaddrAttrs
             }
           }
         };

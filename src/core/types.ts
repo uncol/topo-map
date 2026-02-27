@@ -25,7 +25,7 @@ export interface NodeData {
   y: number;
   width?: number;
   height?: number;
-  label: string;
+  label?: string;
   status?: string;
   iconUnicode?: string;
   iconSizeClass?: string;

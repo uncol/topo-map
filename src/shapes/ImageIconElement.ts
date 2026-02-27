@@ -1,5 +1,5 @@
-import { labelBgAttrs, textLabelBg } from './labeling';
 import { createIconElement, getNumber, getString, IconElementInstance } from './iconElementFactory';
+import { labelBgAttrs, textLabelBg } from './labeling';
 
 let stencilDir = '/stencils';
 
@@ -33,7 +33,7 @@ export const ImageIconElement = createIconElement<ImageIconElementMethods>({
       ...textLabelBg,
       ref: 'icon',
       refX: '50%',
-      refY: '100%',
+      refY: '105%',
       textAnchor: 'middle',
       lineHeight: '1em',
       display: 'block'
@@ -44,7 +44,7 @@ export const ImageIconElement = createIconElement<ImageIconElementMethods>({
       ...textLabelBg,
       ref: 'icon',
       refX: '50%',
-      refY: '100%',
+      refY: '105%',
       textAnchor: 'middle',
       lineHeight: '1em',
       display: 'none'

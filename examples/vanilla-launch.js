@@ -37,6 +37,7 @@ function generateTopology(rows, cols) {
   const startX = 80;
   const startY = 60;
   let linkSeq = 1;
+  const statusClasses = ['gf-ok', 'gf-warn', 'gf-unknown', 'gf-fail'];
 
   const lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
 
@@ -44,7 +45,7 @@ function generateTopology(rows, cols) {
     for (let col = 0; col < cols; col += 1) {
       const index = row * cols + col;
       const id = `n${index + 1}`;
-      const status = index % 23 === 0 ? 'DOWN' : index % 7 === 0 ? 'WARN' : 'UP';
+      const statusClass = statusClasses[Math.floor(Math.random() * statusClasses.length)];
       
       const textLen = Math.floor(Math.random() * 30);
       const loremText = lorem.slice(0, textLen);
@@ -53,11 +54,15 @@ function generateTopology(rows, cols) {
         id,
         x: startX + col * spacingX,
         y: startY + row * spacingY,
-        label: `Node ${index + 1} ${loremText}`,
-        status,
         attrs: {
+          title: {
+            text: `Node ${index + 1} ${loremText}`
+          },
           ipaddr: {
             text: `10.42.${row + 1}.${col + 1}`
+          },
+          icon: {
+            status: statusClass
           }
         }
       });
