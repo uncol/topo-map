@@ -24,6 +24,7 @@ import { ZoomManager } from './managers/ZoomManager';
 import { EditMode } from './modes/EditMode';
 import { PanMode } from './modes/PanMode';
 import { ZoomToAreaMode } from './modes/ZoomToAreaMode';
+import { createIconLinkEnd } from './shapes/linkEndpoints';
 
 const DEFAULT_INITIAL_SCALE = 1;
 const DEFAULT_MIN_SCALE = 0.1;
@@ -307,8 +308,8 @@ export class Topology {
         return {
           id: link.id,
           type: 'noc.LinkElement',
-          source: { id: link.sourceId },
-          target: { id: link.targetId },
+          source: createIconLinkEnd(link.sourceId),
+          target: createIconLinkEnd(link.targetId),
           labels,
           attrs: link.attrs ?? {}
         };
