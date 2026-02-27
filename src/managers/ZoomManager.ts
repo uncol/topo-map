@@ -68,8 +68,47 @@ export class ZoomManager {
     event.preventDefault();
     event.stopPropagation();
 
-    const factor = event.deltaY < 0 ? this.zoomStep : 1 / this.zoomStep;
+    const normalizedDelta = this.normalizeWheelDelta(event);
+    if (normalizedDelta === 0) {
+      return;
+    }
+
+    const factor = this.zoomStep ** normalizedDelta;
     this.zoomByClientPoint(factor, event.clientX, event.clientY);
+  }
+
+  private normalizeWheelDelta(event: WheelEvent): number {
+    const pixelDelta = this.toPixelDelta(event);
+    if (pixelDelta === 0) {
+      return 0;
+    }
+
+    const sign = Math.sign(pixelDelta);
+    const magnitude = Math.abs(pixelDelta);
+
+    if (this.isTrackpadWheelEvent(event, pixelDelta)) {
+      return sign * Math.min(Math.log1p(magnitude) / Math.log(2), 1.5);
+    }
+
+    return sign * Math.min(Math.max(Math.round(magnitude / 40), 1), 3);
+  }
+
+  private toPixelDelta(event: WheelEvent): number {
+    const rawDelta =
+      event.deltaMode === WheelEvent.DOM_DELTA_PIXEL
+        ? -event.deltaY
+        : event.deltaMode === WheelEvent.DOM_DELTA_LINE
+          ? -event.deltaY * 16
+          : -event.deltaY * window.innerHeight;
+
+    return rawDelta / Math.max(window.devicePixelRatio || 1, 1);
+  }
+
+  private isTrackpadWheelEvent(event: WheelEvent, pixelDelta: number): boolean {
+    return (
+      event.deltaMode === WheelEvent.DOM_DELTA_PIXEL &&
+      (Math.abs(pixelDelta) < 12 || !Number.isInteger(event.deltaY) || Math.abs(event.deltaX) > 0)
+    );
   }
 
   private zoomByFactor(factor: number, centerX: number, centerY: number): void {
