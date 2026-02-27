@@ -112,6 +112,7 @@ const boundsPaddingValue = document.getElementById('bounds-padding-value');
 const renderStats = document.getElementById('render-stats');
 const TOPOLOGY_ELEMENT_CLICK_EVENT = 'topology:element:click';
 const TOPOLOGY_LINK_CLICK_EVENT = 'topology:link:click';
+const TOPOLOGY_WHEEL_EVENT = 'topology:wheel';
 const ZOOM_CUSTOM_OPTION_VALUE = '__custom__';
 const ZOOM_PRESET_TOLERANCE = 0.001;
 let lastInteractionText = '';
@@ -241,7 +242,7 @@ const onZoomSelectChange = (event) => {
   }
   applyZoomSelection(target.value);
 };
-const onMainWheel = () => {
+const onTopologyWheel = () => {
   scheduleZoomSelectorSync();
 };
 
@@ -249,7 +250,7 @@ zoomInBtn?.addEventListener('click', onZoomInClick);
 zoomOutBtn?.addEventListener('click', onZoomOutClick);
 resetViewBtn?.addEventListener('click', onResetViewClick);
 zoomSelect?.addEventListener('change', onZoomSelectChange);
-mainContainer.addEventListener('wheel', onMainWheel, { passive: true });
+mainContainer.addEventListener(TOPOLOGY_WHEEL_EVENT, onTopologyWheel);
 syncZoomSelector();
 
 function applyBoundsPadding(value) {
@@ -387,7 +388,7 @@ window.addEventListener('beforeunload', () => {
   zoomOutBtn?.removeEventListener('click', onZoomOutClick);
   resetViewBtn?.removeEventListener('click', onResetViewClick);
   zoomSelect?.removeEventListener('change', onZoomSelectChange);
-  mainContainer.removeEventListener('wheel', onMainWheel);
+  mainContainer.removeEventListener(TOPOLOGY_WHEEL_EVENT, onTopologyWheel);
   mainContainer.removeEventListener(TOPOLOGY_ELEMENT_CLICK_EVENT, onElementClick);
   mainContainer.removeEventListener(TOPOLOGY_LINK_CLICK_EVENT, onLinkClick);
   if (rafResizeId !== 0) {

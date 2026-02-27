@@ -45,6 +45,7 @@ const LINK_HOVER_HIGHLIGHT_ID = 'topology-link-hover-highlight';
 const ELEMENT_HIGHLIGHT_ID = 'topology-element-highlight';
 const TOPOLOGY_ELEMENT_CLICK_EVENT = 'topology:element:click';
 const TOPOLOGY_LINK_CLICK_EVENT = 'topology:link:click';
+const TOPOLOGY_WHEEL_EVENT = 'topology:wheel';
 
 interface GraphEnvelope {
   graph: joint.dia.Graph.JSON;
@@ -167,6 +168,10 @@ export class Topology {
     y: number
   ): void => {
     this.handleLinkPointerClick(linkView, event, x, y);
+  };
+
+  private readonly onPaperWheelBound = (event: WheelEvent): void => {
+    this.handlePaperWheel(event);
   };
 
   public constructor(config: TopologyConfig) {
@@ -581,6 +586,7 @@ export class Topology {
     paper.on('link:mouseleave', this.onLinkMouseLeaveBound);
     paper.on('element:pointerclick', this.onElementPointerClickBound);
     paper.on('link:pointerclick', this.onLinkPointerClickBound);
+    paper.el.addEventListener('wheel', this.onPaperWheelBound);
   }
 
   private teardownInteractionEvents(): void {
@@ -589,6 +595,7 @@ export class Topology {
     paper.off('link:mouseleave', this.onLinkMouseLeaveBound);
     paper.off('element:pointerclick', this.onElementPointerClickBound);
     paper.off('link:pointerclick', this.onLinkPointerClickBound);
+    paper.el.removeEventListener('wheel', this.onPaperWheelBound);
   }
 
   private clearInteractionState(): void {
@@ -625,7 +632,7 @@ export class Topology {
 
     this.highlightElement(elementView);
     const clientPoint = getEventClientPoint(event);
-    this.emitBubbledClickEvent(TOPOLOGY_ELEMENT_CLICK_EVENT, {
+    this.emitBubbledEvent(TOPOLOGY_ELEMENT_CLICK_EVENT, {
       id: String(elementView.model.id),
       type: elementView.model.get('type'),
       x,
@@ -647,7 +654,7 @@ export class Topology {
     const targetId = isObject(target) && 'id' in target ? String(target.id ?? '') : '';
     const clientPoint = getEventClientPoint(event);
 
-    this.emitBubbledClickEvent(TOPOLOGY_LINK_CLICK_EVENT, {
+    this.emitBubbledEvent(TOPOLOGY_LINK_CLICK_EVENT, {
       id: String(link.id),
       type: link.get('type'),
       sourceId,
@@ -656,6 +663,27 @@ export class Topology {
       y,
       clientX: clientPoint?.x ?? null,
       clientY: clientPoint?.y ?? null
+    });
+  }
+
+  private handlePaperWheel(event: WheelEvent): void {
+    const localPoint = this.diagramService.clientToLocal(event.clientX, event.clientY);
+    const snapshot = this.viewportState.getSnapshot();
+
+    this.emitBubbledEvent(TOPOLOGY_WHEEL_EVENT, {
+      clientX: event.clientX,
+      clientY: event.clientY,
+      x: localPoint.x,
+      y: localPoint.y,
+      deltaX: event.deltaX,
+      deltaY: event.deltaY,
+      deltaZ: event.deltaZ,
+      deltaMode: event.deltaMode,
+      ctrlKey: event.ctrlKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      metaKey: event.metaKey,
+      scale: snapshot.scale
     });
   }
 
@@ -688,7 +716,7 @@ export class Topology {
     joint.highlighters.mask.removeAll(this.diagramService.getPaper(), LINK_HOVER_HIGHLIGHT_ID);
   }
 
-  private emitBubbledClickEvent(eventName: string, detail: Record<string, unknown>): void {
+  private emitBubbledEvent(eventName: string, detail: Record<string, unknown>): void {
     this.config.mainContainer.dispatchEvent(
       new CustomEvent(eventName, {
         bubbles: true,
