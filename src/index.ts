@@ -3,7 +3,7 @@ import { ResetViewCommand } from './commands/ResetViewCommand';
 import { ZoomInCommand } from './commands/ZoomInCommand';
 import { ZoomOutCommand } from './commands/ZoomOutCommand';
 import { DiagramService } from './core/DiagramService';
-import { getEventClientPoint, isPrimaryMouseButton } from './core/events';
+import { isPrimaryMouseButton } from './core/events';
 import type {
   LinkData,
   NodeData,
@@ -438,6 +438,10 @@ export class Topology {
     return this.viewportState.getSnapshot();
   }
 
+  public getScale(): number {
+    return this.zoomManager.getScale();
+  }
+
   public zoomIn(): void {
     this.logDebug('zoomIn');
     this.zoomInCommand.execute();
@@ -631,14 +635,10 @@ export class Topology {
     }
 
     this.highlightElement(elementView);
-    const clientPoint = getEventClientPoint(event);
     this.emitBubbledEvent(TOPOLOGY_ELEMENT_CLICK_EVENT, {
       id: String(elementView.model.id),
       type: elementView.model.get('type'),
-      x,
-      y,
-      clientX: clientPoint?.x ?? null,
-      clientY: clientPoint?.y ?? null
+      attrs: elementView.model.get('attrs'),
     });
   }
 
@@ -648,21 +648,11 @@ export class Topology {
     }
 
     const link = linkView.model;
-    const source = link.get('source');
-    const target = link.get('target');
-    const sourceId = isObject(source) && 'id' in source ? String(source.id ?? '') : '';
-    const targetId = isObject(target) && 'id' in target ? String(target.id ?? '') : '';
-    const clientPoint = getEventClientPoint(event);
 
     this.emitBubbledEvent(TOPOLOGY_LINK_CLICK_EVENT, {
       id: String(link.id),
       type: link.get('type'),
-      sourceId,
-      targetId,
-      x,
-      y,
-      clientX: clientPoint?.x ?? null,
-      clientY: clientPoint?.y ?? null
+      attrs: link.get('attrs'),
     });
   }
 
@@ -671,18 +661,6 @@ export class Topology {
     const snapshot = this.viewportState.getSnapshot();
 
     this.emitBubbledEvent(TOPOLOGY_WHEEL_EVENT, {
-      clientX: event.clientX,
-      clientY: event.clientY,
-      x: localPoint.x,
-      y: localPoint.y,
-      deltaX: event.deltaX,
-      deltaY: event.deltaY,
-      deltaZ: event.deltaZ,
-      deltaMode: event.deltaMode,
-      ctrlKey: event.ctrlKey,
-      shiftKey: event.shiftKey,
-      altKey: event.altKey,
-      metaKey: event.metaKey,
       scale: snapshot.scale
     });
   }

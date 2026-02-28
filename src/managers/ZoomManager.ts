@@ -44,6 +44,10 @@ export class ZoomManager {
     this.viewportState.setViewport(this.resetScale, 0, 0);
   }
 
+  public getScale(): number {
+    return this.viewportState.getSnapshot().scale;
+  }
+
   public zoomToRect(rect: Rect, padding = 24): void {
     if (rect.width <= 0 || rect.height <= 0) {
       return;
