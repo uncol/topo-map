@@ -10,6 +10,8 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:convert": "vitest run ./scripts/convertMapData.test.ts",
     "build:lib": "vite build",
     "build:types": "tsc -p tsconfig.types.json",
     "build": "pnpm run clean && pnpm run build:lib && pnpm run build:types",
@@ -24,6 +26,7 @@
   },
   "devDependencies": {
     "typescript": "5.9.3",
-    "vite": "^7.1.5"
+    "vite": "^7.1.5",
+    "vitest": "^4.0.18"
   }
 }

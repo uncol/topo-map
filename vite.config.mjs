@@ -10,7 +10,7 @@ export default defineConfig({
       entry: resolve(process.cwd(), 'src/index.ts'),
       name: 'map',
       formats: ['es', 'umd'],
-      fileName: (format) => (format === 'es' ? 'index.js' : 'index.umd.js')
+      fileName: (format) => (format === 'es' ? 'index.js' : 'topo-map.umd.js')
     }
   }
 });

@@ -4,6 +4,8 @@ import { ZoomInCommand } from './commands/ZoomInCommand';
 import { ZoomOutCommand } from './commands/ZoomOutCommand';
 import { DiagramService } from './core/DiagramService';
 import { isPrimaryMouseButton } from './core/events';
+import { convertMapData } from './decoders/MapConverter';
+import type { MapConverterInput } from './decoders/MapConverter';
 import type {
   LinkData,
   NodeData,
@@ -361,6 +363,11 @@ export class Topology {
 
     this.viewportState.setViewport(this.config.initialScale, 0, 0);
     this.logDebug('fromJSON:reset-viewport');
+  }
+
+  public fromMapData(data: MapConverterInput): void {
+    this.logDebug('fromMapData:start');
+    this.fromJSON(convertMapData(data));
   }
 
   public setMode(mode: TopologyMode): void {
@@ -735,4 +742,21 @@ export class Topology {
   }
 }
 
-export type { LinkData, NodeData, TopologyConfig, TopologyMode } from './core/types';
+export { MapConverter, convertMapData } from './decoders/MapConverter';
+export type {
+  LinkData,
+  NodeData,
+  TopologyConfig,
+  TopologyMode
+} from './core/types';
+export type {
+  MapConvertedDocument,
+  MapConvertedViewport,
+  MapConverterInput,
+  MapConverterLink,
+  MapConverterLinkEnd,
+  MapConverterNode,
+  MapConverterPort,
+  MapConverterPortGroup,
+  MapConverterShape
+} from './decoders/MapConverter';
