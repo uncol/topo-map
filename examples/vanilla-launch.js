@@ -1,5 +1,6 @@
 import '@gufo-labs/font/gufo-font.css';
 import { Topology } from '../src/index.ts';
+import { configuredShapeMapData, glyphSegmentMapData } from '../scripts/fixtures/configuredShapeMapData.ts';
 
 const mainContainer = document.getElementById('topology-main');
 const minimapContainer = document.getElementById('topology-minimap');
@@ -28,6 +29,9 @@ const instance = new Topology({
   enableViewportCulling: true,
   debugLogs: false
 });
+const GENERATED_MAP_KEY = 'generated-grid';
+const DEFAULT_GENERATED_ROWS = 20;
+const DEFAULT_GENERATED_COLS = 20;
 
 function generateTopology(rows, cols) {
   const nodes = [];
@@ -38,15 +42,14 @@ function generateTopology(rows, cols) {
   const startY = 60;
   let linkSeq = 1;
   const statusClasses = ['gf-ok', 'gf-warn', 'gf-unknown', 'gf-fail'];
-
-  const lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+  const lorem =
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
 
   for (let row = 0; row < rows; row += 1) {
     for (let col = 0; col < cols; col += 1) {
       const index = row * cols + col;
       const id = `n${index + 1}`;
       const statusClass = statusClasses[Math.floor(Math.random() * statusClasses.length)];
-      
       const textLen = Math.floor(Math.random() * 30);
       const loremText = lorem.slice(0, textLen);
 
@@ -92,15 +95,22 @@ function generateTopology(rows, cols) {
   return { nodes, links };
 }
 
-const { nodes, links } = generateTopology(10, 10);
-console.log('[demo] generated topology', { nodes: nodes.length, links: links.length });
-
-instance.loadData(nodes, links);
+const MAPS = {
+  'glyph-segment': {
+    label: 'Glyph Segment',
+    data: glyphSegmentMapData
+  },
+  'configured-shape': {
+    label: 'Configured Shape',
+    data: configuredShapeMapData
+  }
+};
 
 const modePan = document.getElementById('mode-pan');
 const modeZoomArea = document.getElementById('mode-zoom-area');
 const modeEdit = document.getElementById('mode-edit');
 const toggleNodeLabelsBtn = document.getElementById('toggle-node-labels');
+const mapSelect = document.getElementById('map-select');
 const snapToggle = document.getElementById('snap-toggle');
 const guidesToggle = document.getElementById('guides-toggle');
 const zoomInBtn = document.getElementById('zoom-in');
@@ -116,6 +126,10 @@ const TOPOLOGY_WHEEL_EVENT = 'topology:wheel';
 const ZOOM_CUSTOM_OPTION_VALUE = '__custom__';
 const ZOOM_PRESET_TOLERANCE = 0.001;
 let lastInteractionText = '';
+let currentNodeCount = 0;
+let currentLinkCount = 0;
+let currentMapKey = 'glyph-segment';
+let statsRafId = 0;
 
 modePan?.addEventListener('click', () => instance.setMode('pan'));
 modeZoomArea?.addEventListener('click', () => instance.setMode('zoomToArea'));
@@ -149,6 +163,99 @@ function getCurrentScale() {
 
 function toPercentText(scale) {
   return `${Math.round(scale * 100)}%`;
+}
+
+function clearCurrentMap() {
+  instance.fromJSON({
+    graph: {
+      cells: []
+    },
+    viewport: {
+      scale: 1,
+      tx: 0,
+      ty: 0
+    }
+  });
+}
+
+function parseGridInput(value) {
+  const parsed = Number.parseInt(String(value), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+  return parsed;
+}
+
+function requestGeneratedMapConfig() {
+  const input = window.prompt(
+    'Rows, Columns',
+    `${DEFAULT_GENERATED_ROWS},${DEFAULT_GENERATED_COLS}`
+  );
+  if (input === null) {
+    return null;
+  }
+
+  const [rowsValue = '', colsValue = ''] = input.split(',').map((part) => part.trim());
+  const rows = parseGridInput(rowsValue);
+  const cols = parseGridInput(colsValue);
+  if (rows === null || cols === null) {
+    window.alert('Enter two positive integers in the format "rows,cols".');
+    return null;
+  }
+
+  return { rows, cols };
+}
+
+function loadSelectedMap(mapKey) {
+  if (mapKey === GENERATED_MAP_KEY) {
+    const config = requestGeneratedMapConfig();
+    if (!config) {
+      if (mapSelect instanceof HTMLSelectElement) {
+        mapSelect.value = currentMapKey;
+      }
+      return;
+    }
+
+    const generated = generateTopology(config.rows, config.cols);
+    clearCurrentMap();
+    instance.loadData(generated.nodes, generated.links);
+    currentMapKey = GENERATED_MAP_KEY;
+    currentNodeCount = generated.nodes.length;
+    currentLinkCount = generated.links.length;
+    lastInteractionText = `Loaded: Generated Grid ${config.rows}x${config.cols}`;
+    console.log('[demo] loaded map', {
+      map: 'Generated Grid',
+      rows: config.rows,
+      cols: config.cols,
+      nodes: currentNodeCount,
+      links: currentLinkCount
+    });
+    scheduleRenderStatsUpdate();
+    scheduleZoomSelectorSync();
+    return;
+  }
+
+  const selected = MAPS[mapKey];
+  if (!selected) {
+    if (mapSelect instanceof HTMLSelectElement) {
+      mapSelect.value = currentMapKey;
+    }
+    return;
+  }
+
+  clearCurrentMap();
+  instance.fromMapData(selected.data);
+  currentMapKey = mapKey;
+  currentNodeCount = selected.data.nodes?.length ?? 0;
+  currentLinkCount = selected.data.links?.length ?? 0;
+  lastInteractionText = `Loaded: ${selected.label}`;
+  console.log('[demo] loaded map', {
+    map: selected.label,
+    nodes: currentNodeCount,
+    links: currentLinkCount
+  });
+  scheduleRenderStatsUpdate();
+  scheduleZoomSelectorSync();
 }
 
 function syncZoomSelector() {
@@ -245,12 +352,25 @@ const onZoomSelectChange = (event) => {
 const onTopologyWheel = () => {
   scheduleZoomSelectorSync();
 };
+const onMapSelectChange = (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLSelectElement)) {
+    return;
+  }
+  loadSelectedMap(target.value);
+};
 
 zoomInBtn?.addEventListener('click', onZoomInClick);
 zoomOutBtn?.addEventListener('click', onZoomOutClick);
 resetViewBtn?.addEventListener('click', onResetViewClick);
+mapSelect?.addEventListener('change', onMapSelectChange);
 zoomSelect?.addEventListener('change', onZoomSelectChange);
 mainContainer.addEventListener(TOPOLOGY_WHEEL_EVENT, onTopologyWheel);
+if (mapSelect instanceof HTMLSelectElement) {
+  loadSelectedMap(mapSelect.value);
+} else {
+  loadSelectedMap('glyph-segment');
+}
 syncZoomSelector();
 
 function applyBoundsPadding(value) {
@@ -276,8 +396,6 @@ if (boundsPadding instanceof HTMLInputElement) {
   applyBoundsPadding(Number(boundsPadding.value));
 }
 
-let statsRafId = 0;
-
 function updateRenderStats() {
   if (!(renderStats instanceof HTMLElement)) {
     return;
@@ -287,7 +405,7 @@ function updateRenderStats() {
   const interactionSuffix = lastInteractionText.length > 0 ? ` | ${lastInteractionText}` : '';
   renderStats.textContent =
     `Visible E: ${visibleElements} L: ${visibleLinks} | ` +
-    `Total E: ${nodes.length} L: ${links.length}${interactionSuffix}`;
+    `Total E: ${currentNodeCount} L: ${currentLinkCount}${interactionSuffix}`;
 }
 
 function scheduleRenderStatsUpdate() {
@@ -387,6 +505,7 @@ window.addEventListener('beforeunload', () => {
   zoomInBtn?.removeEventListener('click', onZoomInClick);
   zoomOutBtn?.removeEventListener('click', onZoomOutClick);
   resetViewBtn?.removeEventListener('click', onResetViewClick);
+  mapSelect?.removeEventListener('change', onMapSelectChange);
   zoomSelect?.removeEventListener('change', onZoomSelectChange);
   mainContainer.removeEventListener(TOPOLOGY_WHEEL_EVENT, onTopologyWheel);
   mainContainer.removeEventListener(TOPOLOGY_ELEMENT_CLICK_EVENT, onElementClick);
