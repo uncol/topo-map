@@ -10,6 +10,26 @@ interface ImageIconElementMethods {
 
 type ImageIconElementInstance = IconElementInstance<ImageIconElementMethods>;
 
+function syncImageHref(
+  instance: ImageIconElementInstance,
+  iconAttrs: Record<string, unknown>
+): void {
+  const currentHref = getString(iconAttrs, 'href');
+  const currentXlinkHref = getString(iconAttrs, 'xlinkHref');
+  const nextHref = currentXlinkHref || currentHref;
+  if (nextHref.length === 0) {
+    return;
+  }
+
+  const normalizedHref = instance.convertImageIdToPath(nextHref);
+  if (currentHref !== normalizedHref) {
+    instance.attr('icon/href', normalizedHref);
+  }
+  if (currentXlinkHref !== normalizedHref) {
+    instance.attr('icon/xlinkHref', normalizedHref);
+  }
+}
+
 export function setStencilDir(dir: string): void {
   stencilDir = dir;
 }
@@ -54,15 +74,7 @@ export const ImageIconElement = createIconElement<ImageIconElementMethods>({
   iconMarkup: { tagName: 'image', selector: 'icon', className: 'scalable' },
   getBreakWidth: (_instance, iconAttrs) => getNumber(iconAttrs, 'width', 64) * 2,
   onIconInit: (instance, iconAttrs) => {
-    const initialHrefCandidate = getString(iconAttrs, 'xlinkHref') || getString(iconAttrs, 'href');
-    if (initialHrefCandidate.length > 0) {
-      if (initialHrefCandidate.startsWith('#img-')) {
-        const path = instance.convertImageIdToPath(initialHrefCandidate);
-        instance.attr('icon/xlinkHref', path);
-      } else if (getString(iconAttrs, 'xlinkHref').length === 0 && getString(iconAttrs, 'href').length > 0) {
-        instance.attr('icon/xlinkHref', initialHrefCandidate);
-      }
-    }
+    syncImageHref(instance as ImageIconElementInstance, iconAttrs);
 
     const statusValue = getString(iconAttrs, 'status');
     if (statusValue.length > 0) {
@@ -70,13 +82,7 @@ export const ImageIconElement = createIconElement<ImageIconElementMethods>({
     }
   },
   onIconAttrsChange: (instance, iconAttrs) => {
-    const nextHref = getString(iconAttrs, 'xlinkHref') || getString(iconAttrs, 'href');
-    if (nextHref.length > 0 && nextHref.startsWith('#img-')) {
-      const path = instance.convertImageIdToPath(nextHref);
-      instance.attr('icon/xlinkHref', path);
-    } else if (nextHref.length > 0 && getString(iconAttrs, 'xlinkHref').length === 0) {
-      instance.attr('icon/xlinkHref', nextHref);
-    }
+    syncImageHref(instance as ImageIconElementInstance, iconAttrs);
 
     const nextStatus = getString(iconAttrs, 'status');
     if (nextStatus.length > 0) {

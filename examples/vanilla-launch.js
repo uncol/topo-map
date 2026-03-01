@@ -125,11 +125,14 @@ const TOPOLOGY_LINK_CLICK_EVENT = 'topology:link:click';
 const TOPOLOGY_WHEEL_EVENT = 'topology:wheel';
 const ZOOM_CUSTOM_OPTION_VALUE = '__custom__';
 const ZOOM_PRESET_TOLERANCE = 0.001;
+const FIT_SETTLE_MAX_PASSES = 4;
+const FIT_SETTLE_TOLERANCE = 0.0005;
 let lastInteractionText = '';
 let currentNodeCount = 0;
 let currentLinkCount = 0;
 let currentMapKey = 'glyph-segment';
 let statsRafId = 0;
+let fitRafId = 0;
 
 modePan?.addEventListener('click', () => instance.setMode('pan'));
 modeZoomArea?.addEventListener('click', () => instance.setMode('zoomToArea'));
@@ -163,6 +166,46 @@ function getCurrentScale() {
 
 function toPercentText(scale) {
   return `${Math.round(scale * 100)}%`;
+}
+
+function isViewportStable(previous, next) {
+  if (!previous || !next) {
+    return false;
+  }
+
+  return (
+    Math.abs(previous.scale - next.scale) <= FIT_SETTLE_TOLERANCE &&
+    Math.abs(previous.tx - next.tx) <= FIT_SETTLE_TOLERANCE &&
+    Math.abs(previous.ty - next.ty) <= FIT_SETTLE_TOLERANCE
+  );
+}
+
+function runStableFit(fitAction, maxPasses = FIT_SETTLE_MAX_PASSES) {
+  if (fitRafId !== 0) {
+    window.cancelAnimationFrame(fitRafId);
+    fitRafId = 0;
+  }
+
+  let pass = 0;
+  let previousSnapshot = null;
+
+  const step = () => {
+    fitRafId = 0;
+    fitAction();
+    scheduleRenderStatsUpdate();
+    scheduleZoomSelectorSync();
+
+    const nextSnapshot = instance.getViewportSnapshot();
+    pass += 1;
+    if (pass >= maxPasses || isViewportStable(previousSnapshot, nextSnapshot)) {
+      return;
+    }
+
+    previousSnapshot = nextSnapshot;
+    fitRafId = window.requestAnimationFrame(step);
+  };
+
+  fitRafId = window.requestAnimationFrame(step);
 }
 
 function clearCurrentMap() {
@@ -219,6 +262,9 @@ function loadSelectedMap(mapKey) {
     const generated = generateTopology(config.rows, config.cols);
     clearCurrentMap();
     instance.loadData(generated.nodes, generated.links);
+    runStableFit(() => {
+      instance.fitToPage();
+    });
     currentMapKey = GENERATED_MAP_KEY;
     currentNodeCount = generated.nodes.length;
     currentLinkCount = generated.links.length;
@@ -245,6 +291,9 @@ function loadSelectedMap(mapKey) {
 
   clearCurrentMap();
   instance.fromMapData(selected.data);
+  runStableFit(() => {
+    instance.fitToPage();
+  });
   currentMapKey = mapKey;
   currentNodeCount = selected.data.nodes?.length ?? 0;
   currentLinkCount = selected.data.links?.length ?? 0;
@@ -303,18 +352,21 @@ function scheduleZoomSelectorSync() {
 
 function applyZoomSelection(value) {
   if (value === 'fit-page') {
-    instance.fitToPage();
-    scheduleZoomSelectorSync();
+    runStableFit(() => {
+      instance.fitToPage();
+    });
     return;
   }
   if (value === 'fit-width') {
-    instance.fitToWidth();
-    scheduleZoomSelectorSync();
+    runStableFit(() => {
+      instance.fitToWidth();
+    });
     return;
   }
   if (value === 'fit-height') {
-    instance.fitToHeight();
-    scheduleZoomSelectorSync();
+    runStableFit(() => {
+      instance.fitToHeight();
+    });
     return;
   }
   if (value === ZOOM_CUSTOM_OPTION_VALUE) {
@@ -518,6 +570,9 @@ window.addEventListener('beforeunload', () => {
   }
   if (statsRafId !== 0) {
     window.cancelAnimationFrame(statsRafId);
+  }
+  if (fitRafId !== 0) {
+    window.cancelAnimationFrame(fitRafId);
   }
   instance.destroy();
 });

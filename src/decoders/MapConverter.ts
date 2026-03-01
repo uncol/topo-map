@@ -50,6 +50,8 @@ export interface MapConverterInput extends Record<string, unknown> {
   nodes?: MapConverterNode[] | null;
   links?: MapConverterLink[] | null;
   viewport?: Partial<MapConvertedViewport> | null;
+  width?: number | null;
+  height?: number | null;
 }
 
 export interface MapConvertedDocument {
@@ -106,6 +108,21 @@ function normalizeViewport(viewport: MapConverterInput['viewport']): MapConverte
   return { scale, tx, ty };
 }
 
+function normalizeMapBounds(input: MapConverterInput): { x: number; y: number; width: number; height: number } | undefined {
+  const width = toFiniteNumber(input.width, Number.NaN);
+  const height = toFiniteNumber(input.height, Number.NaN);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return undefined;
+  }
+
+  return {
+    x: 0,
+    y: 0,
+    width,
+    height
+  };
+}
+
 export class MapConverter {
   private readonly mapData: MapConverterInput;
 
@@ -137,8 +154,14 @@ export class MapConverter {
       }
     }
 
+    const graphJson: Record<string, unknown> = { cells };
+    const mapBounds = normalizeMapBounds(this.mapData);
+    if (mapBounds) {
+      graphJson.mapBounds = mapBounds;
+    }
+
     const document: MapConvertedDocument = {
-      graph: { cells } as joint.dia.Graph.JSON
+      graph: graphJson as joint.dia.Graph.JSON
     };
     const viewport = normalizeViewport(this.mapData.viewport);
     if (viewport) {

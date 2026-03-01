@@ -4,8 +4,6 @@ import { ZoomInCommand } from './commands/ZoomInCommand';
 import { ZoomOutCommand } from './commands/ZoomOutCommand';
 import { DiagramService } from './core/DiagramService';
 import { isPrimaryMouseButton } from './core/events';
-import { convertMapData } from './decoders/MapConverter';
-import type { MapConverterInput } from './decoders/MapConverter';
 import type {
   LinkData,
   NodeData,
@@ -16,6 +14,8 @@ import type {
   ViewportSnapshot
 } from './core/types';
 import { ViewportState } from './core/ViewportState';
+import type { MapConverterInput } from './decoders/MapConverter';
+import { convertMapData } from './decoders/MapConverter';
 import { GuidesManager } from './managers/GuidesManager';
 import { MinimapManager } from './managers/MinimapManager';
 import { ModeManager } from './managers/ModeManager';
@@ -97,6 +97,52 @@ function toGraphEnvelope(input: object): GraphEnvelope {
   }
 
   return { graph: input as joint.dia.Graph.JSON };
+}
+
+function getGraphMapBounds(graph: joint.dia.Graph): Rect | null {
+  const bounds = graph.get('mapBounds') as Partial<Rect> | undefined;
+  if (!bounds) {
+    return null;
+  }
+
+  const { x, y, width, height } = bounds;
+  if (
+    typeof x !== 'number' ||
+    typeof y !== 'number' ||
+    typeof width !== 'number' ||
+    typeof height !== 'number' ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(y) ||
+    !Number.isFinite(width) ||
+    !Number.isFinite(height) ||
+    width <= 0 ||
+    height <= 0
+  ) {
+    return null;
+  }
+
+  return { x, y, width, height };
+}
+
+function unionRects(a: Rect | null, b: Rect | null): Rect | null {
+  if (!a) {
+    return b;
+  }
+  if (!b) {
+    return a;
+  }
+
+  const left = Math.min(a.x, b.x);
+  const top = Math.min(a.y, b.y);
+  const right = Math.max(a.x + a.width, b.x + b.width);
+  const bottom = Math.max(a.y + a.height, b.y + b.height);
+
+  return {
+    x: left,
+    y: top,
+    width: Math.max(0, right - left),
+    height: Math.max(0, bottom - top)
+  };
 }
 
 export class Topology {
@@ -230,7 +276,8 @@ export class Topology {
       this.diagramService.getGraph(),
       this.diagramService.getPaper(),
       this.viewportState,
-      this.config.asyncRendering
+      this.config.asyncRendering,
+      this.config.boundsPadding
     );
 
     const panMode = new PanMode(this.panManager, this.diagramService);
@@ -403,6 +450,7 @@ export class Topology {
   public setBoundsPadding(padding: number): void {
     this.logDebug('setBoundsPadding', padding);
     this.diagramService.setBoundsPadding(padding);
+    this.minimapManager.setBoundsPadding(padding);
     this.viewportState.enforceConstraints();
   }
 
@@ -712,43 +760,64 @@ export class Topology {
   }
 
   private fitToContent(mode: 'page' | 'width' | 'height', padding: number): void {
-    const bbox = this.diagramService.getGraph().getBBox();
-    if (!bbox) {
+    const safePadding = Number.isFinite(padding) ? Math.max(0, padding) : 0;
+    const size = this.diagramService.getSize();
+    const fittingBoxWidth = Math.max(1, size.width);
+    const fittingBoxHeight = Math.max(1, size.height);
+    const snapshot = this.viewportState.getSnapshot();
+    const paper = this.diagramService.getPaper() as joint.dia.Paper & {
+      getContentArea?: () => { x: number; y: number; width: number; height: number } | null;
+      transformToFitContent?: (options: Record<string, unknown>) => void;
+      matrix: () => { a: number; d: number; e: number; f: number };
+    };
+    const contentAreaRect = paper.getContentArea?.() ?? null;
+    const contentArea = unionRects(contentAreaRect, getGraphMapBounds(this.diagramService.getGraph()));
+    if (!contentArea || contentArea.width <= 0 || contentArea.height <= 0 || !paper.transformToFitContent) {
       return;
     }
 
-    const safePadding = Number.isFinite(padding) ? Math.max(0, padding) : 0;
-    const size = this.diagramService.getSize();
-    const availableWidth = Math.max(1, size.width - safePadding * 2);
-    const availableHeight = Math.max(1, size.height - safePadding * 2);
-    const targetRect: Rect = {
-      x: bbox.x,
-      y: bbox.y,
-      width: Math.max(1, bbox.width),
-      height: Math.max(1, bbox.height)
-    };
+    let fittingWidth = fittingBoxWidth;
+    let fittingHeight = fittingBoxHeight;
 
-    const scaleX = availableWidth / targetRect.width;
-    const scaleY = availableHeight / targetRect.height;
-    const rawScale = mode === 'width' ? scaleX : mode === 'height' ? scaleY : Math.min(scaleX, scaleY);
-    const snapshot = this.viewportState.getSnapshot();
-    const nextScale = Math.min(snapshot.maxScale, Math.max(snapshot.minScale, rawScale));
-    const tx = size.width / 2 - (targetRect.x + targetRect.width / 2) * nextScale;
-    const ty = size.height / 2 - (targetRect.y + targetRect.height / 2) * nextScale;
+    if (mode === 'width') {
+      const targetScale = Math.min(snapshot.maxScale, Math.max(snapshot.minScale, fittingBoxWidth / contentArea.width));
+      fittingHeight = Math.max(fittingBoxHeight, contentArea.height * targetScale);
+    } else if (mode === 'height') {
+      const targetScale = Math.min(snapshot.maxScale, Math.max(snapshot.minScale, fittingBoxHeight / contentArea.height));
+      fittingWidth = Math.max(fittingBoxWidth, contentArea.width * targetScale);
+    }
+
+    paper.transformToFitContent({
+      contentArea,
+      padding: safePadding,
+      preserveAspectRatio: true,
+      minScale: snapshot.minScale,
+      maxScale: snapshot.maxScale,
+      horizontalAlign: 'middle',
+      verticalAlign: 'middle',
+      fittingBBox: {
+        x: 0,
+        y: 0,
+        width: fittingWidth,
+        height: fittingHeight
+      }
+    });
+
+    const matrix = paper.matrix();
 
     const fitModeName = mode === 'page' ? 'Page' : mode === 'width' ? 'Width' : 'Height';
-    this.logDebug(`fitTo${fitModeName}`, { padding: safePadding, scale: nextScale });
-    this.viewportState.setViewport(nextScale, tx, ty);
+    this.logDebug(`fitTo${fitModeName}`, { padding: safePadding, scale: matrix.a });
+    this.viewportState.setViewport(matrix.a, matrix.e, matrix.f);
   }
 }
 
-export { MapConverter, convertMapData } from './decoders/MapConverter';
 export type {
   LinkData,
   NodeData,
   TopologyConfig,
   TopologyMode
 } from './core/types';
+export { convertMapData, MapConverter } from './decoders/MapConverter';
 export type {
   MapConvertedDocument,
   MapConvertedViewport,

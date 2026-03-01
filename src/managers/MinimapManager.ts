@@ -1,7 +1,7 @@
 import * as joint from '@joint/core';
 import type { Point, Rect } from '../core/types';
 import { ViewportState } from '../core/ViewportState';
-import { containsPoint } from '../core/geometry';
+import { centerOfRect, containsPoint } from '../core/geometry';
 import { cellNamespace } from '../shapes/cellNamespace';
 
 interface MinimapRect {
@@ -31,6 +31,10 @@ export class MinimapManager {
 
   private readonly asyncRendering: boolean;
 
+  private boundsPadding: number;
+
+  private refreshRafId = 0;
+
   private dragging = false;
 
   private dragOffset: Point = { x: 0, y: 0 };
@@ -57,16 +61,18 @@ export class MinimapManager {
   };
 
   private readonly onGraphChangeBound = (): void => {
-    this.syncPaperTransform();
-    this.updateViewportRect();
+    this.scheduleGraphRefresh();
   };
+
+  private refreshDelayFrames = 0;
 
   public constructor(
     container: HTMLElement,
     graph: joint.dia.Graph,
     mainPaper: joint.dia.Paper,
     viewportState: ViewportState,
-    asyncRendering: boolean
+    asyncRendering: boolean,
+    boundsPadding: number
   ) {
     this.container = container;
     this.vector = joint.V;
@@ -74,6 +80,7 @@ export class MinimapManager {
     this.mainPaper = mainPaper;
     this.viewportState = viewportState;
     this.asyncRendering = asyncRendering;
+    this.boundsPadding = Number.isFinite(boundsPadding) && boundsPadding > 0 ? boundsPadding : 0;
     this.paperHost = this.createPaperHost(container, 'topology-minimap-paper-host');
 
     this.paper = new joint.dia.Paper({
@@ -119,6 +126,7 @@ export class MinimapManager {
     graph.on('reset', this.onGraphChangeBound);
     graph.on('change:position', this.onGraphChangeBound);
     graph.on('change:size', this.onGraphChangeBound);
+    graph.on('change:attrs', this.onGraphChangeBound);
 
     this.container.addEventListener('pointerdown', this.onPointerDownBound);
     window.addEventListener('pointermove', this.onPointerMoveBound);
@@ -130,6 +138,11 @@ export class MinimapManager {
 
   public resize(width: number, height: number): void {
     this.paper.setDimensions(width, height);
+    this.refresh();
+  }
+
+  public setBoundsPadding(padding: number): void {
+    this.boundsPadding = Number.isFinite(padding) && padding > 0 ? padding : 0;
     this.refresh();
   }
 
@@ -146,21 +159,32 @@ export class MinimapManager {
     this.graph.off('reset', this.onGraphChangeBound);
     this.graph.off('change:position', this.onGraphChangeBound);
     this.graph.off('change:size', this.onGraphChangeBound);
+    this.graph.off('change:attrs', this.onGraphChangeBound);
 
     this.container.removeEventListener('pointerdown', this.onPointerDownBound);
     window.removeEventListener('pointermove', this.onPointerMoveBound);
     window.removeEventListener('pointerup', this.onPointerUpBound);
+    if (this.refreshRafId !== 0) {
+      window.cancelAnimationFrame(this.refreshRafId);
+      this.refreshRafId = 0;
+    }
 
     this.viewportLayer.remove();
     this.paper.remove();
   }
 
   private syncPaperTransform(): void {
-    this.paper.scaleContentToFit({
+    const contentArea = this.getMainContentRect();
+    const options: joint.dia.Paper.TransformToFitContentOptions = {
       useModelGeometry: true,
-      padding: 8,
+      padding: 0,
       preserveAspectRatio: true
-    });
+    };
+    if (contentArea) {
+      options.contentArea = contentArea;
+    }
+
+    this.paper.scaleContentToFit(options);
   }
 
   private updateViewportRect(): void {
@@ -168,12 +192,12 @@ export class MinimapManager {
     const mainWidth = this.mainPaper.el.clientWidth;
     const mainHeight = this.mainPaper.el.clientHeight;
 
-    const mainRectLocal: Rect = {
+    const mainRectLocal = this.clampViewportRectToContent({
       x: -mainSnapshot.tx / mainSnapshot.scale,
       y: -mainSnapshot.ty / mainSnapshot.scale,
       width: mainWidth / mainSnapshot.scale,
       height: mainHeight / mainSnapshot.scale
-    };
+    });
 
     this.minimapViewportRect.rect = mainRectLocal;
     const minimapRect = this.clampRectToMinimapBounds(this.mainLocalRectToMinimapPaper(mainRectLocal));
@@ -199,7 +223,13 @@ export class MinimapManager {
       return;
     }
 
-    this.centerMainViewportAt(local);
+    const targetRect = this.clampViewportRectToContent({
+      x: local.x - currentRect.width / 2,
+      y: local.y - currentRect.height / 2,
+      width: currentRect.width,
+      height: currentRect.height
+    });
+    this.centerMainViewportAt(centerOfRect(targetRect));
   }
 
   private onPointerMove(event: PointerEvent): void {
@@ -207,9 +237,14 @@ export class MinimapManager {
       return;
     }
     const local = this.clientToLocalPoint(event.clientX, event.clientY);
-    const targetX = local.x - this.dragOffset.x + this.minimapViewportRect.rect.width / 2;
-    const targetY = local.y - this.dragOffset.y + this.minimapViewportRect.rect.height / 2;
-    this.centerMainViewportAt({ x: targetX, y: targetY });
+    const currentRect = this.minimapViewportRect.rect;
+    const targetRect = this.clampViewportRectToContent({
+      x: local.x - this.dragOffset.x,
+      y: local.y - this.dragOffset.y,
+      width: currentRect.width,
+      height: currentRect.height
+    });
+    this.centerMainViewportAt(centerOfRect(targetRect));
   }
 
   private centerMainViewportAt(minimapPoint: Point): void {
@@ -234,19 +269,34 @@ export class MinimapManager {
   }
 
   private clampRectToMinimapBounds(rect: Rect): Rect {
-    const maxWidth = Math.max(0, this.container.clientWidth);
-    const maxHeight = Math.max(0, this.container.clientHeight);
+    const bounds = this.getMinimapContentPaperRect();
+    if (!bounds) {
+      const computedSize = this.paper.getComputedSize();
+      const maxWidth = Math.max(0, computedSize.width || this.container.clientWidth);
+      const maxHeight = Math.max(0, computedSize.height || this.container.clientHeight);
+      const width = Math.min(Math.max(0, rect.width), maxWidth);
+      const height = Math.min(Math.max(0, rect.height), maxHeight);
+      const left = Math.max(0, Math.min(maxWidth - width, rect.x));
+      const top = Math.max(0, Math.min(maxHeight - height, rect.y));
 
-    const left = Math.max(0, Math.min(maxWidth, rect.x));
-    const top = Math.max(0, Math.min(maxHeight, rect.y));
-    const right = Math.max(0, Math.min(maxWidth, rect.x + rect.width));
-    const bottom = Math.max(0, Math.min(maxHeight, rect.y + rect.height));
+      return {
+        x: left,
+        y: top,
+        width,
+        height
+      };
+    }
+
+    const width = Math.min(Math.max(0, rect.width), bounds.width);
+    const height = Math.min(Math.max(0, rect.height), bounds.height);
+    const left = Math.max(bounds.x, Math.min(bounds.x + bounds.width - width, rect.x));
+    const top = Math.max(bounds.y, Math.min(bounds.y + bounds.height - height, rect.y));
 
     return {
       x: left,
       y: top,
-      width: Math.max(0, right - left),
-      height: Math.max(0, bottom - top)
+      width,
+      height
     };
   }
 
@@ -266,5 +316,152 @@ export class MinimapManager {
     host.style.position = 'relative';
     container.append(host);
     return host;
+  }
+
+  private getMainContentRect(): Rect | null {
+    const snapshot = this.viewportState.getSnapshot();
+    const paddingLocal = snapshot.scale > 0 ? this.boundsPadding / snapshot.scale : this.boundsPadding;
+    const paper = this.mainPaper as joint.dia.Paper & {
+      getContentArea?: () => {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+      } | null;
+    };
+    const declaredBounds = this.getDeclaredMapBounds();
+    const contentArea = paper.getContentArea?.();
+    const contentRect = contentArea
+      ? {
+          x: contentArea.x,
+          y: contentArea.y,
+          width: Math.max(0, contentArea.width),
+          height: Math.max(0, contentArea.height)
+        }
+      : null;
+    const mergedRect = this.unionRects(contentRect, declaredBounds);
+    if (mergedRect) {
+      return {
+        x: mergedRect.x - paddingLocal,
+        y: mergedRect.y - paddingLocal,
+        width: Math.max(0, mergedRect.width) + paddingLocal * 2,
+        height: Math.max(0, mergedRect.height) + paddingLocal * 2
+      };
+    }
+
+    const bbox = this.graph.getBBox();
+    if (!bbox) {
+      return null;
+    }
+
+    return {
+      x: bbox.x - paddingLocal,
+      y: bbox.y - paddingLocal,
+      width: Math.max(0, bbox.width) + paddingLocal * 2,
+      height: Math.max(0, bbox.height) + paddingLocal * 2
+    };
+  }
+
+  private getMinimapContentPaperRect(): Rect | null {
+    const contentRect = this.getMainContentRect();
+    if (!contentRect) {
+      return null;
+    }
+
+    const paperRect = this.paper.localToPaperRect(contentRect);
+    return {
+      x: paperRect.x,
+      y: paperRect.y,
+      width: Math.max(0, paperRect.width),
+      height: Math.max(0, paperRect.height)
+    };
+  }
+
+  private getDeclaredMapBounds(): Rect | null {
+    const bounds = this.graph.get('mapBounds') as Partial<Rect> | undefined;
+    if (!bounds) {
+      return null;
+    }
+
+    const { x, y, width, height } = bounds;
+    if (
+      typeof x !== 'number' ||
+      typeof y !== 'number' ||
+      typeof width !== 'number' ||
+      typeof height !== 'number' ||
+      !Number.isFinite(x) ||
+      !Number.isFinite(y) ||
+      !Number.isFinite(width) ||
+      !Number.isFinite(height) ||
+      width <= 0 ||
+      height <= 0
+    ) {
+      return null;
+    }
+
+    return { x, y, width, height };
+  }
+
+  private unionRects(a: Rect | null, b: Rect | null): Rect | null {
+    if (!a) {
+      return b;
+    }
+    if (!b) {
+      return a;
+    }
+
+    const left = Math.min(a.x, b.x);
+    const top = Math.min(a.y, b.y);
+    const right = Math.max(a.x + a.width, b.x + b.width);
+    const bottom = Math.max(a.y + a.height, b.y + b.height);
+
+    return {
+      x: left,
+      y: top,
+      width: Math.max(0, right - left),
+      height: Math.max(0, bottom - top)
+    };
+  }
+
+  private clampViewportRectToContent(rect: Rect): Rect {
+    const bounds = this.getMainContentRect();
+    if (!bounds) {
+      return rect;
+    }
+
+    const width = Math.min(Math.max(0, rect.width), bounds.width);
+    const height = Math.min(Math.max(0, rect.height), bounds.height);
+    const x = Math.max(bounds.x, Math.min(bounds.x + bounds.width - width, rect.x));
+    const y = Math.max(bounds.y, Math.min(bounds.y + bounds.height - height, rect.y));
+
+    return {
+      x,
+      y,
+      width,
+      height
+    };
+  }
+
+  private scheduleGraphRefresh(): void {
+    this.refreshDelayFrames = 1;
+    if (this.refreshRafId !== 0) {
+      return;
+    }
+
+    const runRefresh = (): void => {
+      this.refreshRafId = window.requestAnimationFrame(() => {
+        this.refreshRafId = 0;
+        if (this.refreshDelayFrames > 0) {
+          this.refreshDelayFrames -= 1;
+          runRefresh();
+          return;
+        }
+
+        this.syncPaperTransform();
+        this.updateViewportRect();
+      });
+    };
+
+    runRefresh();
   }
 }

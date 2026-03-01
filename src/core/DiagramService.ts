@@ -148,7 +148,7 @@ export class DiagramService {
     const snapshot = this.viewportState.getSnapshot();
     const area = this.getVisibleLocalRect(snapshot);
     const size = element.size();
-    const paddingLocal = this.boundsPadding;
+    const paddingLocal = snapshot.scale > 0 ? this.boundsPadding / snapshot.scale : this.boundsPadding;
 
     const minX = area.x + paddingLocal;
     const minY = area.y + paddingLocal;
@@ -163,20 +163,20 @@ export class DiagramService {
 
   public getTranslateBounds(scale: number): TranslateBounds {
     const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
-    const paddingViewport = this.boundsPadding * safeScale;
+    const paddingViewport = this.boundsPadding;
     const size = this.getSize();
     if (size.width <= 1 || size.height <= 1 || this.graph.getCells().length === 0) {
       return { minTx: 0, maxTx: 0, minTy: 0, maxTy: 0 };
     }
 
-    const bbox = this.graph.getBBox();
-    if (!bbox) {
+    const contentRect = this.getPanContentRect();
+    if (!contentRect) {
       return { minTx: 0, maxTx: 0, minTy: 0, maxTy: 0 };
     }
-    const minX = bbox.x * safeScale;
-    const minY = bbox.y * safeScale;
-    const contentWidth = Math.max(0, bbox.width * safeScale);
-    const contentHeight = Math.max(0, bbox.height * safeScale);
+    const minX = contentRect.x * safeScale;
+    const minY = contentRect.y * safeScale;
+    const contentWidth = Math.max(0, contentRect.width * safeScale);
+    const contentHeight = Math.max(0, contentRect.height * safeScale);
 
     let minTx = size.width - (minX + contentWidth) - paddingViewport;
     let maxTx = -minX + paddingViewport;
@@ -235,5 +235,112 @@ export class DiagramService {
     if (this.viewportPredicate) {
       this.paper.updateCellsVisibility();
     }
+  }
+
+  private getContentRect(useModelGeometry = false): Rect | null {
+    const paper = this.paper as joint.dia.Paper & {
+      getContentArea?: (opt?: { useModelGeometry: boolean }) => {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+      } | null;
+    };
+    const declaredBounds = this.getDeclaredMapBounds();
+    const contentArea = paper.getContentArea?.(useModelGeometry ? { useModelGeometry: true } : undefined);
+    const contentRect = contentArea
+      ? {
+          x: contentArea.x,
+          y: contentArea.y,
+          width: Math.max(0, contentArea.width),
+          height: Math.max(0, contentArea.height)
+        }
+      : null;
+    const mergedRect = this.unionRects(contentRect, declaredBounds);
+    if (mergedRect) {
+      return mergedRect;
+    }
+
+    const bbox = this.graph.getBBox();
+    if (!bbox) {
+      return null;
+    }
+
+    return {
+      x: bbox.x,
+      y: bbox.y,
+      width: Math.max(0, bbox.width),
+      height: Math.max(0, bbox.height)
+    };
+  }
+
+  private getPanContentRect(): Rect | null {
+    const modelRect = this.getContentRect(true);
+    const visualRect = this.getContentRect(false);
+
+    if (!modelRect) {
+      return visualRect;
+    }
+    if (!visualRect) {
+      return modelRect;
+    }
+
+    const left = Math.min(modelRect.x, visualRect.x);
+    const top = Math.min(modelRect.y, visualRect.y);
+    const right = Math.max(modelRect.x + modelRect.width, visualRect.x + visualRect.width);
+    const bottom = Math.max(modelRect.y + modelRect.height, visualRect.y + visualRect.height);
+
+    return {
+      x: left,
+      y: top,
+      width: Math.max(0, right - left),
+      height: Math.max(0, bottom - top)
+    };
+  }
+
+  private getDeclaredMapBounds(): Rect | null {
+    const bounds = this.graph.get('mapBounds') as Partial<Rect> | undefined;
+    if (!bounds) {
+      return null;
+    }
+
+    const { x, y, width, height } = bounds;
+    if (
+      typeof x !== 'number' ||
+      typeof y !== 'number' ||
+      typeof width !== 'number' ||
+      typeof height !== 'number' ||
+      !Number.isFinite(x) ||
+      !Number.isFinite(y) ||
+      !Number.isFinite(width) ||
+      !Number.isFinite(height) ||
+      width <= 0 ||
+      height <= 0
+    ) {
+      return null;
+    }
+
+    return { x, y, width, height };
+  }
+
+  private unionRects(a: Rect | null, b: Rect | null): Rect | null {
+    if (!a) {
+      return b;
+    }
+    if (!b) {
+      return a;
+    }
+
+    const left = Math.min(a.x, b.x);
+    const top = Math.min(a.y, b.y);
+    const right = Math.max(a.x + a.width, b.x + b.width);
+    const bottom = Math.max(a.y + a.height, b.y + b.height);
+
+    return {
+      x: left,
+      y: top,
+      width: Math.max(0, right - left),
+      height: Math.max(0, bottom - top)
+    };
   }
 }
