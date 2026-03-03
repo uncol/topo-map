@@ -1,6 +1,6 @@
 import '@gufo-labs/font/gufo-font.css';
-import { Topology } from '../src/index.ts';
 import { configuredShapeMapData, glyphSegmentMapData } from '../scripts/fixtures/configuredShapeMapData.ts';
+import { Topology } from '../src/index.ts';
 
 const mainContainer = document.getElementById('topology-main');
 const minimapContainer = document.getElementById('topology-minimap');
@@ -120,8 +120,7 @@ const zoomSelect = document.getElementById('zoom-select');
 const boundsPadding = document.getElementById('bounds-padding');
 const boundsPaddingValue = document.getElementById('bounds-padding-value');
 const renderStats = document.getElementById('render-stats');
-const TOPOLOGY_ELEMENT_CLICK_EVENT = 'topology:element:click';
-const TOPOLOGY_LINK_CLICK_EVENT = 'topology:link:click';
+const TOPOLOGY_CELL_POINTERDOWN_EVENT = 'topology:cell:pointerdown';
 const TOPOLOGY_WHEEL_EVENT = 'topology:wheel';
 const ZOOM_CUSTOM_OPTION_VALUE = '__custom__';
 const ZOOM_PRESET_TOLERANCE = 0.001;
@@ -134,6 +133,7 @@ let currentMapKey = 'glyph-segment';
 let statsRafId = 0;
 let fitRafId = 0;
 
+// toolbar buttons
 modePan?.addEventListener('click', () => instance.setMode('pan'));
 modeZoomArea?.addEventListener('click', () => instance.setMode('zoomToArea'));
 modeEdit?.addEventListener('click', () => instance.setMode('edit'));
@@ -480,30 +480,17 @@ renderObserver.observe(mainContainer, {
 });
 scheduleRenderStatsUpdate();
 
-function onElementClick(event) {
+function onCellPointerDown(event) {
   if (!(event instanceof CustomEvent)) {
     return;
   }
   const detail = event.detail ?? {};
-  lastInteractionText = `Element click: ${detail.id ?? 'unknown'}`;
-  console.log('[demo] element click', detail);
+  lastInteractionText = `Cell down: ${detail.id ?? 'unknown'} [${detail.kind ?? 'unknown'}]`;
+  console.log('[demo] cell pointerdown', detail);
   scheduleRenderStatsUpdate();
 }
 
-function onLinkClick(event) {
-  if (!(event instanceof CustomEvent)) {
-    return;
-  }
-  const detail = event.detail ?? {};
-  const source = detail.sourceId ?? '?';
-  const target = detail.targetId ?? '?';
-  lastInteractionText = `Link click: ${detail.id ?? 'unknown'} (${source} -> ${target})`;
-  console.log('[demo] link click', detail);
-  scheduleRenderStatsUpdate();
-}
-
-mainContainer.addEventListener(TOPOLOGY_ELEMENT_CLICK_EVENT, onElementClick);
-mainContainer.addEventListener(TOPOLOGY_LINK_CLICK_EVENT, onLinkClick);
+mainContainer.addEventListener(TOPOLOGY_CELL_POINTERDOWN_EVENT, onCellPointerDown);
 
 let rafResizeId = 0;
 let prevMainWidth = -1;
@@ -560,8 +547,7 @@ window.addEventListener('beforeunload', () => {
   mapSelect?.removeEventListener('change', onMapSelectChange);
   zoomSelect?.removeEventListener('change', onZoomSelectChange);
   mainContainer.removeEventListener(TOPOLOGY_WHEEL_EVENT, onTopologyWheel);
-  mainContainer.removeEventListener(TOPOLOGY_ELEMENT_CLICK_EVENT, onElementClick);
-  mainContainer.removeEventListener(TOPOLOGY_LINK_CLICK_EVENT, onLinkClick);
+  mainContainer.removeEventListener(TOPOLOGY_CELL_POINTERDOWN_EVENT, onCellPointerDown);
   if (rafResizeId !== 0) {
     window.cancelAnimationFrame(rafResizeId);
   }

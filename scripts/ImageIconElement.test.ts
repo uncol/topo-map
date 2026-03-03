@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ImageIconElement } from '../src/shapes/ImageIconElement.ts';
+import { ImageIconElement } from '../src/shapes/ImageIconElement';
 
 describe('ImageIconElement', () => {
   it('normalizes image references into matching href and xlinkHref values', () => {

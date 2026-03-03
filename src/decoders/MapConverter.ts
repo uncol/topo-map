@@ -197,7 +197,21 @@ export class MapConverter {
     if (!nodeId) {
       return null;
     }
-
+    const data = {
+      id: node.id,
+      address: node.address,
+      name: node.name,
+      level: node.level,
+      external: node.external,
+      caps: node.caps,
+      metrics_label: node.metrics_label,
+      metrics_template: node.metrics_template,
+      node_id: node.node_id,
+      object_filter: node.object_filter,
+      ports: node.ports,
+      shape_overlay: node.shape_overlay,
+      type: node.type,
+    };
     if (shape.length === 0) {
       const glyphText = toGlyphText(node.glyph);
       if (!glyphText) {
@@ -223,7 +237,8 @@ export class MapConverter {
           ipaddr: {
             text: toText(node.address)
           }
-        }
+        },
+        data,
       };
     }
 
@@ -247,7 +262,8 @@ export class MapConverter {
         ipaddr: {
           text: toText(node.address)
         }
-      }
+      },
+      data,
     };
   }
 
@@ -263,6 +279,16 @@ export class MapConverter {
     if (srcId === undefined || dstId === undefined) {
       return null;
     }
+    const data = {
+      id: link.id,
+      bw: link.bw,
+      in_bw: link.in_bw,
+      out_bw: link.out_bw,
+      method: link.method,
+      connector: link.connector,
+      ports: link.ports,
+      type: link.type,
+    };
 
     return {
       type: 'noc.LinkElement',
@@ -275,7 +301,8 @@ export class MapConverter {
         in_bw: link.in_bw ?? 0,
         out_bw: link.out_bw ?? 0,
         method: toText(link.method)
-      }
+      },
+      data,
     };
   }
 }

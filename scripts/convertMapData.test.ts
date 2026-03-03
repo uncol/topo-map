@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { convertMapData } from '../src/decoders/MapConverter.ts';
-import { configuredShapeMapData, glyphSegmentMapData } from './fixtures/configuredShapeMapData.ts';
+import { convertMapData } from '../src/decoders/MapConverter';
+import { configuredShapeMapData, glyphSegmentMapData } from './fixtures/configuredShapeMapData';
 
 describe('convertMapData', () => {
   it('converts segment payload with glyph nodes and port-based links', () => {
