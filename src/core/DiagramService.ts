@@ -1,8 +1,9 @@
 import * as joint from '@joint/core';
-import type { Point, Rect, Size, TranslateBounds, ViewportSnapshot } from './types';
-import { clamp } from './geometry';
-import { ViewportState } from './ViewportState';
 import { cellNamespace } from '../shapes/cellNamespace';
+import { ensureIconCenterAnchorRegistered } from '../shapes/linkEndpoints';
+import { clamp } from './geometry';
+import type { Point, Rect, Size, TranslateBounds, ViewportSnapshot } from './types';
+import { ViewportState } from './ViewportState';
 
 const DEFAULT_BACKGROUND_COLOR = '#f8fafc';
 
@@ -35,6 +36,7 @@ export class DiagramService {
     this.asyncRendering = asyncRendering;
     this.boundsPadding = this.normalizePadding(boundsPadding);
     this.graph = new joint.dia.Graph({}, { cellNamespace });
+    ensureIconCenterAnchorRegistered();
     const paperHost = this.createPaperHost(container, 'topology-main-paper-host');
 
     this.paper = new joint.dia.Paper({
@@ -55,7 +57,45 @@ export class DiagramService {
           return this.viewportPredicate(view);
         }
         return true;
-      }
+      },
+      // restrictTranslate: (elementView) => {
+      //   const element = elementView.model;
+      //   const iconAttrs = element.attr('icon') || {};
+      //   const iconWidth = Number(iconAttrs.width) || 64;
+      //   const iconHeight = Number(iconAttrs.height) || 64;
+
+      //   // Calculate label height (label is below icon)
+      //   // Label uses fontSize 12, can be multi-line
+      //   // const titleText = element.attr('title/text') || '';
+      //   // const lineCount = titleText ? titleText.split('\n').length : 1;
+      //   // const labelHeight = lineCount * 12 + 4; // fontSize * lines + padding
+
+      //   const elWidth = iconWidth;
+      //   // const elHeight = iconHeight + labelHeight;
+      //   const elHeight = iconHeight;
+
+      //   // Get current viewport bounds in world coordinates
+      //   // This is called dynamically, so it updates as viewport changes
+      //   if (this.viewportState) {
+      //     const bounds = this.viewportState.getState().bounds;
+      //     // Add padding to prevent element from touching screen edge
+      //     const padding = 5;
+      //     return {
+      //       x: bounds.x + padding,
+      //       y: bounds.y + padding,
+      //       width: bounds.width - elWidth - padding * 2,
+      //       height: bounds.height + elHeight + padding * 2,
+      //     };
+      //   }
+
+      //   // Fallback to paper bounds if viewport not initialized yet
+      //   return {
+      //     x: 0,
+      //     y: 0,
+      //     width: this.paperConfig.width - elWidth,
+      //     height: this.paperConfig.height + elHeight,
+      //   };
+      // },
     });
 
     this.unsubscribeViewport = viewportState.subscribe((snapshot) => {
@@ -96,10 +136,6 @@ export class DiagramService {
   public resize(width: number, height: number): void {
     this.paper.setDimensions(width, height);
     this.refreshVisibility();
-  }
-
-  public setBoundsPadding(padding: number): void {
-    this.boundsPadding = this.normalizePadding(padding);
   }
 
   public getSize(): Size {

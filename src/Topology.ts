@@ -27,9 +27,10 @@ const DEFAULT_MIN_SCALE = 0.1;
 const DEFAULT_MAX_SCALE = 5;
 const DEFAULT_GRID_SIZE = 20;
 const DEFAULT_GUIDE_THRESHOLD = 5;
-const DEFAULT_BOUNDS_PADDING = 12;
 
 export class Topology {
+  public static readonly DEFAULT_PADDING = 12;
+
   private readonly config: Required<Omit<TopologyConfig, 'onReady'>> & { onReady: (() => void) | undefined };
 
   private readonly viewportState: ViewportState;
@@ -79,7 +80,6 @@ export class Topology {
       maxScale: config.maxScale ?? DEFAULT_MAX_SCALE,
       gridSize: config.gridSize ?? DEFAULT_GRID_SIZE,
       snapThreshold: config.snapThreshold ?? DEFAULT_GUIDE_THRESHOLD,
-      boundsPadding: config.boundsPadding ?? DEFAULT_BOUNDS_PADDING,
       preserveViewportOnLoad: config.preserveViewportOnLoad ?? false,
       fitToPageOnLoad: config.fitToPageOnLoad ?? false,
       enableViewportCulling: config.enableViewportCulling ?? false,
@@ -95,7 +95,7 @@ export class Topology {
       this.viewportState,
       this.config.gridSize,
       this.config.asyncRendering,
-      this.config.boundsPadding
+      Topology.DEFAULT_PADDING
     );
     this.viewportState.setTranslateBoundsResolver((snapshot) => this.diagramService.getTranslateBounds(snapshot.scale));
 
@@ -125,7 +125,7 @@ export class Topology {
       this.diagramService.getPaper(),
       this.viewportState,
       this.config.asyncRendering,
-      this.config.boundsPadding
+      Topology.DEFAULT_PADDING
     );
 
     const panMode = new PanMode(this.panManager, this.diagramService);
@@ -242,13 +242,6 @@ export class Topology {
       });
   }
 
-  public setBoundsPadding(padding: number): void {
-    this.logDebug('setBoundsPadding', padding);
-    this.diagramService.setBoundsPadding(padding);
-    this.minimapManager.setBoundsPadding(padding);
-    this.viewportState.enforceConstraints();
-  }
-
   public setZoom(scale: number): void {
     if (!Number.isFinite(scale) || scale <= 0) {
       return;
@@ -272,16 +265,16 @@ export class Topology {
     this.viewportState.setViewport(scale, nextTx, nextTy);
   }
 
-  public fitToPage(padding = 24): void {
-    this.fitToContent('page', padding);
+  public fitToPage(): void {
+    this.fitToContent('page');
   }
 
-  public fitToWidth(padding = 24): void {
-    this.fitToContent('width', padding);
+  public fitToWidth(): void {
+    this.fitToContent('width');
   }
 
-  public fitToHeight(padding = 24): void {
-    this.fitToContent('height', padding);
+  public fitToHeight(): void {
+    this.fitToContent('height');
   }
 
   public getViewportSnapshot(): ViewportSnapshot {
@@ -356,22 +349,21 @@ export class Topology {
     this.debug.log(message, ...payload);
   }
 
-  private fitToContent(mode: FitMode, padding: number): void {
-    const safePadding = Number.isFinite(padding) ? Math.max(0, padding) : 0;
+  private fitToContent(mode: FitMode): void {
     const fittedViewport = fitPaperToContent(
       this.diagramService.getGraph(),
       this.diagramService.getPaper(),
       this.diagramService.getSize(),
       this.viewportState.getSnapshot(),
       mode,
-      safePadding
+      Topology.DEFAULT_PADDING
     );
     if (!fittedViewport) {
       return;
     }
 
     const fitModeName = mode === 'page' ? 'Page' : mode === 'width' ? 'Width' : 'Height';
-    this.logDebug(`fitTo${fitModeName}`, { padding: safePadding, scale: fittedViewport.scale });
+    this.logDebug(`fitTo${fitModeName}`, { padding: Topology.DEFAULT_PADDING, scale: fittedViewport.scale });
     this.viewportState.setViewport(fittedViewport.scale, fittedViewport.tx, fittedViewport.ty);
   }
 }

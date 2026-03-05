@@ -1,7 +1,7 @@
 import * as joint from '@joint/core';
+import { centerOfRect, containsPoint } from '../core/geometry';
 import type { Point, Rect } from '../core/types';
 import { ViewportState } from '../core/ViewportState';
-import { centerOfRect, containsPoint } from '../core/geometry';
 import { cellNamespace } from '../shapes/cellNamespace';
 
 interface MinimapRect {
@@ -31,7 +31,7 @@ export class MinimapManager {
 
   private readonly asyncRendering: boolean;
 
-  private boundsPadding: number;
+  private readonly padding: number;
 
   private refreshRafId = 0;
 
@@ -72,7 +72,7 @@ export class MinimapManager {
     mainPaper: joint.dia.Paper,
     viewportState: ViewportState,
     asyncRendering: boolean,
-    boundsPadding: number
+    padding: number
   ) {
     this.container = container;
     this.vector = joint.V;
@@ -80,7 +80,7 @@ export class MinimapManager {
     this.mainPaper = mainPaper;
     this.viewportState = viewportState;
     this.asyncRendering = asyncRendering;
-    this.boundsPadding = Number.isFinite(boundsPadding) && boundsPadding > 0 ? boundsPadding : 0;
+    this.padding = Number.isFinite(padding) && padding > 0 ? padding : 0;
     this.paperHost = this.createPaperHost(container, 'topology-minimap-paper-host');
 
     this.paper = new joint.dia.Paper({
@@ -141,11 +141,6 @@ export class MinimapManager {
     this.refresh();
   }
 
-  public setBoundsPadding(padding: number): void {
-    this.boundsPadding = Number.isFinite(padding) && padding > 0 ? padding : 0;
-    this.refresh();
-  }
-
   public refresh(): void {
     this.syncPaperTransform();
     this.updateViewportRect();
@@ -177,14 +172,14 @@ export class MinimapManager {
     const contentArea = this.getMainContentRect();
     const options: joint.dia.Paper.TransformToFitContentOptions = {
       useModelGeometry: true,
-      padding: 0,
+      padding: this.padding,
       preserveAspectRatio: true
     };
     if (contentArea) {
       options.contentArea = contentArea;
     }
 
-    this.paper.scaleContentToFit(options);
+    this.paper.transformToFitContent(options);
   }
 
   private updateViewportRect(): void {
@@ -320,7 +315,6 @@ export class MinimapManager {
 
   private getMainContentRect(): Rect | null {
     const snapshot = this.viewportState.getSnapshot();
-    const paddingLocal = snapshot.scale > 0 ? this.boundsPadding / snapshot.scale : this.boundsPadding;
     const paper = this.mainPaper as joint.dia.Paper & {
       getContentArea?: () => {
         x: number;
@@ -342,10 +336,10 @@ export class MinimapManager {
     const mergedRect = this.unionRects(contentRect, declaredBounds);
     if (mergedRect) {
       return {
-        x: mergedRect.x - paddingLocal,
-        y: mergedRect.y - paddingLocal,
-        width: Math.max(0, mergedRect.width) + paddingLocal * 2,
-        height: Math.max(0, mergedRect.height) + paddingLocal * 2
+        x: mergedRect.x,
+        y: mergedRect.y,
+        width: Math.max(0, mergedRect.width),
+        height: Math.max(0, mergedRect.height),
       };
     }
 
@@ -355,10 +349,10 @@ export class MinimapManager {
     }
 
     return {
-      x: bbox.x - paddingLocal,
-      y: bbox.y - paddingLocal,
-      width: Math.max(0, bbox.width) + paddingLocal * 2,
-      height: Math.max(0, bbox.height) + paddingLocal * 2
+      x: bbox.x,
+      y: bbox.y,
+      width: Math.max(0, bbox.width),
+      height: Math.max(0, bbox.height),
     };
   }
 

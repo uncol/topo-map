@@ -1,4 +1,5 @@
 import * as joint from '@joint/core';
+import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from './graphLayers';
 import { createIconLinkEnd } from '../shapes/linkEndpoints';
 import type { LinkData, NodeData, SerializedTopology, ViewportSnapshot } from './types';
 
@@ -60,6 +61,7 @@ export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint
       return {
         id: node.id,
         type: 'noc.FontIconElement',
+        layer: NODE_LAYER_ID,
         position: { x: node.x, y: node.y },
         size: {
           width: node.width ?? DEFAULT_NODE_SIZE,
@@ -94,6 +96,7 @@ export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint
       return {
         id: link.id,
         type: 'noc.LinkElement',
+        layer: LINK_LAYER_ID,
         source: createIconLinkEnd(link.sourceId),
         target: createIconLinkEnd(link.targetId),
         labels,
@@ -102,7 +105,11 @@ export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint
     })
   ];
 
-  return { cells } as joint.dia.Graph.JSON;
+  return {
+    cells,
+    layers: createGraphLayers(),
+    defaultLayer: NODE_LAYER_ID
+  } as joint.dia.Graph.JSON;
 }
 
 export function serializeTopology(graph: joint.dia.Graph.JSON, snapshot: ViewportSnapshot): SerializedTopology {

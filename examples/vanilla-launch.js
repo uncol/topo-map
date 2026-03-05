@@ -22,7 +22,6 @@ const instance = new Topology({
   minScale: 0.1,
   maxScale: 5,
   gridSize: 20,
-  boundsPadding: 12,
   snapThreshold: 5,
   fitToPageOnLoad: FIT_TO_PAGE_ON_LOAD,
   asyncRendering: false,
@@ -117,8 +116,6 @@ const zoomInBtn = document.getElementById('zoom-in');
 const zoomOutBtn = document.getElementById('zoom-out');
 const resetViewBtn = document.getElementById('reset-view');
 const zoomSelect = document.getElementById('zoom-select');
-const boundsPadding = document.getElementById('bounds-padding');
-const boundsPaddingValue = document.getElementById('bounds-padding-value');
 const renderStats = document.getElementById('render-stats');
 const TOPOLOGY_CELL_POINTERDOWN_EVENT = 'topology:cell:pointerdown';
 const TOPOLOGY_WHEEL_EVENT = 'topology:wheel';
@@ -424,29 +421,6 @@ if (mapSelect instanceof HTMLSelectElement) {
   loadSelectedMap('glyph-segment');
 }
 syncZoomSelector();
-
-function applyBoundsPadding(value) {
-  if (!Number.isFinite(value)) {
-    return;
-  }
-  const normalized = Math.max(0, Math.round(value));
-  instance.setBoundsPadding(normalized);
-  if (boundsPaddingValue instanceof HTMLElement) {
-    boundsPaddingValue.textContent = String(normalized);
-  }
-}
-
-boundsPadding?.addEventListener('input', (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLInputElement)) {
-    return;
-  }
-  applyBoundsPadding(Number(target.value));
-});
-
-if (boundsPadding instanceof HTMLInputElement) {
-  applyBoundsPadding(Number(boundsPadding.value));
-}
 
 function updateRenderStats() {
   if (!(renderStats instanceof HTMLElement)) {

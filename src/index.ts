@@ -3,6 +3,7 @@ export type { LinkData, NodeData, TopologyConfig, TopologyMode } from './core/ty
 export { convertMapData, MapConverter } from './decoders/MapConverter';
 export type {
   MapConvertedDocument,
+  MapConvertedPaperConfig,
   MapConvertedViewport,
   MapConverterInput,
   MapConverterLink,

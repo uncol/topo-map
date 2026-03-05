@@ -10,7 +10,6 @@ export interface TopologyConfig {
   maxScale?: number;
   gridSize?: number;
   snapThreshold?: number;
-  boundsPadding?: number;
   onReady?: () => void;
   preserveViewportOnLoad?: boolean;
   fitToPageOnLoad?: boolean;

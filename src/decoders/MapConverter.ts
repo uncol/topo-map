@@ -1,9 +1,12 @@
 import type * as joint from '@joint/core';
+import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from '../core/graphLayers';
+import { createIconLinkEnd } from '../shapes/linkEndpoints';
 
-type ScalarId = string | number;
 const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
 const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
+const PAPER_TYPES = ['segment', 'configured', 'l2domain', 'objectcontainer', 'objectgroup', 'objectlevelneighbor'] as const;
 
+type ScalarId = string | number;
 export interface MapConverterPort extends Record<string, unknown> {
   id?: ScalarId | null;
 }
@@ -46,17 +49,47 @@ export interface MapConvertedViewport {
   ty: number;
 }
 
+export type PaperType = typeof PAPER_TYPES[number];
+
 export interface MapConverterInput extends Record<string, unknown> {
+  id?: ScalarId | null;
+  type?: string | null;
+  grid_size?: number | null;
+  normalize_position?: boolean | null;
+  object_status_refresh_interval?: number | null;
+  background_image?: string | null;
+  background_opacity?: number | null;
+  name?: string | null;
   nodes?: MapConverterNode[] | null;
   links?: MapConverterLink[] | null;
   viewport?: Partial<MapConvertedViewport> | null;
   width?: number | null;
   height?: number | null;
+  stencil_dir?: string | null;
+}
+
+export interface MapConvertedPaperConfig {
+  id?: string;
+  type?: PaperType;
+  gridSize?: number;
+  normalizePosition?: boolean;
+  objectStatusRefreshInterval?: number;
+  backgroundImage?: string;
+  backgroundOpacity?: number;
+  name?: string;
+  width?: number;
+  height?: number;
+  stencilDir?: string;
 }
 
 export interface MapConvertedDocument {
   graph: joint.dia.Graph.JSON;
   viewport?: MapConvertedViewport;
+  paperConfig: MapConvertedPaperConfig;
+}
+
+function isPaperType(value: unknown): value is PaperType {
+  return typeof value === 'string' && (PAPER_TYPES as readonly string[]).includes(value);
 }
 
 function toFiniteNumber(value: unknown, fallback: number): number {
@@ -75,6 +108,19 @@ function toId(value: unknown): string | null {
 
 function toText(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback;
+}
+
+function toOptionalText(value: unknown): string | undefined {
+  const text = toText(value);
+  return text.length > 0 ? text : undefined;
+}
+
+function toOptionalFiniteNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function toOptionalBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined;
 }
 
 function toGlyphText(value: unknown): string | null {
@@ -123,6 +169,57 @@ function normalizeMapBounds(input: MapConverterInput): { x: number; y: number; w
   };
 }
 
+function normalizePaperConfig(input: MapConverterInput): MapConvertedPaperConfig {
+  const paperConfig: MapConvertedPaperConfig = {};
+  const id = toId(input.id);
+  const type = toOptionalText(input.type);
+  const gridSize = toOptionalFiniteNumber(input.grid_size);
+  const normalizePosition = toOptionalBoolean(input.normalize_position);
+  const objectStatusRefreshInterval = toOptionalFiniteNumber(input.object_status_refresh_interval);
+  const backgroundImage = toOptionalText(input.background_image);
+  const backgroundOpacity = toOptionalFiniteNumber(input.background_opacity);
+  const name = toOptionalText(input.name);
+  const width = toOptionalFiniteNumber(input.width);
+  const height = toOptionalFiniteNumber(input.height);
+  const stencilDir = toOptionalText(input.stencil_dir);
+
+  if (id) {
+    paperConfig.id = id;
+  }
+  if (isPaperType(type)) {
+    paperConfig.type = type;
+  }
+  if (gridSize !== undefined) {
+    paperConfig.gridSize = gridSize;
+  }
+  if (normalizePosition !== undefined) {
+    paperConfig.normalizePosition = normalizePosition;
+  }
+  if (objectStatusRefreshInterval !== undefined) {
+    paperConfig.objectStatusRefreshInterval = objectStatusRefreshInterval;
+  }
+  if (backgroundImage) {
+    paperConfig.backgroundImage = backgroundImage;
+  }
+  if (backgroundOpacity !== undefined) {
+    paperConfig.backgroundOpacity = backgroundOpacity;
+  }
+  if (name) {
+    paperConfig.name = name;
+  }
+  if (width !== undefined) {
+    paperConfig.width = width;
+  }
+  if (height !== undefined) {
+    paperConfig.height = height;
+  }
+  if (stencilDir) {
+    paperConfig.stencilDir = stencilDir;
+  }
+
+  return paperConfig;
+}
+
 export class MapConverter {
   private readonly mapData: MapConverterInput;
 
@@ -154,14 +251,19 @@ export class MapConverter {
       }
     }
 
-    const graphJson: Record<string, unknown> = { cells };
+    const graphJson: Record<string, unknown> = {
+      cells,
+      layers: createGraphLayers(),
+      defaultLayer: NODE_LAYER_ID
+    };
     const mapBounds = normalizeMapBounds(this.mapData);
     if (mapBounds) {
       graphJson.mapBounds = mapBounds;
     }
 
     const document: MapConvertedDocument = {
-      graph: graphJson as joint.dia.Graph.JSON
+      graph: graphJson as joint.dia.Graph.JSON,
+      paperConfig: normalizePaperConfig(this.mapData)
     };
     const viewport = normalizeViewport(this.mapData.viewport);
     if (viewport) {
@@ -221,6 +323,7 @@ export class MapConverter {
       return {
         type: 'noc.FontIconElement',
         id: nodeId,
+        layer: NODE_LAYER_ID,
         position: {
           x: toFiniteNumber(node.x, 0),
           y: toFiniteNumber(node.y, 0)
@@ -245,6 +348,7 @@ export class MapConverter {
     return {
       type: 'noc.ImageIconElement',
       id: nodeId,
+      layer: NODE_LAYER_ID,
       position: {
         x: toFiniteNumber(node.x, 0),
         y: toFiniteNumber(node.y, 0)
@@ -293,8 +397,9 @@ export class MapConverter {
     return {
       type: 'noc.LinkElement',
       id: toId(link.id) ?? `${srcId}:${dstId}`,
-      source: { id: srcId },
-      target: { id: dstId },
+      layer: LINK_LAYER_ID,
+      source: createIconLinkEnd(srcId),
+      target: createIconLinkEnd(dstId),
       attrs: {
         connector: toText(link.connector, 'normal'),
         bw: link.bw ?? 0,
