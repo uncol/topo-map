@@ -9,8 +9,6 @@ interface MinimapRect {
 }
 
 export class MinimapManager {
-  private readonly vector: typeof joint.V;
-
   private readonly graph: joint.dia.Graph;
 
   private readonly container: HTMLElement;
@@ -25,9 +23,7 @@ export class MinimapManager {
 
   private readonly unsubscribeViewport: () => void;
 
-  private readonly viewportLayer: ReturnType<typeof joint.V>;
-
-  private readonly viewportRect: ReturnType<typeof joint.V>;
+  private readonly viewportRectElement: HTMLDivElement;
 
   private readonly asyncRendering: boolean;
 
@@ -58,6 +54,7 @@ export class MinimapManager {
 
   private readonly onPointerUpBound = (): void => {
     this.dragging = false;
+    this.viewportRectElement.style.cursor = 'grab';
   };
 
   private readonly onGraphChangeBound = (): void => {
@@ -75,12 +72,14 @@ export class MinimapManager {
     padding: number
   ) {
     this.container = container;
-    this.vector = joint.V;
     this.graph = graph;
     this.mainPaper = mainPaper;
     this.viewportState = viewportState;
     this.asyncRendering = asyncRendering;
     this.padding = Number.isFinite(padding) && padding > 0 ? padding : 0;
+    if (window.getComputedStyle(container).position === 'static') {
+      container.style.position = 'relative';
+    }
     this.paperHost = this.createPaperHost(container, 'topology-minimap-paper-host');
 
     this.paper = new joint.dia.Paper({
@@ -96,25 +95,11 @@ export class MinimapManager {
       drawGrid: false,
       background: { color: '#ffffff' }
     });
+    this.viewportRectElement = this.createViewportRectElement();
+    this.container.append(this.viewportRectElement);
 
     if (this.asyncRendering) {
       this.paper.unfreeze();
-    }
-
-    this.viewportLayer = this.vector('g', { class: 'topology-minimap-viewport' });
-    this.viewportRect = this.vector('rect', {
-      fill: 'rgba(14, 165, 233, 0.14)',
-      stroke: '#0284c7',
-      'stroke-width': 1,
-      'stroke-dasharray': '4 2',
-      rx: 2,
-      ry: 2,
-      cursor: 'grab'
-    });
-
-    this.viewportLayer.append(this.viewportRect);
-    if (this.paper.svg) {
-      this.viewportLayer.appendTo(this.paper.svg);
     }
 
     this.unsubscribeViewport = this.viewportState.subscribe(() => {
@@ -164,7 +149,7 @@ export class MinimapManager {
       this.refreshRafId = 0;
     }
 
-    this.viewportLayer.remove();
+    this.viewportRectElement.remove();
     this.paper.remove();
   }
 
@@ -197,12 +182,11 @@ export class MinimapManager {
     this.minimapViewportRect.rect = mainRectLocal;
     const minimapRect = this.clampRectToMinimapBounds(this.mainLocalRectToMinimapPaper(mainRectLocal));
 
-    this.viewportRect.attr({
-      x: minimapRect.x,
-      y: minimapRect.y,
-      width: minimapRect.width,
-      height: minimapRect.height
-    });
+    const style = this.viewportRectElement.style;
+    style.left = `${minimapRect.x}px`;
+    style.top = `${minimapRect.y}px`;
+    style.width = `${Math.max(0, minimapRect.width)}px`;
+    style.height = `${Math.max(0, minimapRect.height)}px`;
   }
 
   private onPointerDown(event: PointerEvent): void {
@@ -211,6 +195,7 @@ export class MinimapManager {
 
     if (containsPoint(currentRect, local)) {
       this.dragging = true;
+      this.viewportRectElement.style.cursor = 'grabbing';
       this.dragOffset = {
         x: local.x - currentRect.x,
         y: local.y - currentRect.y
@@ -313,16 +298,25 @@ export class MinimapManager {
     return host;
   }
 
+  private createViewportRectElement(): HTMLDivElement {
+    const rect = document.createElement('div');
+    rect.className = 'topology-minimap-viewport-rect';
+    rect.style.position = 'absolute';
+    rect.style.left = '0';
+    rect.style.top = '0';
+    rect.style.width = '0';
+    rect.style.height = '0';
+    rect.style.background = 'rgba(14, 165, 233, 0.14)';
+    rect.style.border = '1px dashed #0284c7';
+    rect.style.borderRadius = '2px';
+    rect.style.cursor = 'grab';
+    rect.style.zIndex = '2';
+    rect.style.boxSizing = 'border-box';
+    return rect;
+  }
+
   private getMainContentRect(): Rect | null {
-    const snapshot = this.viewportState.getSnapshot();
-    const paper = this.mainPaper as joint.dia.Paper & {
-      getContentArea?: () => {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-      } | null;
-    };
+    const paper = this.mainPaper;
     const declaredBounds = this.getDeclaredMapBounds();
     const contentArea = paper.getContentArea?.();
     const contentRect = contentArea
