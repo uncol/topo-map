@@ -15,6 +15,22 @@ if (
   throw new Error('Required containers .layout, #topology-main and #topology-minimap were not found.');
 }
 
+async function waitForGufoFont() {
+  const fontSet = document.fonts;
+  if (!fontSet || typeof fontSet.load !== 'function') {
+    return;
+  }
+
+  try {
+    await fontSet.load('normal 400 1em "GufoFont"');
+    await fontSet.ready;
+  } catch (error) {
+    console.warn('[demo] GufoFont wait failed, continue without blocking', error);
+  }
+}
+
+await waitForGufoFont();
+
 const instance = new Topology({
   mainContainer,
   minimapContainer,

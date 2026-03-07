@@ -1,5 +1,5 @@
 import * as joint from '@joint/core';
-import { calcLabelBg, elementMarkup, resolveBgDisplay, TEXT_LABEL_BG } from './labeling';
+import { elementMarkup } from './labeling';
 
 type LabelKey = 'title' | 'ipaddr';
 
@@ -66,9 +66,6 @@ function applyLabelText(thisElement: joint.dia.Element, key: LabelKey, breakWidt
 
   const brokenText = joint.util.breakText(labelText, { width: breakWidth });
   thisElement.attr(`${key}/text`, brokenText);
-  if (TEXT_LABEL_BG === 'rect') {
-    thisElement.attr(`${key}Bg`, calcLabelBg(brokenText, breakWidth));
-  }
 }
 
 function toggleLabel(this: joint.dia.Element): void {
@@ -78,8 +75,6 @@ function toggleLabel(this: joint.dia.Element): void {
   const newIpaddrDisplay = ipaddrDisplay === 'none' ? 'block' : 'none';
   this.attr('title/display', newTitleDisplay);
   this.attr('ipaddr/display', newIpaddrDisplay);
-  this.attr('titleBg/display', resolveBgDisplay(newTitleDisplay));
-  this.attr('ipaddrBg/display', resolveBgDisplay(newIpaddrDisplay));
 }
 
 export function createIconElement<TMethods extends object>(

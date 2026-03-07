@@ -1,5 +1,5 @@
 import { createIconElement, getNumber, getString, IconElementInstance } from './iconElementFactory';
-import { labelBgAttrs, textLabelBg } from './labeling';
+import { textLabelBg } from './labeling';
 
 let stencilDir = '/stencils';
 
@@ -68,8 +68,7 @@ export const ImageIconElement = createIconElement<ImageIconElementMethods>({
       textAnchor: 'middle',
       lineHeight: '1em',
       display: 'none'
-    },
-    ...labelBgAttrs
+    }
   },
   iconMarkup: { tagName: 'image', selector: 'icon', className: 'scalable' },
   getBreakWidth: (_instance, iconAttrs) => getNumber(iconAttrs, 'width', 64) * 2,

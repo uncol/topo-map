@@ -1,5 +1,5 @@
-import { labelBgAttrs, textLabelBg } from './labeling';
 import { createIconElement, getString, IconElementInstance } from './iconElementFactory';
+import { textLabelBg } from './labeling';
 
 // const DEFAULT_FONT_ICON_UNICODE = '\uE003'; // brand-gufolabs-s
 const DEFAULT_FONT_ICON_UNICODE = '\uF20A';
@@ -38,8 +38,7 @@ export const FontIconElement = createIconElement<FontIconElementMethods>({
       display: 'none',
       fill: '#000000',
       ...textLabelBg
-    },
-    ...labelBgAttrs
+    }
   },
   iconMarkup: { tagName: 'text', selector: 'icon', className: 'scalable' },
   getBreakWidth: (instance, iconAttrs) => instance.getSizeFromClass(getString(iconAttrs, 'size')) * 2,
