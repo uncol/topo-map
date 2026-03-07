@@ -96,6 +96,22 @@ function toFiniteNumber(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
+function toPositiveFiniteNumber(value: unknown, fallback: number): number {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed.length > 0) {
+      const parsed = Number(trimmed);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+  }
+  return fallback;
+}
+
 function toId(value: unknown): string | null {
   if (typeof value === 'string' && value.length > 0) {
     return value;
@@ -296,6 +312,8 @@ export class MapConverter {
   private convertNode(node: MapConverterNode): Record<string, unknown> | null {
     const nodeId = toId(node.id);
     const shape = toText(node.shape);
+    const nodeWidth = toPositiveFiniteNumber(node.shape_width, 64);
+    const nodeHeight = toPositiveFiniteNumber(node.shape_height, 64);
     if (!nodeId) {
       return null;
     }
@@ -328,6 +346,10 @@ export class MapConverter {
           x: toFiniteNumber(node.x, 0),
           y: toFiniteNumber(node.y, 0)
         },
+        size: {
+          width: nodeWidth,
+          height: nodeHeight
+        },
         attrs: {
           icon: {
             text: glyphText,
@@ -353,11 +375,15 @@ export class MapConverter {
         x: toFiniteNumber(node.x, 0),
         y: toFiniteNumber(node.y, 0)
       },
+      size: {
+        width: nodeWidth,
+        height: nodeHeight
+      },
       attrs: {
         icon: {
           href: `#${MapConverter.getImageId(shape)}`,
-          width: String(node.shape_width ?? ''),
-          height: String(node.shape_height ?? ''),
+          width: String(nodeWidth),
+          height: String(nodeHeight),
           status: 'Unknown'
         },
         title: {

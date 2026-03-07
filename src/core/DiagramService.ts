@@ -20,6 +20,8 @@ export class DiagramService {
 
   private boundsPadding: number;
 
+  private mapBoundsProvider: (() => Rect | null) | null = null;
+
   private viewportPredicate: ((view: joint.mvc.View<joint.mvc.Model, SVGElement>) => boolean) | null = null;
 
   private readonly unsubscribeViewport: () => void;
@@ -131,6 +133,10 @@ export class DiagramService {
 
   public setInteractive(interactive: joint.dia.Paper.Options['interactive']): void {
     this.paper.setInteractivity(interactive);
+  }
+
+  public setMapBoundsProvider(provider: (() => Rect | null) | null): void {
+    this.mapBoundsProvider = provider;
   }
 
   public resize(width: number, height: number): void {
@@ -273,110 +279,10 @@ export class DiagramService {
     }
   }
 
-  private getContentRect(useModelGeometry = false): Rect | null {
-    const paper = this.paper as joint.dia.Paper & {
-      getContentArea?: (opt?: { useModelGeometry: boolean }) => {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-      } | null;
-    };
-    const declaredBounds = this.getDeclaredMapBounds();
-    const contentArea = paper.getContentArea?.(useModelGeometry ? { useModelGeometry: true } : undefined);
-    const contentRect = contentArea
-      ? {
-          x: contentArea.x,
-          y: contentArea.y,
-          width: Math.max(0, contentArea.width),
-          height: Math.max(0, contentArea.height)
-        }
-      : null;
-    const mergedRect = this.unionRects(contentRect, declaredBounds);
-    if (mergedRect) {
-      return mergedRect;
-    }
-
-    const bbox = this.graph.getBBox();
-    if (!bbox) {
-      return null;
-    }
-
-    return {
-      x: bbox.x,
-      y: bbox.y,
-      width: Math.max(0, bbox.width),
-      height: Math.max(0, bbox.height)
-    };
-  }
-
   private getPanContentRect(): Rect | null {
-    const modelRect = this.getContentRect(true);
-    const visualRect = this.getContentRect(false);
-
-    if (!modelRect) {
-      return visualRect;
+    if (this.mapBoundsProvider) {
+      return this.mapBoundsProvider();
     }
-    if (!visualRect) {
-      return modelRect;
-    }
-
-    const left = Math.min(modelRect.x, visualRect.x);
-    const top = Math.min(modelRect.y, visualRect.y);
-    const right = Math.max(modelRect.x + modelRect.width, visualRect.x + visualRect.width);
-    const bottom = Math.max(modelRect.y + modelRect.height, visualRect.y + visualRect.height);
-
-    return {
-      x: left,
-      y: top,
-      width: Math.max(0, right - left),
-      height: Math.max(0, bottom - top)
-    };
-  }
-
-  private getDeclaredMapBounds(): Rect | null {
-    const bounds = this.graph.get('mapBounds') as Partial<Rect> | undefined;
-    if (!bounds) {
-      return null;
-    }
-
-    const { x, y, width, height } = bounds;
-    if (
-      typeof x !== 'number' ||
-      typeof y !== 'number' ||
-      typeof width !== 'number' ||
-      typeof height !== 'number' ||
-      !Number.isFinite(x) ||
-      !Number.isFinite(y) ||
-      !Number.isFinite(width) ||
-      !Number.isFinite(height) ||
-      width <= 0 ||
-      height <= 0
-    ) {
-      return null;
-    }
-
-    return { x, y, width, height };
-  }
-
-  private unionRects(a: Rect | null, b: Rect | null): Rect | null {
-    if (!a) {
-      return b;
-    }
-    if (!b) {
-      return a;
-    }
-
-    const left = Math.min(a.x, b.x);
-    const top = Math.min(a.y, b.y);
-    const right = Math.max(a.x + a.width, b.x + b.width);
-    const bottom = Math.max(a.y + a.height, b.y + b.height);
-
-    return {
-      x: left,
-      y: top,
-      width: Math.max(0, right - left),
-      height: Math.max(0, bottom - top)
-    };
+    return null;
   }
 }

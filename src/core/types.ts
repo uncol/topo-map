@@ -16,6 +16,7 @@ export interface TopologyConfig {
   enableViewportCulling?: boolean;
   asyncRendering?: boolean;
   debugLogs?: boolean;
+  padding?: number;
 }
 
 export interface NodeData {

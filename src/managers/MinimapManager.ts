@@ -1,5 +1,6 @@
 import * as joint from '@joint/core';
 import { centerOfRect, containsPoint } from '../core/geometry';
+import { MapBoundsManager } from '../core/MapBoundsManager';
 import type { Point, Rect } from '../core/types';
 import { ViewportState } from '../core/ViewportState';
 import { cellNamespace } from '../shapes/cellNamespace';
@@ -9,7 +10,7 @@ interface MinimapRect {
 }
 
 export class MinimapManager {
-  private readonly graph: joint.dia.Graph;
+  private readonly mapBoundsManager: MapBoundsManager;
 
   private readonly container: HTMLElement;
 
@@ -22,6 +23,8 @@ export class MinimapManager {
   private readonly viewportState: ViewportState;
 
   private readonly unsubscribeViewport: () => void;
+
+  private readonly unsubscribeMapBounds: () => void;
 
   private readonly viewportRectElement: HTMLDivElement;
 
@@ -57,10 +60,6 @@ export class MinimapManager {
     this.viewportRectElement.style.cursor = 'grab';
   };
 
-  private readonly onGraphChangeBound = (): void => {
-    this.scheduleGraphRefresh();
-  };
-
   private refreshDelayFrames = 0;
 
   public constructor(
@@ -68,13 +67,14 @@ export class MinimapManager {
     graph: joint.dia.Graph,
     mainPaper: joint.dia.Paper,
     viewportState: ViewportState,
+    mapBoundsManager: MapBoundsManager,
     asyncRendering: boolean,
     padding: number
   ) {
     this.container = container;
-    this.graph = graph;
     this.mainPaper = mainPaper;
     this.viewportState = viewportState;
+    this.mapBoundsManager = mapBoundsManager;
     this.asyncRendering = asyncRendering;
     this.padding = Number.isFinite(padding) && padding > 0 ? padding : 0;
     if (window.getComputedStyle(container).position === 'static') {
@@ -105,13 +105,9 @@ export class MinimapManager {
     this.unsubscribeViewport = this.viewportState.subscribe(() => {
       this.updateViewportRect();
     });
-
-    graph.on('add', this.onGraphChangeBound);
-    graph.on('remove', this.onGraphChangeBound);
-    graph.on('reset', this.onGraphChangeBound);
-    graph.on('change:position', this.onGraphChangeBound);
-    graph.on('change:size', this.onGraphChangeBound);
-    graph.on('change:attrs', this.onGraphChangeBound);
+    this.unsubscribeMapBounds = this.mapBoundsManager.subscribe(() => {
+      this.scheduleGraphRefresh();
+    });
 
     this.container.addEventListener('pointerdown', this.onPointerDownBound);
     window.addEventListener('pointermove', this.onPointerMoveBound);
@@ -133,13 +129,7 @@ export class MinimapManager {
 
   public destroy(): void {
     this.unsubscribeViewport();
-
-    this.graph.off('add', this.onGraphChangeBound);
-    this.graph.off('remove', this.onGraphChangeBound);
-    this.graph.off('reset', this.onGraphChangeBound);
-    this.graph.off('change:position', this.onGraphChangeBound);
-    this.graph.off('change:size', this.onGraphChangeBound);
-    this.graph.off('change:attrs', this.onGraphChangeBound);
+    this.unsubscribeMapBounds();
 
     this.container.removeEventListener('pointerdown', this.onPointerDownBound);
     window.removeEventListener('pointermove', this.onPointerMoveBound);
@@ -281,11 +271,11 @@ export class MinimapManager {
   }
 
   private clientToLocalPoint(clientX: number, clientY: number): Point {
-    const point = this.paper.clientToLocalPoint({
+    const {x, y} = this.paper.clientToLocalPoint({
       x: clientX,
       y: clientY
     });
-    return { x: point.x, y: point.y };
+    return { x, y };
   }
 
   private createPaperHost(container: HTMLElement, className: string): HTMLDivElement {
@@ -316,40 +306,14 @@ export class MinimapManager {
   }
 
   private getMainContentRect(): Rect | null {
-    const paper = this.mainPaper;
-    const declaredBounds = this.getDeclaredMapBounds();
-    const contentArea = paper.getContentArea?.();
-    const contentRect = contentArea
-      ? {
-          x: contentArea.x,
-          y: contentArea.y,
-          width: Math.max(0, contentArea.width),
-          height: Math.max(0, contentArea.height)
-        }
-      : null;
-    const mergedRect = this.unionRects(contentRect, declaredBounds);
-    if (mergedRect) {
-      return {
-        x: mergedRect.x,
-        y: mergedRect.y,
-        width: Math.max(0, mergedRect.width),
-        height: Math.max(0, mergedRect.height),
-      };
-    }
-
-    const bbox = this.graph.getBBox();
-    if (!bbox) {
-      return null;
-    }
-
-    return {
-      x: bbox.x,
-      y: bbox.y,
-      width: Math.max(0, bbox.width),
-      height: Math.max(0, bbox.height),
-    };
+    return this.mapBoundsManager.get();
   }
 
+  /**
+   * Transforms the main content rectangle to the minimap's local coordinate space.
+   * 
+   * @returns The minimap content rectangle in minimap coordinates, or null if no content
+   */
   private getMinimapContentPaperRect(): Rect | null {
     const contentRect = this.getMainContentRect();
     if (!contentRect) {
@@ -364,53 +328,15 @@ export class MinimapManager {
       height: Math.max(0, paperRect.height)
     };
   }
-
-  private getDeclaredMapBounds(): Rect | null {
-    const bounds = this.graph.get('mapBounds') as Partial<Rect> | undefined;
-    if (!bounds) {
-      return null;
-    }
-
-    const { x, y, width, height } = bounds;
-    if (
-      typeof x !== 'number' ||
-      typeof y !== 'number' ||
-      typeof width !== 'number' ||
-      typeof height !== 'number' ||
-      !Number.isFinite(x) ||
-      !Number.isFinite(y) ||
-      !Number.isFinite(width) ||
-      !Number.isFinite(height) ||
-      width <= 0 ||
-      height <= 0
-    ) {
-      return null;
-    }
-
-    return { x, y, width, height };
-  }
-
-  private unionRects(a: Rect | null, b: Rect | null): Rect | null {
-    if (!a) {
-      return b;
-    }
-    if (!b) {
-      return a;
-    }
-
-    const left = Math.min(a.x, b.x);
-    const top = Math.min(a.y, b.y);
-    const right = Math.max(a.x + a.width, b.x + b.width);
-    const bottom = Math.max(a.y + a.height, b.y + b.height);
-
-    return {
-      x: left,
-      y: top,
-      width: Math.max(0, right - left),
-      height: Math.max(0, bottom - top)
-    };
-  }
-
+  
+  /**
+   * Constrains the viewport rectangle within the bounds of the main content.
+   * Prevents the viewport from panning outside content boundaries and ensures
+   * the viewport size does not exceed the content size.
+   * 
+   * @param rect - The viewport rectangle to constrain
+   * @returns The constrained viewport rectangle within content bounds
+   */
   private clampViewportRectToContent(rect: Rect): Rect {
     const bounds = this.getMainContentRect();
     if (!bounds) {
@@ -430,6 +356,11 @@ export class MinimapManager {
     };
   }
 
+  /**
+   * Schedules a deferred graph refresh using requestAnimationFrame.
+   * Ensures multiple refresh requests are batched into a single update.
+   * Applies a one-frame delay before syncing transforms and updating the viewport.
+   */
   private scheduleGraphRefresh(): void {
     this.refreshDelayFrames = 1;
     if (this.refreshRafId !== 0) {

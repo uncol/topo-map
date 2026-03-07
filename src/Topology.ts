@@ -4,6 +4,7 @@ import { ZoomInCommand } from './commands/ZoomInCommand';
 import { ZoomOutCommand } from './commands/ZoomOutCommand';
 import { DiagramService } from './core/DiagramService';
 import { fitPaperToContent, type FitMode } from './core/fitBounds';
+import { MapBoundsManager } from './core/MapBoundsManager';
 import { createGraphFromData, serializeTopology, toGraphEnvelope } from './core/serialization';
 import { TopologyDebug } from './core/TopologyDebug';
 import { TopologyEvents } from './core/TopologyEvents';
@@ -27,10 +28,9 @@ const DEFAULT_MIN_SCALE = 0.1;
 const DEFAULT_MAX_SCALE = 5;
 const DEFAULT_GRID_SIZE = 20;
 const DEFAULT_GUIDE_THRESHOLD = 5;
+const DEFAULT_PADDING = 10;
 
 export class Topology {
-  public static readonly DEFAULT_PADDING = 12;
-
   private readonly config: Required<Omit<TopologyConfig, 'onReady'>> & { onReady: (() => void) | undefined };
 
   private readonly viewportState: ViewportState;
@@ -38,6 +38,8 @@ export class Topology {
   private readonly diagramService: DiagramService;
 
   private readonly viewportManager: ViewportManager;
+
+  private readonly mapBoundsManager: MapBoundsManager;
 
   private readonly zoomManager: ZoomManager;
 
@@ -79,6 +81,7 @@ export class Topology {
       minScale: config.minScale ?? DEFAULT_MIN_SCALE,
       maxScale: config.maxScale ?? DEFAULT_MAX_SCALE,
       gridSize: config.gridSize ?? DEFAULT_GRID_SIZE,
+      padding: config.padding ?? DEFAULT_PADDING,
       snapThreshold: config.snapThreshold ?? DEFAULT_GUIDE_THRESHOLD,
       preserveViewportOnLoad: config.preserveViewportOnLoad ?? false,
       fitToPageOnLoad: config.fitToPageOnLoad ?? false,
@@ -95,8 +98,13 @@ export class Topology {
       this.viewportState,
       this.config.gridSize,
       this.config.asyncRendering,
-      Topology.DEFAULT_PADDING
+      DEFAULT_PADDING
     );
+    this.mapBoundsManager = new MapBoundsManager(
+      this.diagramService.getGraph(),
+      this.diagramService.getPaper(),
+      this.config.padding);
+    this.diagramService.setMapBoundsProvider(() => this.mapBoundsManager.get());
     this.viewportState.setTranslateBoundsResolver((snapshot) => this.diagramService.getTranslateBounds(snapshot.scale));
 
     this.viewportManager = new ViewportManager(
@@ -124,8 +132,9 @@ export class Topology {
       this.diagramService.getGraph(),
       this.diagramService.getPaper(),
       this.viewportState,
+      this.mapBoundsManager,
       this.config.asyncRendering,
-      Topology.DEFAULT_PADDING
+      DEFAULT_PADDING
     );
 
     const panMode = new PanMode(this.panManager, this.diagramService);
@@ -164,6 +173,7 @@ export class Topology {
     this.logDebug('loadData:start', { nodes: nodes.length, links: links.length });
     this.events.clearInteractionState();
     this.diagramService.fromJSON(createGraphFromData(nodes, links));
+    this.mapBoundsManager.refreshNow();
     this.viewportManager.rebuildIndex();
     this.viewportState.enforceConstraints();
     if (this.config.fitToPageOnLoad) {
@@ -183,6 +193,7 @@ export class Topology {
     const envelope = toGraphEnvelope(data);
 
     this.diagramService.fromJSON(envelope.graph);
+    this.mapBoundsManager.refreshNow();
     this.viewportManager.rebuildIndex();
     this.viewportState.enforceConstraints();
     this.minimapManager.refresh();
@@ -313,6 +324,7 @@ export class Topology {
     this.lastMainHeight = height;
     this.logDebug('resizeMain:apply', { width, height });
     this.diagramService.resize(width, height);
+    this.mapBoundsManager.refreshNow();
     this.viewportState.enforceConstraints();
   }
 
@@ -341,6 +353,7 @@ export class Topology {
     this.guidesManager.destroy();
     this.minimapManager.destroy();
     this.viewportManager.destroy();
+    this.mapBoundsManager.destroy();
     this.diagramService.destroy();
     this.logDebug('destroy:done');
   }
@@ -351,19 +364,19 @@ export class Topology {
 
   private fitToContent(mode: FitMode): void {
     const fittedViewport = fitPaperToContent(
-      this.diagramService.getGraph(),
       this.diagramService.getPaper(),
+      this.mapBoundsManager.get(),
       this.diagramService.getSize(),
       this.viewportState.getSnapshot(),
       mode,
-      Topology.DEFAULT_PADDING
+      DEFAULT_PADDING
     );
     if (!fittedViewport) {
       return;
     }
 
     const fitModeName = mode === 'page' ? 'Page' : mode === 'width' ? 'Width' : 'Height';
-    this.logDebug(`fitTo${fitModeName}`, { padding: Topology.DEFAULT_PADDING, scale: fittedViewport.scale });
+    this.logDebug(`fitTo${fitModeName}`, { padding: DEFAULT_PADDING, scale: fittedViewport.scale });
     this.viewportState.setViewport(fittedViewport.scale, fittedViewport.tx, fittedViewport.ty);
   }
 }
