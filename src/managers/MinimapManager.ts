@@ -5,6 +5,10 @@ import type { Point, Rect } from '../core/types';
 import { ViewportState } from '../core/ViewportState';
 import { cellNamespace } from '../shapes/cellNamespace';
 
+const MINIMAP_ELEMENT_HIGHLIGHT_ID = 'topology-minimap-element-highlight';
+const TOPOLOGY_CELL_HIGHLIGHT_EVENT = 'topology:cell:highlight';
+const TOPOLOGY_CELL_UNHIGHLIGHT_EVENT = 'topology:cell:unhighlight';
+
 interface MinimapRect {
   rect: Rect;
 }
@@ -13,6 +17,10 @@ export class MinimapManager {
   private readonly mapBoundsManager: MapBoundsManager;
 
   private readonly container: HTMLElement;
+
+  private readonly selectionEventTarget: HTMLElement;
+
+  private readonly graph: joint.dia.Graph;
 
   private readonly paperHost: HTMLDivElement;
 
@@ -31,6 +39,8 @@ export class MinimapManager {
   private readonly asyncRendering: boolean;
 
   private readonly padding: number;
+
+  private highlightedCellId: string | null = null;
 
   private refreshRafId = 0;
 
@@ -60,10 +70,19 @@ export class MinimapManager {
     this.viewportRectElement.style.cursor = 'grab';
   };
 
+  private readonly onCellHighlightBound = (event: Event): void => {
+    this.handleCellHighlight(event);
+  };
+
+  private readonly onCellUnhighlightBound = (): void => {
+    this.clearSelectionHighlight();
+  };
+
   private refreshDelayFrames = 0;
 
   public constructor(
     container: HTMLElement,
+    selectionEventTarget: HTMLElement,
     graph: joint.dia.Graph,
     mainPaper: joint.dia.Paper,
     viewportState: ViewportState,
@@ -72,6 +91,8 @@ export class MinimapManager {
     padding: number
   ) {
     this.container = container;
+    this.selectionEventTarget = selectionEventTarget;
+    this.graph = graph;
     this.mainPaper = mainPaper;
     this.viewportState = viewportState;
     this.mapBoundsManager = mapBoundsManager;
@@ -109,12 +130,15 @@ export class MinimapManager {
       this.scheduleGraphRefresh();
     });
 
+    this.selectionEventTarget.addEventListener(TOPOLOGY_CELL_HIGHLIGHT_EVENT, this.onCellHighlightBound);
+    this.selectionEventTarget.addEventListener(TOPOLOGY_CELL_UNHIGHLIGHT_EVENT, this.onCellUnhighlightBound);
     this.container.addEventListener('pointerdown', this.onPointerDownBound);
     window.addEventListener('pointermove', this.onPointerMoveBound);
     window.addEventListener('pointerup', this.onPointerUpBound);
 
     this.syncPaperTransform();
     this.updateViewportRect();
+    this.syncSelectionHighlight();
   }
 
   public resize(width: number, height: number): void {
@@ -125,12 +149,15 @@ export class MinimapManager {
   public refresh(): void {
     this.syncPaperTransform();
     this.updateViewportRect();
+    this.syncSelectionHighlight();
   }
 
   public destroy(): void {
     this.unsubscribeViewport();
     this.unsubscribeMapBounds();
 
+    this.selectionEventTarget.removeEventListener(TOPOLOGY_CELL_HIGHLIGHT_EVENT, this.onCellHighlightBound);
+    this.selectionEventTarget.removeEventListener(TOPOLOGY_CELL_UNHIGHLIGHT_EVENT, this.onCellUnhighlightBound);
     this.container.removeEventListener('pointerdown', this.onPointerDownBound);
     window.removeEventListener('pointermove', this.onPointerMoveBound);
     window.removeEventListener('pointerup', this.onPointerUpBound);
@@ -139,6 +166,7 @@ export class MinimapManager {
       this.refreshRafId = 0;
     }
 
+    this.removeRenderedSelectionHighlight();
     this.viewportRectElement.remove();
     this.paper.remove();
   }
@@ -228,6 +256,16 @@ export class MinimapManager {
     this.viewportState.setTranslate(tx, ty);
   }
 
+  private handleCellHighlight(event: Event): void {
+    const cellId = this.getCellIdFromEvent(event);
+    if (!cellId) {
+      return;
+    }
+
+    this.highlightedCellId = cellId;
+    this.syncSelectionHighlight();
+  }
+
   private mainLocalRectToMinimapPaper(mainRect: Rect): Rect {
     const paperRect = this.paper.localToPaperRect(mainRect);
     return {
@@ -276,6 +314,72 @@ export class MinimapManager {
       y: clientY
     });
     return { x, y };
+  }
+
+  private syncSelectionHighlight(): void {
+    this.removeRenderedSelectionHighlight();
+
+    if (!this.highlightedCellId) {
+      return;
+    }
+
+    const cell = this.graph.getCell(this.highlightedCellId);
+    if (!cell?.isElement()) {
+      this.highlightedCellId = null;
+      return;
+    }
+
+    const elementView = this.resolveElementView(cell);
+    if (!elementView) {
+      return;
+    }
+
+    joint.highlighters.mask.add(elementView, 'root', MINIMAP_ELEMENT_HIGHLIGHT_ID, {
+      padding: 4,
+      attrs: {
+        stroke: '#f59e0b',
+        strokeWidth: 1.5,
+        fill: 'none',
+        opacity: 0.95,
+        pointerEvents: 'none'
+      }
+    });
+  }
+
+  private resolveElementView(element: joint.dia.Element): joint.dia.ElementView | null {
+    const existingView = this.paper.findViewByModel<joint.dia.ElementView>(element);
+    if (existingView) {
+      return existingView;
+    }
+
+    try {
+      return this.paper.requireView<joint.dia.ElementView>(element);
+    } catch {
+      return null;
+    }
+  }
+
+  private clearSelectionHighlight(): void {
+    this.highlightedCellId = null;
+    this.removeRenderedSelectionHighlight();
+  }
+
+  private removeRenderedSelectionHighlight(): void {
+    joint.highlighters.mask.removeAll(this.paper, MINIMAP_ELEMENT_HIGHLIGHT_ID);
+  }
+
+  private getCellIdFromEvent(event: Event): string | null {
+    if (!(event instanceof CustomEvent)) {
+      return null;
+    }
+
+    const detail = event.detail;
+    if (typeof detail !== 'object' || detail === null || !('id' in detail)) {
+      return null;
+    }
+
+    const { id } = detail as { id?: unknown };
+    return typeof id === 'string' && id.length > 0 ? id : null;
   }
 
   private createPaperHost(container: HTMLElement, className: string): HTMLDivElement {
@@ -371,13 +475,12 @@ export class MinimapManager {
       this.refreshRafId = window.requestAnimationFrame(() => {
         this.refreshRafId = 0;
         if (this.refreshDelayFrames > 0) {
-          this.refreshDelayFrames -= 1;
-          runRefresh();
-          return;
-        }
+        this.refreshDelayFrames -= 1;
+        runRefresh();
+        return;
+      }
 
-        this.syncPaperTransform();
-        this.updateViewportRect();
+        this.refresh();
       });
     };
 

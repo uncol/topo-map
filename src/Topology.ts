@@ -129,6 +129,7 @@ export class Topology {
     );
     this.minimapManager = new MinimapManager(
       this.config.minimapContainer,
+      this.config.mainContainer,
       this.diagramService.getGraph(),
       this.diagramService.getPaper(),
       this.viewportState,

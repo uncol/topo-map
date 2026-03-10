@@ -131,6 +131,7 @@ export class TopologyEvents {
       return;
     }
 
+    this.updateElementHighlight(cellView);
     this.emitBubbledEvent(TOPOLOGY_CELL_POINTERDOWN_EVENT, {
       ...this.getCellEventDetail(cellView),
       x,
@@ -155,6 +156,7 @@ export class TopologyEvents {
       return;
     }
 
+    this.clearElementHighlight();
     this.emitBubbledEvent(TOPOLOGY_BLANK_POINTERDOWN_EVENT, { x, y });
   }
 
@@ -183,6 +185,21 @@ export class TopologyEvents {
     this.emitBubbledEvent(TOPOLOGY_WHEEL_EVENT, {
       scale: snapshot.scale
     });
+  }
+
+  private updateElementHighlight(cellView: joint.dia.CellView): void {
+    if (!cellView.model.isElement()) {
+      this.clearElementHighlight();
+      return;
+    }
+
+    const elementView = cellView as joint.dia.ElementView;
+    if (this.isHighlightedElement(elementView)) {
+      this.clearElementHighlight();
+      return;
+    }
+
+    this.highlightElement(elementView);
   }
 
   private highlightElement(elementView: joint.dia.ElementView): void {
@@ -221,8 +238,13 @@ export class TopologyEvents {
     const model = cellView.model;
     return {
       id: String(model.id),
-      cell: cellView
+      cell: cellView,
+      data: model.get('data') || {},
     };
+  }
+
+  private isHighlightedElement(elementView: joint.dia.ElementView): boolean {
+    return this.highlightedElementView?.model.id === elementView.model.id;
   }
 
   private preventDefaultEvent(event: joint.dia.Event): void {
