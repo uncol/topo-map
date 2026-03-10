@@ -8,7 +8,7 @@ import { MapBoundsManager } from './core/MapBoundsManager';
 import { createGraphFromData, serializeTopology, toGraphEnvelope } from './core/serialization';
 import { TopologyDebug } from './core/TopologyDebug';
 import { TopologyEvents } from './core/TopologyEvents';
-import type { LinkData, NodeData, TopologyConfig, TopologyMode, ViewportSnapshot } from './core/types';
+import type { LinkData, NodeData, TopologyConfig, TopologyMode, TopologyPaperConfig, ViewportSnapshot } from './core/types';
 import { ViewportState } from './core/ViewportState';
 import type { MapConverterInput } from './decoders/MapConverter';
 import { convertMapData } from './decoders/MapConverter';
@@ -22,6 +22,7 @@ import { ZoomManager } from './managers/ZoomManager';
 import { EditMode } from './modes/EditMode';
 import { PanMode } from './modes/PanMode';
 import { ZoomToAreaMode } from './modes/ZoomToAreaMode';
+import { setStencilDir } from './shapes/ImageIconElement';
 
 const DEFAULT_INITIAL_SCALE = 1;
 const DEFAULT_MIN_SCALE = 0.1;
@@ -221,7 +222,9 @@ export class Topology {
 
   public fromMapData(data: MapConverterInput): void {
     this.logDebug('fromMapData:start');
-    this.fromJSON(convertMapData(data));
+    const document = convertMapData(data);
+    this.applyMapPaperConfig(document.paperConfig);
+    this.fromJSON(document.viewport ? { graph: document.graph, viewport: document.viewport } : { graph: document.graph });
   }
 
   public setMode(mode: TopologyMode): void {
@@ -379,5 +382,12 @@ export class Topology {
     const fitModeName = mode === 'page' ? 'Page' : mode === 'width' ? 'Width' : 'Height';
     this.logDebug(`fitTo${fitModeName}`, { padding: DEFAULT_PADDING, scale: fittedViewport.scale });
     this.viewportState.setViewport(fittedViewport.scale, fittedViewport.tx, fittedViewport.ty);
+  }
+
+  private applyMapPaperConfig(paperConfig: TopologyPaperConfig): void {
+    setStencilDir(paperConfig.stencilDir ?? '/stencils');
+    this.editMode.setGridSize(paperConfig.gridSize ?? this.config.gridSize);
+    this.diagramService.applyPaperConfig(paperConfig);
+    this.logDebug('applyPaperConfig', paperConfig);
   }
 }

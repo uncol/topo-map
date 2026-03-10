@@ -110,7 +110,7 @@ export const configuredShapeMapData = {
   grid_size: 25,
   normalize_position: false,
   object_status_refresh_interval: 60,
-  background_image: '69740ce78ce3e3bca22290ae',
+  background_image: '/bg/demo.png',
   background_opacity: 30,
   name: 'configured',
   width: 3200,

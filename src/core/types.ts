@@ -19,6 +19,31 @@ export interface TopologyConfig {
   padding?: number;
 }
 
+export const TOPOLOGY_PAPER_TYPES = [
+  'segment',
+  'configured',
+  'l2domain',
+  'objectcontainer',
+  'objectgroup',
+  'objectlevelneighbor'
+] as const;
+
+export type TopologyPaperType = (typeof TOPOLOGY_PAPER_TYPES)[number];
+
+export interface TopologyPaperConfig {
+  id?: string;
+  type?: TopologyPaperType;
+  gridSize?: number;
+  normalizePosition?: boolean;
+  objectStatusRefreshInterval?: number;
+  backgroundImage?: string;
+  backgroundOpacity?: number;
+  name?: string;
+  width?: number;
+  height?: number;
+  stencilDir?: string;
+}
+
 export interface NodeData {
   id: string;
   x: number;

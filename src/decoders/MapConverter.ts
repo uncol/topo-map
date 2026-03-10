@@ -1,10 +1,10 @@
 import type * as joint from '@joint/core';
 import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from '../core/graphLayers';
+import { TOPOLOGY_PAPER_TYPES, type TopologyPaperConfig, type TopologyPaperType } from '../core/types';
 import { createIconLinkEnd } from '../shapes/linkEndpoints';
 
 const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
 const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
-const PAPER_TYPES = ['segment', 'configured', 'l2domain', 'objectcontainer', 'objectgroup', 'objectlevelneighbor'] as const;
 
 type ScalarId = string | number;
 export interface MapConverterPort extends Record<string, unknown> {
@@ -49,8 +49,6 @@ export interface MapConvertedViewport {
   ty: number;
 }
 
-export type PaperType = typeof PAPER_TYPES[number];
-
 export interface MapConverterInput extends Record<string, unknown> {
   id?: ScalarId | null;
   type?: string | null;
@@ -68,19 +66,7 @@ export interface MapConverterInput extends Record<string, unknown> {
   stencil_dir?: string | null;
 }
 
-export interface MapConvertedPaperConfig {
-  id?: string;
-  type?: PaperType;
-  gridSize?: number;
-  normalizePosition?: boolean;
-  objectStatusRefreshInterval?: number;
-  backgroundImage?: string;
-  backgroundOpacity?: number;
-  name?: string;
-  width?: number;
-  height?: number;
-  stencilDir?: string;
-}
+export type MapConvertedPaperConfig = TopologyPaperConfig;
 
 export interface MapConvertedDocument {
   graph: joint.dia.Graph.JSON;
@@ -88,8 +74,8 @@ export interface MapConvertedDocument {
   paperConfig: MapConvertedPaperConfig;
 }
 
-function isPaperType(value: unknown): value is PaperType {
-  return typeof value === 'string' && (PAPER_TYPES as readonly string[]).includes(value);
+function isPaperType(value: unknown): value is TopologyPaperType {
+  return typeof value === 'string' && TOPOLOGY_PAPER_TYPES.includes(value as TopologyPaperType);
 }
 
 function toFiniteNumber(value: unknown, fallback: number): number {
@@ -139,6 +125,16 @@ function toOptionalBoolean(value: unknown): boolean | undefined {
   return typeof value === 'boolean' ? value : undefined;
 }
 
+function normalizeOpacity(value: unknown): number | undefined {
+  const opacity = toOptionalFiniteNumber(value);
+  if (opacity === undefined) {
+    return undefined;
+  }
+
+  const normalized = opacity > 1 ? opacity / 100 : opacity;
+  return Math.min(1, Math.max(0, normalized));
+}
+
 function toGlyphText(value: unknown): string | null {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return String.fromCodePoint(value);
@@ -170,21 +166,6 @@ function normalizeViewport(viewport: MapConverterInput['viewport']): MapConverte
   return { scale, tx, ty };
 }
 
-function normalizeMapBounds(input: MapConverterInput): { x: number; y: number; width: number; height: number } | undefined {
-  const width = toFiniteNumber(input.width, Number.NaN);
-  const height = toFiniteNumber(input.height, Number.NaN);
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-    return undefined;
-  }
-
-  return {
-    x: 0,
-    y: 0,
-    width,
-    height
-  };
-}
-
 function normalizePaperConfig(input: MapConverterInput): MapConvertedPaperConfig {
   const paperConfig: MapConvertedPaperConfig = {};
   const id = toId(input.id);
@@ -193,7 +174,7 @@ function normalizePaperConfig(input: MapConverterInput): MapConvertedPaperConfig
   const normalizePosition = toOptionalBoolean(input.normalize_position);
   const objectStatusRefreshInterval = toOptionalFiniteNumber(input.object_status_refresh_interval);
   const backgroundImage = toOptionalText(input.background_image);
-  const backgroundOpacity = toOptionalFiniteNumber(input.background_opacity);
+  const backgroundOpacity = normalizeOpacity(input.background_opacity);
   const name = toOptionalText(input.name);
   const width = toOptionalFiniteNumber(input.width);
   const height = toOptionalFiniteNumber(input.height);
@@ -272,10 +253,6 @@ export class MapConverter {
       layers: createGraphLayers(),
       defaultLayer: NODE_LAYER_ID
     };
-    const mapBounds = normalizeMapBounds(this.mapData);
-    if (mapBounds) {
-      graphJson.mapBounds = mapBounds;
-    }
 
     const document: MapConvertedDocument = {
       graph: graphJson as joint.dia.Graph.JSON,

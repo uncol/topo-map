@@ -2,7 +2,7 @@ import * as joint from '@joint/core';
 import { cellNamespace } from '../shapes/cellNamespace';
 import { ensureIconCenterAnchorRegistered } from '../shapes/linkEndpoints';
 import { clamp } from './geometry';
-import type { Point, Rect, Size, TranslateBounds, ViewportSnapshot } from './types';
+import type { Point, Rect, Size, TopologyPaperConfig, TranslateBounds, ViewportSnapshot } from './types';
 import { ViewportState } from './ViewportState';
 
 const DEFAULT_BACKGROUND_COLOR = '#f8fafc';
@@ -137,6 +137,33 @@ export class DiagramService {
 
   public setMapBoundsProvider(provider: (() => Rect | null) | null): void {
     this.mapBoundsProvider = provider;
+  }
+
+  public applyPaperConfig(config: TopologyPaperConfig): void {
+    const background: joint.dia.Paper.BackgroundOptions = {
+      color: DEFAULT_BACKGROUND_COLOR
+    };
+
+    if (typeof config.backgroundImage === 'string' && config.backgroundImage.length > 0) {
+      background.image = config.backgroundImage;
+      background.opacity = clamp(config.backgroundOpacity ?? 1, 0, 1);
+      background.repeat = 'no-repeat';
+
+      const hasSize =
+        Number.isFinite(config.width) &&
+        Number.isFinite(config.height) &&
+        (config.width ?? 0) > 0 &&
+        (config.height ?? 0) > 0;
+      if (hasSize) {
+        background.position = { x: 0, y: 0 };
+        background.size = {
+          width: config.width as number,
+          height: config.height as number
+        };
+      }
+    }
+
+    this.paper.drawBackground(background);
   }
 
   public resize(width: number, height: number): void {

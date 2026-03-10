@@ -1,9 +1,13 @@
 import type { Point } from '../core/types';
 
 export class SnapManager {
-  private readonly gridSize: number;
+  private gridSize: number;
 
   public constructor(gridSize: number) {
+    this.gridSize = Math.max(1, gridSize);
+  }
+
+  public setGridSize(gridSize: number): void {
     this.gridSize = Math.max(1, gridSize);
   }
 

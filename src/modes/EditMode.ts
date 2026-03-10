@@ -38,6 +38,11 @@ export class EditMode implements InteractionMode {
     }
   }
 
+  public setGridSize(gridSize: number): void {
+    this.snapManager.setGridSize(gridSize);
+    this.diagramService.setDrawGrid(this.active && this.snapEnabled, this.snapManager.getGridSize());
+  }
+
   public setGuidesEnabled(enabled: boolean): void {
     this.guidesManager.setEnabled(enabled);
   }

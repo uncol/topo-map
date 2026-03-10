@@ -70,12 +70,13 @@ describe('convertMapData', () => {
       normalizePosition: false,
       objectStatusRefreshInterval: 60,
       backgroundImage: '69740ce78ce3e3bca22290ae',
-      backgroundOpacity: 30,
+      backgroundOpacity: 0.3,
       name: 'configured',
       width: 3200,
       height: 1800,
       stencilDir: '/stencils/custom'
     });
+    expect((result.graph as Record<string, unknown>).mapBounds).toBeUndefined();
     expect(result.graph.cells).toHaveLength(
       configuredShapeMapData.nodes.length + configuredShapeMapData.links.length
     );
