@@ -17,6 +17,7 @@
     "build": "pnpm run clean && pnpm run build:lib && pnpm run build:types",
     "demo": "vite --config vite.demo.config.mjs",
     "demo:build": "vite build --config vite.demo.config.mjs",
+    "prepare": "pnpm run build",
     "clean": "rm -rf dist"
   },
   "dependencies": {
