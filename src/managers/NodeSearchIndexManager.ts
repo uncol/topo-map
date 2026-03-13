@@ -1,8 +1,9 @@
 import * as joint from '@joint/core';
-import type { TopologyNodeLabelField, TopologyNodeSearchResult } from '../core/types';
+import type { TopologyNodeLabelField, TopologyNodeSearchField, TopologyNodeSearchResult } from '../core/types';
 
 interface SearchEntry {
   id: string;
+  normalizedId: string;
   title: string;
   normalizedTitle: string;
   ipaddr: string;
@@ -23,14 +24,15 @@ interface FieldIndex {
   trigrams: Map<string, Set<string>>;
 }
 
-const SEARCH_FIELDS: TopologyNodeLabelField[] = ['title', 'ipaddr'];
+const SEARCH_FIELDS: TopologyNodeSearchField[] = ['id', 'title', 'ipaddr'];
 
 export class NodeSearchIndexManager {
   private readonly graph: joint.dia.Graph;
 
   private entriesById = new Map<string, SearchEntry>();
 
-  private readonly indexes: Record<TopologyNodeLabelField, FieldIndex> = {
+  private indexes: Record<TopologyNodeSearchField, FieldIndex> = {
+    id: this.createEmptyFieldIndex(),
     title: this.createEmptyFieldIndex(),
     ipaddr: this.createEmptyFieldIndex()
   };
@@ -46,6 +48,7 @@ export class NodeSearchIndexManager {
 
     const id = String(cell.id);
     const current = this.entriesById.get(id);
+    const nextNormalizedId = this.normalizeSearchText(id);
     const nextTitle = this.readLabelText(cell, 'title');
     const nextIpaddr = this.readLabelText(cell, 'ipaddr');
     const nextNormalizedTitle = this.normalizeSearchText(nextTitle);
@@ -57,6 +60,7 @@ export class NodeSearchIndexManager {
     }
 
     if (
+      current.normalizedId !== nextNormalizedId ||
       current.normalizedTitle !== nextNormalizedTitle ||
       current.normalizedIpaddr !== nextNormalizedIpaddr
     ) {
@@ -75,25 +79,28 @@ export class NodeSearchIndexManager {
 
   public rebuildIndex(): void {
     this.entriesById = new Map();
+    this.indexes.id = this.createEmptyFieldIndex();
     this.indexes.title = this.createEmptyFieldIndex();
     this.indexes.ipaddr = this.createEmptyFieldIndex();
 
     this.graph.getElements().forEach((element, order) => {
       const entry: SearchEntry = {
         id: String(element.id),
+        normalizedId: '',
         title: this.readLabelText(element, 'title'),
         normalizedTitle: '',
         ipaddr: this.readLabelText(element, 'ipaddr'),
         normalizedIpaddr: '',
         order
       };
+      entry.normalizedId = this.normalizeSearchText(entry.id);
       entry.normalizedTitle = this.normalizeSearchText(entry.title);
       entry.normalizedIpaddr = this.normalizeSearchText(entry.ipaddr);
       this.entriesById.set(entry.id, entry);
 
       SEARCH_FIELDS.forEach((field) => {
-        const text = entry[field];
-        const normalizedText = field === 'title' ? entry.normalizedTitle : entry.normalizedIpaddr;
+        const text = this.getFieldText(entry, field);
+        const normalizedText = this.getNormalizedFieldText(entry, field);
         if (normalizedText.length === 0) {
           return;
         }
@@ -105,13 +112,13 @@ export class NodeSearchIndexManager {
           order: entry.order
         };
         this.addExactEntry(field, sortedEntry);
-        this.indexes[field].sorted.push(sortedEntry);
+        this.getIndex(field).sorted.push(sortedEntry);
         this.addTrigrams(field, sortedEntry);
       });
     });
 
     SEARCH_FIELDS.forEach((field) => {
-      this.indexes[field].sorted.sort((left, right) => {
+      this.getIndex(field).sorted.sort((left, right) => {
         if (left.normalizedText === right.normalizedText) {
           return left.order - right.order;
         }
@@ -120,7 +127,7 @@ export class NodeSearchIndexManager {
     });
   }
 
-  public search(field: TopologyNodeLabelField, query: string): TopologyNodeSearchResult | null {
+  public search(field: TopologyNodeSearchField, query: string): TopologyNodeSearchResult | null {
     const normalizedQuery = this.normalizeSearchText(query);
     if (normalizedQuery.length === 0) {
       return null;
@@ -149,6 +156,7 @@ export class NodeSearchIndexManager {
     this.graph.off('remove', this.onAddOrRemoveBound);
     this.graph.off('change:attrs', this.onAttrsChangeBound);
     this.entriesById.clear();
+    this.indexes.id = this.createEmptyFieldIndex();
     this.indexes.title = this.createEmptyFieldIndex();
     this.indexes.ipaddr = this.createEmptyFieldIndex();
   }
@@ -161,6 +169,10 @@ export class NodeSearchIndexManager {
     };
   }
 
+  private getIndex(field: TopologyNodeSearchField): FieldIndex {
+    return this.indexes[field];
+  }
+
   private readLabelText(element: joint.dia.Element, field: TopologyNodeLabelField): string {
     const value = element.attr(`${field}/text`);
     return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
@@ -170,27 +182,27 @@ export class NodeSearchIndexManager {
     return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
   }
 
-  private addExactEntry(field: TopologyNodeLabelField, entry: SortedEntry): void {
-    const bucket = this.indexes[field].exact.get(entry.normalizedText) ?? [];
+  private addExactEntry(field: TopologyNodeSearchField, entry: SortedEntry): void {
+    const bucket = this.getIndex(field).exact.get(entry.normalizedText) ?? [];
     bucket.push(entry);
-    this.indexes[field].exact.set(entry.normalizedText, bucket);
+    this.getIndex(field).exact.set(entry.normalizedText, bucket);
   }
 
-  private addTrigrams(field: TopologyNodeLabelField, entry: SortedEntry): void {
+  private addTrigrams(field: TopologyNodeSearchField, entry: SortedEntry): void {
     const grams = this.buildTrigrams(entry.normalizedText);
     if (grams.length === 0) {
       return;
     }
 
     grams.forEach((gram) => {
-      const bucket = this.indexes[field].trigrams.get(gram) ?? new Set<string>();
+      const bucket = this.getIndex(field).trigrams.get(gram) ?? new Set<string>();
       bucket.add(entry.id);
-      this.indexes[field].trigrams.set(gram, bucket);
+      this.getIndex(field).trigrams.set(gram, bucket);
     });
   }
 
-  private findExact(field: TopologyNodeLabelField, normalizedQuery: string): SortedEntry | null {
-    const bucket = this.indexes[field].exact.get(normalizedQuery);
+  private findExact(field: TopologyNodeSearchField, normalizedQuery: string): SortedEntry | null {
+    const bucket = this.getIndex(field).exact.get(normalizedQuery);
     if (!bucket || bucket.length === 0) {
       return null;
     }
@@ -198,8 +210,8 @@ export class NodeSearchIndexManager {
     return this.pickBestCandidate(bucket);
   }
 
-  private findPrefix(field: TopologyNodeLabelField, normalizedQuery: string): SortedEntry | null {
-    const sorted = this.indexes[field].sorted;
+  private findPrefix(field: TopologyNodeSearchField, normalizedQuery: string): SortedEntry | null {
+    const sorted = this.getIndex(field).sorted;
     if (sorted.length === 0) {
       return null;
     }
@@ -236,10 +248,10 @@ export class NodeSearchIndexManager {
     return best;
   }
 
-  private findContains(field: TopologyNodeLabelField, normalizedQuery: string): SortedEntry | null {
+  private findContains(field: TopologyNodeSearchField, normalizedQuery: string): SortedEntry | null {
     const candidates = normalizedQuery.length >= 3
       ? this.collectTrigramCandidates(field, normalizedQuery)
-      : this.indexes[field].sorted;
+      : this.getIndex(field).sorted;
     if (candidates.length === 0) {
       return null;
     }
@@ -257,14 +269,14 @@ export class NodeSearchIndexManager {
     return best;
   }
 
-  private collectTrigramCandidates(field: TopologyNodeLabelField, normalizedQuery: string): SortedEntry[] {
+  private collectTrigramCandidates(field: TopologyNodeSearchField, normalizedQuery: string): SortedEntry[] {
     const grams = this.buildTrigrams(normalizedQuery);
     if (grams.length === 0) {
-      return this.indexes[field].sorted;
+      return this.getIndex(field).sorted;
     }
 
     const buckets = grams
-      .map((gram) => this.indexes[field].trigrams.get(gram))
+      .map((gram) => this.getIndex(field).trigrams.get(gram))
       .filter((bucket): bucket is Set<string> => Boolean(bucket))
       .sort((left, right) => left.size - right.size);
     if (buckets.length !== grams.length || buckets.length === 0) {
@@ -282,10 +294,24 @@ export class NodeSearchIndexManager {
       .filter((entry): entry is SearchEntry => Boolean(entry))
       .map((entry) => ({
         id: entry.id,
-        text: entry[field],
-        normalizedText: field === 'title' ? entry.normalizedTitle : entry.normalizedIpaddr,
+        text: this.getFieldText(entry, field),
+        normalizedText: this.getNormalizedFieldText(entry, field),
         order: entry.order
       }));
+  }
+
+  private getFieldText(entry: SearchEntry, field: TopologyNodeSearchField): string {
+    if (field === 'id') {
+      return entry.id;
+    }
+    return entry[field];
+  }
+
+  private getNormalizedFieldText(entry: SearchEntry, field: TopologyNodeSearchField): string {
+    if (field === 'id') {
+      return entry.normalizedId;
+    }
+    return field === 'title' ? entry.normalizedTitle : entry.normalizedIpaddr;
   }
 
   private buildTrigrams(value: string): string[] {

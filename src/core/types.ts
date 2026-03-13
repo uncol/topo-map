@@ -77,10 +77,12 @@ export interface ViewportSnapshot {
 
 export type TopologyNodeLabelField = 'title' | 'ipaddr';
 
+export type TopologyNodeSearchField = TopologyNodeLabelField | 'id';
+
 export interface TopologyNodeSearchResult {
   id: string;
   text: string;
-  field: TopologyNodeLabelField;
+  field: TopologyNodeSearchField;
 }
 
 export interface TranslateBounds {

@@ -7,6 +7,14 @@ import { fitPaperToContent, type FitMode } from './core/fitBounds';
 import { clamp } from './core/geometry';
 import { MapBoundsManager } from './core/MapBoundsManager';
 import { createGraphFromData, serializeTopology, toGraphEnvelope } from './core/serialization';
+import {
+  isTopologyNodeSearchRequestDetail,
+  normalizeTopologyNodeSearchMode,
+  TOPOLOGY_NODE_SEARCH_REQUEST_EVENT,
+  TOPOLOGY_NODE_SEARCH_RESULT_EVENT,
+  type TopologyNodeSearchMode,
+  type TopologyNodeSearchResultDetail
+} from './core/TopologySearchEvents';
 import { TopologyDebug } from './core/TopologyDebug';
 import { TopologyEvents } from './core/TopologyEvents';
 import type {
@@ -15,6 +23,7 @@ import type {
   TopologyConfig,
   TopologyMode,
   TopologyNodeLabelField,
+  TopologyNodeSearchField,
   TopologyNodeSearchResult,
   TopologyPaperConfig,
   ViewportSnapshot
@@ -89,6 +98,10 @@ export class Topology {
   private lastMinimapHeight = -1;
 
   private viewportAnimationFrameId = 0;
+
+  private readonly onNodeSearchRequestBound = (event: Event): void => {
+    this.handleNodeSearchRequest(event);
+  };
 
   public constructor(config: TopologyConfig) {
     this.config = {
@@ -181,6 +194,7 @@ export class Topology {
     );
 
     this.events.setup();
+    this.config.mainContainer.addEventListener(TOPOLOGY_NODE_SEARCH_REQUEST_EVENT, this.onNodeSearchRequestBound as EventListener);
     this.debug.setup(this.diagramService.getGraph(), this.diagramService.getPaper(), (listener) =>
       this.viewportState.subscribe(listener)
     );
@@ -302,9 +316,30 @@ export class Topology {
     return this.nodeSearchIndexManager.search(field, query);
   }
 
+  public findNodeById(query: string): TopologyNodeSearchResult | null {
+    return this.nodeSearchIndexManager.search('id', query);
+  }
+
   public focusNodeByVisibleLabel(query: string, durationMs = DEFAULT_FOCUS_ANIMATION_MS): TopologyNodeSearchResult | null {
     const field = this.getVisibleNodeLabelField();
     const matched = this.nodeSearchIndexManager.search(field, query);
+    if (!matched) {
+      return null;
+    }
+
+    const element = this.diagramService.getGraph().getCell(matched.id);
+    if (!element?.isElement()) {
+      return null;
+    }
+
+    this.animateViewportToElement(element, durationMs, () => {
+      this.events.highlightElementById(element.id);
+    });
+    return matched;
+  }
+
+  public focusNodeById(query: string, durationMs = DEFAULT_FOCUS_ANIMATION_MS): TopologyNodeSearchResult | null {
+    const matched = this.nodeSearchIndexManager.search('id', query);
     if (!matched) {
       return null;
     }
@@ -413,6 +448,7 @@ export class Topology {
   public destroy(): void {
     this.logDebug('destroy:start');
     this.cancelViewportAnimation();
+    this.config.mainContainer.removeEventListener(TOPOLOGY_NODE_SEARCH_REQUEST_EVENT, this.onNodeSearchRequestBound as EventListener);
     this.events.teardown();
     this.events.clearInteractionState();
     this.debug.teardown(this.diagramService.getGraph(), this.diagramService.getPaper());
@@ -429,6 +465,43 @@ export class Topology {
 
   private logDebug(message: string, ...payload: unknown[]): void {
     this.debug.log(message, ...payload);
+  }
+
+  private handleNodeSearchRequest(event: Event): void {
+    if (!(event instanceof CustomEvent) || !isTopologyNodeSearchRequestDetail(event.detail)) {
+      return;
+    }
+
+    const { query } = event.detail;
+    const mode = normalizeTopologyNodeSearchMode(event.detail.mode);
+    const field: TopologyNodeSearchField = mode === 'idAndMove' ? 'id' : this.getVisibleNodeLabelField();
+    const result =
+      mode === 'idAndMove'
+        ? this.focusNodeById(query, event.detail.durationMs ?? DEFAULT_FOCUS_ANIMATION_MS)
+        : this.focusNodeByVisibleLabel(query, event.detail.durationMs ?? DEFAULT_FOCUS_ANIMATION_MS);
+
+    const detail: TopologyNodeSearchResultDetail = result
+      ? {
+          ...result,
+          query,
+          mode,
+          field,
+          found: true
+        }
+      : {
+          query,
+          mode,
+          field,
+          found: false
+        };
+
+    this.config.mainContainer.dispatchEvent(
+      new CustomEvent(TOPOLOGY_NODE_SEARCH_RESULT_EVENT, {
+        bubbles: true,
+        composed: true,
+        detail
+      })
+    );
   }
 
   private animateViewportToElement(element: joint.dia.Element, durationMs: number, onComplete?: () => void): void {

@@ -75,4 +75,22 @@ describe('NodeSearchIndexManager', () => {
 
     index.destroy();
   });
+
+  it('finds nodes by id for the id-and-move mode', () => {
+    const graph = createGraph();
+    graph.addCells([
+      createElement('node-access-01', 'Access Switch Alpha', '10.10.0.1'),
+      createElement('node-core-01', 'Core Router', '10.10.0.254')
+    ]);
+
+    const index = new NodeSearchIndexManager(graph);
+
+    expect(index.search('id', 'core-01')).toEqual({
+      id: 'node-core-01',
+      text: 'node-core-01',
+      field: 'id'
+    });
+
+    index.destroy();
+  });
 });

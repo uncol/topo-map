@@ -1,6 +1,11 @@
 import '@gufo-labs/font/gufo-font.css';
 import { configuredShapeMapData, glyphSegmentMapData } from '../scripts/fixtures/configuredShapeMapData.ts';
-import { Topology } from '../src/index.ts';
+import {
+  normalizeTopologyNodeSearchMode,
+  Topology,
+  TOPOLOGY_NODE_SEARCH_REQUEST_EVENT,
+  TOPOLOGY_NODE_SEARCH_RESULT_EVENT
+} from '../src/index.ts';
 
 const mainContainer = document.getElementById('topology-main');
 const minimapContainer = document.getElementById('topology-minimap');
@@ -133,11 +138,11 @@ const zoomOutBtn = document.getElementById('zoom-out');
 const resetViewBtn = document.getElementById('reset-view');
 const zoomSelect = document.getElementById('zoom-select');
 const nodeSearchInput = document.getElementById('node-search');
+const nodeSearchModeSelect = document.getElementById('node-search-mode');
 const nodeSearchSubmitBtn = document.getElementById('node-search-submit');
 const nodeSearchStatus = document.getElementById('node-search-status');
 const renderStats = document.getElementById('render-stats');
 const TOPOLOGY_CELL_POINTERDOWN_EVENT = 'topology:cell:pointerdown';
-const TOPOLOGY_WHEEL_EVENT = 'topology:wheel';
 const ZOOM_CUSTOM_OPTION_VALUE = '__custom__';
 const ZOOM_PRESET_TOLERANCE = 0.001;
 const FIT_SETTLE_MAX_PASSES = 4;
@@ -150,10 +155,15 @@ let statsRafId = 0;
 let fitRafId = 0;
 
 function updateSearchUi() {
-  const field = instance.getVisibleNodeLabelField();
-  const humanField = field === 'ipaddr' ? 'IP' : 'node name';
+  const mode =
+    nodeSearchModeSelect instanceof HTMLSelectElement
+      ? normalizeTopologyNodeSearchMode(nodeSearchModeSelect.value)
+      : 'labelAndMove';
+  const field = mode === 'idAndMove' ? 'id' : instance.getVisibleNodeLabelField();
+  const humanField = field === 'id' ? 'node id' : field === 'ipaddr' ? 'IP' : 'node name';
   if (nodeSearchInput instanceof HTMLInputElement) {
-    nodeSearchInput.placeholder = field === 'ipaddr' ? 'Find by IP' : 'Find by node name';
+    nodeSearchInput.placeholder =
+      field === 'id' ? 'Find by node id' : field === 'ipaddr' ? 'Find by IP' : 'Find by node name';
   }
   if (nodeSearchStatus instanceof HTMLElement) {
     nodeSearchStatus.textContent = `Search by ${humanField}`;
@@ -180,19 +190,21 @@ function runNodeSearch() {
     return;
   }
 
-  const result = instance.focusNodeByVisibleLabel(query);
-  if (!result) {
-    const fieldName = instance.getVisibleNodeLabelField() === 'ipaddr' ? 'IP' : 'node name';
-    setSearchStatus(`No match in current ${fieldName} view`, 'miss');
-    lastInteractionText = `Search miss: ${query}`;
-    scheduleRenderStatsUpdate();
-    return;
-  }
+  const mode =
+    nodeSearchModeSelect instanceof HTMLSelectElement
+      ? normalizeTopologyNodeSearchMode(nodeSearchModeSelect.value)
+      : 'labelAndMove';
 
-  const fieldName = result.field === 'ipaddr' ? 'IP' : 'name';
-  setSearchStatus(`Found by ${fieldName}: ${result.text}`, 'hit');
-  lastInteractionText = `Found: ${result.id}`;
-  scheduleRenderStatsUpdate();
+  mainContainer.dispatchEvent(
+    new CustomEvent(TOPOLOGY_NODE_SEARCH_REQUEST_EVENT, {
+      bubbles: true,
+      composed: true,
+      detail: {
+        query,
+        mode
+      }
+    })
+  );
 }
 
 // toolbar buttons
@@ -485,6 +497,26 @@ const onNodeSearchKeydown = (event) => {
   event.preventDefault();
   runNodeSearch();
 };
+const onNodeSearchResult = (event) => {
+  if (!(event instanceof CustomEvent)) {
+    return;
+  }
+
+  const detail = event.detail ?? {};
+  const fieldName = detail.field === 'id' ? 'id' : detail.field === 'ipaddr' ? 'IP' : 'name';
+  const modeText = detail.mode === 'idAndMove' ? 'search and move by id' : 'search and move';
+
+  if (!detail.found) {
+    setSearchStatus(`No match in current ${fieldName} view`, 'miss');
+    lastInteractionText = `Search miss: ${detail.query ?? 'unknown'}`;
+    scheduleRenderStatsUpdate();
+    return;
+  }
+
+  setSearchStatus(`Found by ${fieldName}: ${detail.text} (${modeText})`, 'hit');
+  lastInteractionText = `Found: ${detail.id}`;
+  scheduleRenderStatsUpdate();
+};
 
 zoomInBtn?.addEventListener('click', onZoomInClick);
 zoomOutBtn?.addEventListener('click', onZoomOutClick);
@@ -493,7 +525,9 @@ mapSelect?.addEventListener('change', onMapSelectChange);
 zoomSelect?.addEventListener('change', onZoomSelectChange);
 nodeSearchSubmitBtn?.addEventListener('click', runNodeSearch);
 nodeSearchInput?.addEventListener('keydown', onNodeSearchKeydown);
-mainContainer.addEventListener(TOPOLOGY_WHEEL_EVENT, onTopologyWheel);
+nodeSearchModeSelect?.addEventListener('change', updateSearchUi);
+mainContainer.addEventListener('topology:wheel', onTopologyWheel);
+mainContainer.addEventListener(TOPOLOGY_NODE_SEARCH_RESULT_EVENT, onNodeSearchResult);
 if (mapSelect instanceof HTMLSelectElement) {
   loadSelectedMap(mapSelect.value);
 } else {
