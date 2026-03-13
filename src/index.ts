@@ -4,6 +4,7 @@ export {
   TOPOLOGY_NODE_SEARCH_REQUEST_EVENT,
   TOPOLOGY_NODE_SEARCH_RESULT_EVENT
 } from './core/TopologySearchEvents';
+export { TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT } from './core/TopologySelectionEvents';
 export type {
   LinkData,
   NodeData,

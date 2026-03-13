@@ -109,6 +109,10 @@ export class TopologyEvents {
     this.clearLinkHoverStyles();
   }
 
+  public clearHighlightedElement(): void {
+    this.clearElementHighlight();
+  }
+
   public highlightElementById(cellId: joint.dia.Cell.ID): boolean {
     const cell = this.paper.model.getCell(cellId);
     if (!cell?.isElement()) {

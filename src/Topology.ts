@@ -15,6 +15,7 @@ import {
   type TopologyNodeSearchMode,
   type TopologyNodeSearchResultDetail
 } from './core/TopologySearchEvents';
+import { TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT } from './core/TopologySelectionEvents';
 import { TopologyDebug } from './core/TopologyDebug';
 import { TopologyEvents } from './core/TopologyEvents';
 import type {
@@ -101,6 +102,10 @@ export class Topology {
 
   private readonly onNodeSearchRequestBound = (event: Event): void => {
     this.handleNodeSearchRequest(event);
+  };
+
+  private readonly onUnhighlightRequestBound = (): void => {
+    this.events.clearHighlightedElement();
   };
 
   public constructor(config: TopologyConfig) {
@@ -195,6 +200,7 @@ export class Topology {
 
     this.events.setup();
     this.config.mainContainer.addEventListener(TOPOLOGY_NODE_SEARCH_REQUEST_EVENT, this.onNodeSearchRequestBound as EventListener);
+    this.config.mainContainer.addEventListener(TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT, this.onUnhighlightRequestBound as EventListener);
     this.debug.setup(this.diagramService.getGraph(), this.diagramService.getPaper(), (listener) =>
       this.viewportState.subscribe(listener)
     );
@@ -449,6 +455,7 @@ export class Topology {
     this.logDebug('destroy:start');
     this.cancelViewportAnimation();
     this.config.mainContainer.removeEventListener(TOPOLOGY_NODE_SEARCH_REQUEST_EVENT, this.onNodeSearchRequestBound as EventListener);
+    this.config.mainContainer.removeEventListener(TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT, this.onUnhighlightRequestBound as EventListener);
     this.events.teardown();
     this.events.clearInteractionState();
     this.debug.teardown(this.diagramService.getGraph(), this.diagramService.getPaper());
