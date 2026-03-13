@@ -4,17 +4,28 @@ import { ZoomInCommand } from './commands/ZoomInCommand';
 import { ZoomOutCommand } from './commands/ZoomOutCommand';
 import { DiagramService } from './core/DiagramService';
 import { fitPaperToContent, type FitMode } from './core/fitBounds';
+import { clamp } from './core/geometry';
 import { MapBoundsManager } from './core/MapBoundsManager';
 import { createGraphFromData, serializeTopology, toGraphEnvelope } from './core/serialization';
 import { TopologyDebug } from './core/TopologyDebug';
 import { TopologyEvents } from './core/TopologyEvents';
-import type { LinkData, NodeData, TopologyConfig, TopologyMode, TopologyPaperConfig, ViewportSnapshot } from './core/types';
+import type {
+  LinkData,
+  NodeData,
+  TopologyConfig,
+  TopologyMode,
+  TopologyNodeLabelField,
+  TopologyNodeSearchResult,
+  TopologyPaperConfig,
+  ViewportSnapshot
+} from './core/types';
 import { ViewportState } from './core/ViewportState';
 import type { MapConverterInput } from './decoders/MapConverter';
 import { convertMapData } from './decoders/MapConverter';
 import { GuidesManager } from './managers/GuidesManager';
 import { MinimapManager } from './managers/MinimapManager';
 import { ModeManager } from './managers/ModeManager';
+import { NodeSearchIndexManager } from './managers/NodeSearchIndexManager';
 import { PanManager } from './managers/PanManager';
 import { SnapManager } from './managers/SnapManager';
 import { ViewportManager } from './managers/ViewportManager';
@@ -30,6 +41,7 @@ const DEFAULT_MAX_SCALE = 5;
 const DEFAULT_GRID_SIZE = 20;
 const DEFAULT_GUIDE_THRESHOLD = 5;
 const DEFAULT_PADDING = 10;
+const DEFAULT_FOCUS_ANIMATION_MS = 650;
 
 export class Topology {
   private readonly config: Required<Omit<TopologyConfig, 'onReady'>> & { onReady: (() => void) | undefined };
@@ -52,6 +64,8 @@ export class Topology {
 
   private readonly minimapManager: MinimapManager;
 
+  private readonly nodeSearchIndexManager: NodeSearchIndexManager;
+
   private readonly editMode: EditMode;
 
   private readonly modeManager: ModeManager;
@@ -73,6 +87,8 @@ export class Topology {
   private lastMinimapWidth = -1;
 
   private lastMinimapHeight = -1;
+
+  private viewportAnimationFrameId = 0;
 
   public constructor(config: TopologyConfig) {
     this.config = {
@@ -138,6 +154,7 @@ export class Topology {
       this.config.asyncRendering,
       DEFAULT_PADDING
     );
+    this.nodeSearchIndexManager = new NodeSearchIndexManager(this.diagramService.getGraph());
 
     const panMode = new PanMode(this.panManager, this.diagramService);
     const zoomToAreaMode = new ZoomToAreaMode(this.diagramService, this.zoomManager, this.viewportState);
@@ -177,6 +194,7 @@ export class Topology {
     this.diagramService.fromJSON(createGraphFromData(nodes, links));
     this.mapBoundsManager.refreshNow();
     this.viewportManager.rebuildIndex();
+    this.nodeSearchIndexManager.rebuildIndex();
     this.viewportState.enforceConstraints();
     if (this.config.fitToPageOnLoad) {
       this.fitToPage();
@@ -197,6 +215,7 @@ export class Topology {
     this.diagramService.fromJSON(envelope.graph);
     this.mapBoundsManager.refreshNow();
     this.viewportManager.rebuildIndex();
+    this.nodeSearchIndexManager.rebuildIndex();
     this.viewportState.enforceConstraints();
     this.minimapManager.refresh();
 
@@ -255,6 +274,50 @@ export class Topology {
         const toggleable = element as joint.dia.Element & { toggleLabel?: () => void };
         toggleable.toggleLabel?.();
       });
+  }
+
+  public getVisibleNodeLabelField(): TopologyNodeLabelField {
+    const elements = this.diagramService.getGraph().getElements();
+    const active = elements.find((element) => {
+      const titleDisplay = String(element.attr('title/display') ?? '');
+      const ipaddrDisplay = String(element.attr('ipaddr/display') ?? '');
+      return titleDisplay.length > 0 || ipaddrDisplay.length > 0;
+    });
+
+    if (!active) {
+      return 'title';
+    }
+
+    const titleVisible = active.attr('title/display') !== 'none';
+    const ipaddrVisible = active.attr('ipaddr/display') !== 'none';
+    if (!titleVisible && ipaddrVisible) {
+      return 'ipaddr';
+    }
+
+    return 'title';
+  }
+
+  public findNodeByVisibleLabel(query: string): TopologyNodeSearchResult | null {
+    const field = this.getVisibleNodeLabelField();
+    return this.nodeSearchIndexManager.search(field, query);
+  }
+
+  public focusNodeByVisibleLabel(query: string, durationMs = DEFAULT_FOCUS_ANIMATION_MS): TopologyNodeSearchResult | null {
+    const field = this.getVisibleNodeLabelField();
+    const matched = this.nodeSearchIndexManager.search(field, query);
+    if (!matched) {
+      return null;
+    }
+
+    const element = this.diagramService.getGraph().getCell(matched.id);
+    if (!element?.isElement()) {
+      return null;
+    }
+
+    this.animateViewportToElement(element, durationMs, () => {
+      this.events.highlightElementById(element.id);
+    });
+    return matched;
   }
 
   public setZoom(scale: number): void {
@@ -349,6 +412,7 @@ export class Topology {
 
   public destroy(): void {
     this.logDebug('destroy:start');
+    this.cancelViewportAnimation();
     this.events.teardown();
     this.events.clearInteractionState();
     this.debug.teardown(this.diagramService.getGraph(), this.diagramService.getPaper());
@@ -356,6 +420,7 @@ export class Topology {
     this.zoomManager.destroy();
     this.guidesManager.destroy();
     this.minimapManager.destroy();
+    this.nodeSearchIndexManager.destroy();
     this.viewportManager.destroy();
     this.mapBoundsManager.destroy();
     this.diagramService.destroy();
@@ -364,6 +429,67 @@ export class Topology {
 
   private logDebug(message: string, ...payload: unknown[]): void {
     this.debug.log(message, ...payload);
+  }
+
+  private animateViewportToElement(element: joint.dia.Element, durationMs: number, onComplete?: () => void): void {
+    const bbox = element.getBBox();
+    const size = this.diagramService.getSize();
+    const snapshot = this.viewportState.getSnapshot();
+    if (size.width <= 1 || size.height <= 1 || bbox.width <= 0 || bbox.height <= 0) {
+      return;
+    }
+
+    const targetCenterX = bbox.x + bbox.width / 2;
+    const targetCenterY = bbox.y + bbox.height / 2;
+    const rawTargetTx = size.width / 2 - targetCenterX * snapshot.scale;
+    const rawTargetTy = size.height / 2 - targetCenterY * snapshot.scale;
+    const bounds = this.diagramService.getTranslateBounds(snapshot.scale);
+    const minTx = Math.min(bounds.minTx, bounds.maxTx);
+    const maxTx = Math.max(bounds.minTx, bounds.maxTx);
+    const minTy = Math.min(bounds.minTy, bounds.maxTy);
+    const maxTy = Math.max(bounds.minTy, bounds.maxTy);
+    const targetTx = clamp(rawTargetTx, minTx, maxTx);
+    const targetTy = clamp(rawTargetTy, minTy, maxTy);
+    const duration = Math.max(0, Math.round(durationMs));
+
+    this.cancelViewportAnimation();
+
+    if (duration === 0) {
+      this.viewportState.setTranslate(targetTx, targetTy);
+      onComplete?.();
+      return;
+    }
+
+    const startTx = snapshot.tx;
+    const startTy = snapshot.ty;
+    const startTime = performance.now();
+    const step = (now: number): void => {
+      const elapsed = now - startTime;
+      const progress = clamp(elapsed / duration, 0, 1);
+      const eased = 1 - (1 - progress) ** 3;
+      const nextTx = startTx + (targetTx - startTx) * eased;
+      const nextTy = startTy + (targetTy - startTy) * eased;
+
+      this.viewportState.setTranslate(nextTx, nextTy);
+      if (progress >= 1) {
+        this.viewportAnimationFrameId = 0;
+        onComplete?.();
+        return;
+      }
+
+      this.viewportAnimationFrameId = window.requestAnimationFrame(step);
+    };
+
+    this.viewportAnimationFrameId = window.requestAnimationFrame(step);
+  }
+
+  private cancelViewportAnimation(): void {
+    if (this.viewportAnimationFrameId === 0) {
+      return;
+    }
+
+    window.cancelAnimationFrame(this.viewportAnimationFrameId);
+    this.viewportAnimationFrameId = 0;
   }
 
   private fitToContent(mode: FitMode): void {

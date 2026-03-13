@@ -75,6 +75,14 @@ export interface ViewportSnapshot {
   maxScale: number;
 }
 
+export type TopologyNodeLabelField = 'title' | 'ipaddr';
+
+export interface TopologyNodeSearchResult {
+  id: string;
+  text: string;
+  field: TopologyNodeLabelField;
+}
+
 export interface TranslateBounds {
   minTx: number;
   maxTx: number;

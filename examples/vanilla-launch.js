@@ -132,6 +132,9 @@ const zoomInBtn = document.getElementById('zoom-in');
 const zoomOutBtn = document.getElementById('zoom-out');
 const resetViewBtn = document.getElementById('reset-view');
 const zoomSelect = document.getElementById('zoom-select');
+const nodeSearchInput = document.getElementById('node-search');
+const nodeSearchSubmitBtn = document.getElementById('node-search-submit');
+const nodeSearchStatus = document.getElementById('node-search-status');
 const renderStats = document.getElementById('render-stats');
 const TOPOLOGY_CELL_POINTERDOWN_EVENT = 'topology:cell:pointerdown';
 const TOPOLOGY_WHEEL_EVENT = 'topology:wheel';
@@ -146,11 +149,60 @@ let currentMapKey = 'glyph-segment';
 let statsRafId = 0;
 let fitRafId = 0;
 
+function updateSearchUi() {
+  const field = instance.getVisibleNodeLabelField();
+  const humanField = field === 'ipaddr' ? 'IP' : 'node name';
+  if (nodeSearchInput instanceof HTMLInputElement) {
+    nodeSearchInput.placeholder = field === 'ipaddr' ? 'Find by IP' : 'Find by node name';
+  }
+  if (nodeSearchStatus instanceof HTMLElement) {
+    nodeSearchStatus.textContent = `Search by ${humanField}`;
+    nodeSearchStatus.dataset.state = 'idle';
+  }
+}
+
+function setSearchStatus(message, state = 'idle') {
+  if (!(nodeSearchStatus instanceof HTMLElement)) {
+    return;
+  }
+  nodeSearchStatus.textContent = message;
+  nodeSearchStatus.dataset.state = state;
+}
+
+function runNodeSearch() {
+  if (!(nodeSearchInput instanceof HTMLInputElement)) {
+    return;
+  }
+
+  const query = nodeSearchInput.value.trim();
+  if (query.length === 0) {
+    updateSearchUi();
+    return;
+  }
+
+  const result = instance.focusNodeByVisibleLabel(query);
+  if (!result) {
+    const fieldName = instance.getVisibleNodeLabelField() === 'ipaddr' ? 'IP' : 'node name';
+    setSearchStatus(`No match in current ${fieldName} view`, 'miss');
+    lastInteractionText = `Search miss: ${query}`;
+    scheduleRenderStatsUpdate();
+    return;
+  }
+
+  const fieldName = result.field === 'ipaddr' ? 'IP' : 'name';
+  setSearchStatus(`Found by ${fieldName}: ${result.text}`, 'hit');
+  lastInteractionText = `Found: ${result.id}`;
+  scheduleRenderStatsUpdate();
+}
+
 // toolbar buttons
 modePan?.addEventListener('click', () => instance.setMode('pan'));
 modeZoomArea?.addEventListener('click', () => instance.setMode('zoomToArea'));
 modeEdit?.addEventListener('click', () => instance.setMode('edit'));
-toggleNodeLabelsBtn?.addEventListener('click', () => instance.toggleNodeLabelMode());
+toggleNodeLabelsBtn?.addEventListener('click', () => {
+  instance.toggleNodeLabelMode();
+  updateSearchUi();
+});
 
 function applyToggleState() {
   if (snapToggle instanceof HTMLInputElement) {
@@ -291,6 +343,7 @@ function loadSelectedMap(mapKey) {
     });
     scheduleRenderStatsUpdate();
     scheduleZoomSelectorSync();
+    updateSearchUi();
     return;
   }
 
@@ -318,6 +371,7 @@ function loadSelectedMap(mapKey) {
   });
   scheduleRenderStatsUpdate();
   scheduleZoomSelectorSync();
+  updateSearchUi();
 }
 
 function syncZoomSelector() {
@@ -424,12 +478,21 @@ const onMapSelectChange = (event) => {
   }
   loadSelectedMap(target.value);
 };
+const onNodeSearchKeydown = (event) => {
+  if (!(event instanceof KeyboardEvent) || event.key !== 'Enter') {
+    return;
+  }
+  event.preventDefault();
+  runNodeSearch();
+};
 
 zoomInBtn?.addEventListener('click', onZoomInClick);
 zoomOutBtn?.addEventListener('click', onZoomOutClick);
 resetViewBtn?.addEventListener('click', onResetViewClick);
 mapSelect?.addEventListener('change', onMapSelectChange);
 zoomSelect?.addEventListener('change', onZoomSelectChange);
+nodeSearchSubmitBtn?.addEventListener('click', runNodeSearch);
+nodeSearchInput?.addEventListener('keydown', onNodeSearchKeydown);
 mainContainer.addEventListener(TOPOLOGY_WHEEL_EVENT, onTopologyWheel);
 if (mapSelect instanceof HTMLSelectElement) {
   loadSelectedMap(mapSelect.value);
@@ -437,6 +500,7 @@ if (mapSelect instanceof HTMLSelectElement) {
   loadSelectedMap('glyph-segment');
 }
 syncZoomSelector();
+updateSearchUi();
 
 function updateRenderStats() {
   if (!(renderStats instanceof HTMLElement)) {

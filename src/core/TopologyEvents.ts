@@ -5,8 +5,8 @@ import type { TopologyConfig, ViewportSnapshot } from './types';
 const LINK_HOVER_STROKE = '#3498db';
 const LINK_HOVER_STROKE_WIDTH = 3;
 const LINK_HOVER_OPACITY = 0.6;
-const LINK_HOVER_HIGHLIGHT_ID = 'topology-link-hover-highlight';
-const ELEMENT_HIGHLIGHT_ID = 'topology-element-highlight';
+const LINK_HOVER_HIGHLIGHT_ID = 'topology:link-hover-highlight';
+const ELEMENT_HIGHLIGHT_ID = 'topology:element-highlight';
 const TOPOLOGY_CELL_POINTERDOWN_EVENT = 'topology:cell:pointerdown';
 const TOPOLOGY_CELL_POINTERDBLCLICK_EVENT = 'topology:cell:pointerdblclick';
 const TOPOLOGY_BLANK_POINTERDOWN_EVENT = 'topology:blank:pointerdown';
@@ -107,6 +107,21 @@ export class TopologyEvents {
   public clearInteractionState(): void {
     this.clearElementHighlight();
     this.clearLinkHoverStyles();
+  }
+
+  public highlightElementById(cellId: joint.dia.Cell.ID): boolean {
+    const cell = this.paper.model.getCell(cellId);
+    if (!cell?.isElement()) {
+      return false;
+    }
+
+    const elementView = this.resolveElementView(cell);
+    if (!elementView) {
+      return false;
+    }
+
+    this.highlightElement(elementView);
+    return true;
   }
 
   private applyLinkHoverStyle(linkView: joint.dia.LinkView): void {
@@ -234,11 +249,23 @@ export class TopologyEvents {
     joint.highlighters.mask.removeAll(this.paper, LINK_HOVER_HIGHLIGHT_ID);
   }
 
+  private resolveElementView(element: joint.dia.Element): joint.dia.ElementView | null {
+    const existingView = this.paper.findViewByModel<joint.dia.ElementView>(element);
+    if (existingView) {
+      return existingView;
+    }
+
+    try {
+      return this.paper.requireView<joint.dia.ElementView>(element);
+    } catch {
+      return null;
+    }
+  }
+
   private getCellEventDetail(cellView: joint.dia.CellView): Record<string, unknown> {
     const model = cellView.model;
     return {
       id: String(model.id),
-      cell: cellView,
       data: model.get('data') || {},
     };
   }

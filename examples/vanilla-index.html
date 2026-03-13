@@ -28,7 +28,8 @@
 
     .toolbar button,
     .toolbar label,
-    .toolbar select {
+    .toolbar select,
+    .toolbar input {
       font-size: 14px;
     }
 
@@ -52,6 +53,22 @@
       padding: 6px 8px;
       border-radius: 6px;
       min-width: 140px;
+    }
+
+    .toolbar input[type="text"] {
+      border: 1px solid #94a3b8;
+      background: #ffffff;
+      color: #0f172a;
+      padding: 6px 10px;
+      border-radius: 6px;
+      min-width: 220px;
+    }
+
+    .toolbar .search-status {
+      align-self: center;
+      font-size: 13px;
+      color: #475569;
+      white-space: nowrap;
     }
 
     .toolbar .stats {
@@ -133,6 +150,9 @@
     </label>
     <label><input id="snap-toggle" type="checkbox" checked /> Snap to grid</label>
     <label><input id="guides-toggle" type="checkbox" checked /> Guides</label>
+    <input id="node-search" type="text" placeholder="Find by node name" autocomplete="off" />
+    <button id="node-search-submit" type="button">Find</button>
+    <span id="node-search-status" class="search-status">Search by node name</span>
     <span id="render-stats" class="stats">Visible E: 0 L: 0 | Total E: 0 L: 0</span>
   </div>
   <div class="layout">
