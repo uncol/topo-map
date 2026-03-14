@@ -1,6 +1,6 @@
 import * as joint from '@joint/core';
-import { isPrimaryMouseButton } from './eventUtils';
 import type { TopologyConfig, ViewportSnapshot } from '../types';
+import { getEventClientPoint, isPrimaryMouseButton } from './eventUtils';
 
 const LINK_HOVER_STROKE = '#3498db';
 const LINK_HOVER_STROKE_WIDTH = 3;
@@ -24,6 +24,8 @@ export class TopologyInteractionEvents {
   private readonly getViewportSnapshot: () => ViewportSnapshot;
 
   private highlightedElementView: joint.dia.ElementView | null = null;
+
+  private readonly pendingContextMenuTimers = new Set<number>();
 
   private readonly onLinkMouseEnterBound = (linkView: joint.dia.LinkView): void => {
     this.applyLinkHoverStyle(linkView);
@@ -102,6 +104,7 @@ export class TopologyInteractionEvents {
     this.paper.off('cell:contextmenu', this.onCellContextMenuBound);
     this.paper.off('blank:contextmenu', this.onBlankContextMenuBound);
     this.paper.el.removeEventListener('wheel', this.onPaperWheelBound);
+    this.clearPendingContextMenuTimers();
   }
 
   public clearInteractionState(): void {
@@ -182,20 +185,25 @@ export class TopologyInteractionEvents {
   private handleCellContextMenu(
     cellView: joint.dia.CellView,
     event: joint.dia.Event,
-    x: number,
-    y: number
+    _x: number,
+    _y: number
   ): void {
     this.preventDefaultEvent(event);
-    this.emitBubbledEvent(TOPOLOGY_CELL_CONTEXTMENU_EVENT, {
+    const clientPoint = getEventClientPoint(event);
+    this.emitBubbledContextMenuEvent(TOPOLOGY_CELL_CONTEXTMENU_EVENT, {
       ...this.getCellEventDetail(cellView),
-      x,
-      y
+      clientX: clientPoint?.x ?? 0,
+      clientY: clientPoint?.y ?? 0
     });
   }
 
-  private handleBlankContextMenu(event: joint.dia.Event, x: number, y: number): void {
+  private handleBlankContextMenu(event: joint.dia.Event, _x: number, _y: number): void {
     this.preventDefaultEvent(event);
-    this.emitBubbledEvent(TOPOLOGY_BLANK_CONTEXTMENU_EVENT, { x, y });
+    const clientPoint = getEventClientPoint(event);
+    this.emitBubbledContextMenuEvent(TOPOLOGY_BLANK_CONTEXTMENU_EVENT, {
+      clientX: clientPoint?.x ?? 0,
+      clientY: clientPoint?.y ?? 0
+    });
   }
 
   private handlePaperWheel(_: WheelEvent): void {
@@ -282,6 +290,22 @@ export class TopologyInteractionEvents {
     if ('preventDefault' in event && typeof event.preventDefault === 'function') {
       event.preventDefault();
     }
+  }
+
+  private emitBubbledContextMenuEvent(eventName: string, detail: Record<string, unknown>): void {
+    const timerId = window.setTimeout(() => {
+      this.pendingContextMenuTimers.delete(timerId);
+      this.emitBubbledEvent(eventName, detail);
+    }, 0);
+
+    this.pendingContextMenuTimers.add(timerId);
+  }
+
+  private clearPendingContextMenuTimers(): void {
+    this.pendingContextMenuTimers.forEach((timerId) => {
+      window.clearTimeout(timerId);
+    });
+    this.pendingContextMenuTimers.clear();
   }
 
   private emitBubbledEvent(eventName: string, detail: Record<string, unknown>): void {
