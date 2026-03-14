@@ -1,6 +1,6 @@
 import * as joint from '@joint/core';
-import { isPrimaryMouseButton } from './events';
-import type { TopologyConfig, ViewportSnapshot } from './types';
+import { isPrimaryMouseButton } from './eventUtils';
+import type { TopologyConfig, ViewportSnapshot } from '../types';
 
 const LINK_HOVER_STROKE = '#3498db';
 const LINK_HOVER_STROKE_WIDTH = 3;
@@ -16,7 +16,7 @@ const TOPOLOGY_CELL_CONTEXTMENU_EVENT = 'topology:cell:contextmenu';
 const TOPOLOGY_BLANK_CONTEXTMENU_EVENT = 'topology:blank:contextmenu';
 const TOPOLOGY_WHEEL_EVENT = 'topology:wheel';
 
-export class TopologyEvents {
+export class TopologyInteractionEvents {
   private readonly mainContainer: TopologyConfig['mainContainer'];
 
   private readonly paper: joint.dia.Paper;
@@ -270,7 +270,7 @@ export class TopologyEvents {
     const model = cellView.model;
     return {
       id: String(model.id),
-      data: model.get('data') || {},
+      data: model.get('data') || {}
     };
   }
 

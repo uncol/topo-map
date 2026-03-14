@@ -10,14 +10,13 @@ import { createGraphFromData, serializeTopology, toGraphEnvelope } from './core/
 import {
   isTopologyNodeSearchRequestDetail,
   normalizeTopologyNodeSearchMode,
+  TopologyInteractionEvents,
   TOPOLOGY_NODE_SEARCH_REQUEST_EVENT,
   TOPOLOGY_NODE_SEARCH_RESULT_EVENT,
-  type TopologyNodeSearchMode,
+  TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT,
   type TopologyNodeSearchResultDetail
-} from './core/TopologySearchEvents';
-import { TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT } from './core/TopologySelectionEvents';
+} from './core/events';
 import { TopologyDebug } from './core/TopologyDebug';
-import { TopologyEvents } from './core/TopologyEvents';
 import type {
   LinkData,
   NodeData,
@@ -88,7 +87,7 @@ export class Topology {
 
   private readonly debug: TopologyDebug;
 
-  private readonly events: TopologyEvents;
+  private readonly events: TopologyInteractionEvents;
 
   private lastMainWidth = -1;
 
@@ -192,7 +191,7 @@ export class Topology {
     this.zoomInCommand = new ZoomInCommand(this.zoomManager);
     this.zoomOutCommand = new ZoomOutCommand(this.zoomManager);
     this.resetViewCommand = new ResetViewCommand(this.zoomManager);
-    this.events = new TopologyEvents(
+    this.events = new TopologyInteractionEvents(
       this.config.mainContainer,
       this.diagramService.getPaper(),
       () => this.viewportState.getSnapshot()

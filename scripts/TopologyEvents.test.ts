@@ -1,6 +1,6 @@
 import * as joint from '@joint/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { TopologyEvents } from '../src/core/TopologyEvents';
+import { TopologyInteractionEvents } from '../src/core/events';
 
 type PaperHandler = (...args: unknown[]) => void;
 
@@ -76,7 +76,7 @@ function createCellView(
   } as unknown as joint.dia.CellView;
 }
 
-describe('TopologyEvents', () => {
+describe('TopologyInteractionEvents', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -87,7 +87,7 @@ describe('TopologyEvents', () => {
     const addSpy = mockHighlighterAdd();
     vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
 
-    const topologyEvents = new TopologyEvents(element, paper, () => ({
+    const topologyEvents = new TopologyInteractionEvents(element, paper, () => ({
       scale: 1,
       tx: 0,
       ty: 0,
@@ -121,7 +121,7 @@ describe('TopologyEvents', () => {
     mockHighlighterAdd();
     const removeSpy = vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
 
-    const topologyEvents = new TopologyEvents(element, paper, () => ({
+    const topologyEvents = new TopologyInteractionEvents(element, paper, () => ({
       scale: 1,
       tx: 0,
       ty: 0,
@@ -156,7 +156,7 @@ describe('TopologyEvents', () => {
     mockHighlighterAdd();
     const removeSpy = vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
 
-    const topologyEvents = new TopologyEvents(element, paper, () => ({
+    const topologyEvents = new TopologyInteractionEvents(element, paper, () => ({
       scale: 1,
       tx: 0,
       ty: 0,
@@ -196,7 +196,7 @@ describe('TopologyEvents', () => {
     mockHighlighterAdd();
     const removeSpy = vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
 
-    const topologyEvents = new TopologyEvents(element, paper, () => ({
+    const topologyEvents = new TopologyInteractionEvents(element, paper, () => ({
       scale: 1,
       tx: 0,
       ty: 0,

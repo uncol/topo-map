@@ -1,4 +1,4 @@
-import type { TopologyNodeSearchField, TopologyNodeSearchResult } from './types';
+import type { TopologyNodeSearchField, TopologyNodeSearchResult } from '../types';
 
 export const TOPOLOGY_NODE_SEARCH_REQUEST_EVENT = 'topology:node-search:request';
 export const TOPOLOGY_NODE_SEARCH_RESULT_EVENT = 'topology:node-search:result';

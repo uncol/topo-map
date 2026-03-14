@@ -1,5 +1,5 @@
 import type * as joint from '@joint/core';
-import type { Point } from './types';
+import type { Point } from '../types';
 
 interface EventWithOriginal {
   originalEvent?: MouseEvent | PointerEvent;

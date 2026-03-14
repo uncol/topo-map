@@ -2,9 +2,9 @@ export { Topology } from './Topology';
 export {
   normalizeTopologyNodeSearchMode,
   TOPOLOGY_NODE_SEARCH_REQUEST_EVENT,
-  TOPOLOGY_NODE_SEARCH_RESULT_EVENT
-} from './core/TopologySearchEvents';
-export { TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT } from './core/TopologySelectionEvents';
+  TOPOLOGY_NODE_SEARCH_RESULT_EVENT,
+  TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT
+} from './core/events';
 export type {
   LinkData,
   NodeData,
@@ -20,7 +20,7 @@ export type {
   TopologyNodeSearchMode,
   TopologyNodeSearchRequestDetail,
   TopologyNodeSearchResultDetail
-} from './core/TopologySearchEvents';
+} from './core/events';
 export { convertMapData, MapConverter } from './decoders/MapConverter';
 export type {
   MapConvertedDocument,
