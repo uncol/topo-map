@@ -56,6 +56,7 @@ Open: `http://localhost:8080`
 - `loadData(nodes, links)`
 - `toJSON()`
 - `fromJSON(data)`
+- `data.elements.getIdsByDataType(type)`
 - `setMode('pan' | 'zoomToArea' | 'edit')`
 - `getMode()`
 - `setSnapToGrid(enabled)`
@@ -68,6 +69,12 @@ Open: `http://localhost:8080`
 
 `fromJSON(data)` reads `data.viewport` and restores it by default. Set `preserveViewportOnLoad: true` in config to keep current viewport on load.
 Set `fitToPageOnLoad: true` to auto-fit the graph on `loadData()` and on `fromJSON()` when saved viewport is absent.
+
+### Data access
+
+```ts
+const managedObjectIds = map.data.elements.getIdsByDataType('managedobject');
+```
 
 ## Launch examples
 

@@ -87,6 +87,22 @@ fromJSON(data: object): void
 - корректно восстанавливает `noc.*` типы через `cellNamespace`;
 - если `preserveViewportOnLoad !== true`, применяет viewport из JSON; если viewport нет и `fitToPageOnLoad === true` — делает `fit to page`, иначе сбрасывает к initial.
 
+### Доступ к данным
+
+```ts
+data.elements.getIdsByDataType(type: string): string[]
+data.elements.getById(id: string): { id: string; data: Record<string, unknown> } | null
+data.elements.getAll(): Array<{ id: string; data: Record<string, unknown> }>
+data.links.getById(id: string): { id: string; data: Record<string, unknown> } | null
+data.links.getAll(): Array<{ id: string; data: Record<string, unknown> }>
+```
+
+Назначение:
+- синхронный read-only доступ к `data` из уже загруженного графа;
+- `elements` читает только `graph.getElements()`;
+- `links` читает только `graph.getLinks()`;
+- методы возвращают обычные JS-объекты, без утечки `joint.dia.Cell`.
+
 ### Режимы и взаимодействие
 
 ```ts
@@ -151,4 +167,6 @@ map.loadData(nodes, links);
 map.setMode('edit');
 map.setSnapToGrid(true);
 map.setGuidesEnabled(true);
+
+const managedObjectIds = map.data.elements.getIdsByDataType('managedobject');
 ```

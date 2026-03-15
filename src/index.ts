@@ -8,7 +8,13 @@ export {
 export type {
   LinkData,
   NodeData,
+  TopologyCellData,
   TopologyConfig,
+  TopologyDataApi,
+  TopologyElementDataApi,
+  TopologyElementRecord,
+  TopologyLinkDataApi,
+  TopologyLinkRecord,
   TopologyMode,
   TopologyNodeLabelField,
   TopologyNodeSearchField,

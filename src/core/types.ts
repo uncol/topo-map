@@ -67,6 +67,34 @@ export interface LinkData {
   attrs?: Record<string, unknown>;
 }
 
+export type TopologyCellData = Record<string, unknown>;
+
+export interface TopologyElementRecord<TData extends TopologyCellData = TopologyCellData> {
+  id: string;
+  data: TData;
+}
+
+export interface TopologyLinkRecord<TData extends TopologyCellData = TopologyCellData> {
+  id: string;
+  data: TData;
+}
+
+export interface TopologyElementDataApi {
+  getIdsByDataType(type: string): string[];
+  getById<TData extends TopologyCellData = TopologyCellData>(id: string): TopologyElementRecord<TData> | null;
+  getAll<TData extends TopologyCellData = TopologyCellData>(): TopologyElementRecord<TData>[];
+}
+
+export interface TopologyLinkDataApi {
+  getById<TData extends TopologyCellData = TopologyCellData>(id: string): TopologyLinkRecord<TData> | null;
+  getAll<TData extends TopologyCellData = TopologyCellData>(): TopologyLinkRecord<TData>[];
+}
+
+export interface TopologyDataApi {
+  readonly elements: TopologyElementDataApi;
+  readonly links: TopologyLinkDataApi;
+}
+
 export interface ViewportSnapshot {
   scale: number;
   tx: number;
