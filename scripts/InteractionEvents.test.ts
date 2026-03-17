@@ -60,15 +60,15 @@ function createContainerStub(): ContainerStub {
 function createCellView(
   id: string,
   isElement: boolean,
-  attr: Record<string, unknown>
+  data: Record<string, unknown>
 ): joint.dia.CellView | joint.dia.ElementView {
   return {
     model: {
       id,
       isElement: () => isElement,
       get: (key: string) => {
-        if (key === 'attrs') {
-          return attr;
+        if (key === 'data') {
+          return data;
         }
         return undefined;
       }
@@ -81,7 +81,7 @@ describe('InteractionEvents', () => {
     vi.restoreAllMocks();
   });
 
-  it('highlights an unselected element and emits its attrs in the highlight event', () => {
+  it('highlights an unselected element and emits its data in the highlight event', () => {
     const { paper, handlers } = createPaperStub();
     const { element, events } = createContainerStub();
     const addSpy = mockHighlighterAdd();
@@ -97,21 +97,20 @@ describe('InteractionEvents', () => {
 
     topologyEvents.setup();
 
-    const attr = { body: { fill: '#fff' } };
-    const elementView = createCellView('node-1', true, attr) as joint.dia.ElementView;
+    const data = { type: 'managedobject', name: 'node-1' };
+    const elementView = createCellView('node-1', true, data) as joint.dia.ElementView;
     const pointerDown = handlers.get('cell:pointerdown');
 
     expect(pointerDown).toBeTypeOf('function');
     pointerDown?.(elementView, { button: 0 }, 10, 20);
 
-    expect(addSpy).toHaveBeenCalledWith(elementView, 'root', 'topology-element-highlight', expect.any(Object));
+    expect(addSpy).toHaveBeenCalledWith(elementView, 'root', 'topology:element-highlight', expect.any(Object));
 
     const highlightEvent = events.find((event) => event.type === 'topology:cell:highlight');
 
     expect(highlightEvent?.detail).toMatchObject({
       id: 'node-1',
-      cell: elementView,
-      attr
+      data
     });
   });
 
@@ -131,8 +130,8 @@ describe('InteractionEvents', () => {
 
     topologyEvents.setup();
 
-    const attr = { body: { fill: '#fff' } };
-    const elementView = createCellView('node-1', true, attr) as joint.dia.ElementView;
+    const data = { type: 'managedobject', name: 'node-1' };
+    const elementView = createCellView('node-1', true, data) as joint.dia.ElementView;
     const pointerDown = handlers.get('cell:pointerdown');
 
     pointerDown?.(elementView, { button: 0 }, 10, 20);
@@ -141,12 +140,11 @@ describe('InteractionEvents', () => {
 
     pointerDown?.(elementView, { button: 0 }, 15, 25);
 
-    expect(removeSpy).toHaveBeenCalledWith(elementView, 'topology-element-highlight');
+    expect(removeSpy).toHaveBeenCalledWith(elementView, 'topology:element-highlight');
     expect(events.map((event) => event.type)).toEqual(['topology:cell:unhighlight', 'topology:cell:pointerdown']);
     expect(events[0]?.detail).toMatchObject({
       id: 'node-1',
-      cell: elementView,
-      attr
+      data
     });
   });
 
@@ -166,9 +164,10 @@ describe('InteractionEvents', () => {
 
     topologyEvents.setup();
 
-    const selectedAttr = { body: { fill: '#fff' } };
-    const elementView = createCellView('node-1', true, selectedAttr) as joint.dia.ElementView;
-    const linkView = createCellView('link-1', false, { line: { stroke: '#000' } });
+    const selectedData = { type: 'managedobject', name: 'node-1' };
+    const elementView = createCellView('node-1', true, selectedData) as joint.dia.ElementView;
+    const linkData = { type: 'link', method: 'lldp' };
+    const linkView = createCellView('link-1', false, linkData);
     const pointerDown = handlers.get('cell:pointerdown');
 
     pointerDown?.(elementView, { button: 0 }, 10, 20);
@@ -177,16 +176,15 @@ describe('InteractionEvents', () => {
 
     pointerDown?.(linkView, { button: 0 }, 15, 25);
 
-    expect(removeSpy).toHaveBeenCalledWith(elementView, 'topology-element-highlight');
+    expect(removeSpy).toHaveBeenCalledWith(elementView, 'topology:element-highlight');
     expect(events.map((event) => event.type)).toEqual(['topology:cell:unhighlight', 'topology:cell:pointerdown']);
     expect(events[0]?.detail).toMatchObject({
       id: 'node-1',
-      cell: elementView,
-      attr: selectedAttr
+      data: selectedData
     });
     expect(events[1]?.detail).toMatchObject({
       id: 'link-1',
-      attr: { line: { stroke: '#000' } }
+      data: linkData
     });
   });
 
@@ -206,8 +204,8 @@ describe('InteractionEvents', () => {
 
     topologyEvents.setup();
 
-    const attr = { body: { fill: '#fff' } };
-    const elementView = createCellView('node-1', true, attr) as joint.dia.ElementView;
+    const data = { type: 'managedobject', name: 'node-1' };
+    const elementView = createCellView('node-1', true, data) as joint.dia.ElementView;
     const cellPointerDown = handlers.get('cell:pointerdown');
     const blankPointerDown = handlers.get('blank:pointerdown');
 
@@ -217,12 +215,11 @@ describe('InteractionEvents', () => {
 
     blankPointerDown?.({ button: 0 }, 15, 25);
 
-    expect(removeSpy).toHaveBeenCalledWith(elementView, 'topology-element-highlight');
+    expect(removeSpy).toHaveBeenCalledWith(elementView, 'topology:element-highlight');
     expect(events.map((event) => event.type)).toEqual(['topology:cell:unhighlight', 'topology:blank:pointerdown']);
     expect(events[0]?.detail).toMatchObject({
       id: 'node-1',
-      cell: elementView,
-      attr
+      data
     });
   });
 });
