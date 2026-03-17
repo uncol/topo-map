@@ -13,15 +13,23 @@ const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
 const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
 
 type ScalarId = string | number;
-export interface MapConverterPort extends Record<string, unknown> {
-  id?: ScalarId | null;
-}
 
-export type MapConverterPortGroup = Record<string, unknown>;
+export interface MapConverterPort {
+  id?: ScalarId | null;
+  ports?: Array<string> | null;
+}
+export type MapConverterShapeOverlayPosition = 'NW' | 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SW' | 'W';
+export type MapConverterShapeOverlayForm = 'c' | 's';
+
+export interface MapConverterShapeOverlay {
+  code: number;
+  position: MapConverterShapeOverlayPosition;
+  form: MapConverterShapeOverlayForm;
+}
 
 export type MapConverterShape = string;
 
-export interface MapConverterNode extends Record<string, unknown> {
+export interface MapConverterNode {
   id?: ScalarId | null;
   x?: number | null;
   y?: number | null;
@@ -32,24 +40,35 @@ export interface MapConverterNode extends Record<string, unknown> {
   address?: string | null;
   glyph?: number | string | null;
   cls?: string | null;
-  ports?: MapConverterPort[] | null;
+  ports?: Array<MapConverterPort> | null;
+  level?: number | string | null;
+  external?: boolean | null;
+  caps?: [] | null;
+  metrics_label?: string | null;
+  metrics_template?: string | null;
+  node_id?: ScalarId | null;
+  object_filter?: object | null;
+  shape_overlay?: Array<MapConverterShapeOverlay> | null;
+  type?: string | null;
+  role?: string | null;
 }
 
-export interface MapConverterLinkEnd extends Record<string, unknown> {
+export interface MapConverterLinkEnd{
   id?: ScalarId | null;
 }
 
-export interface MapConverterLink extends Record<string, unknown> {
+export interface MapConverterLink {
   id?: ScalarId | null;
-  ports?: Array<ScalarId | null | undefined> | null;
+  ports?: Array<number> | null;
   connector?: string | null;
-  bw?: number | string | null;
-  in_bw?: number | string | null;
-  out_bw?: number | string | null;
+  bw?: number | null;
+  in_bw?: number | null;
+  out_bw?: number | null;
   method?: string | null;
+  type?: string | null;
 }
 
-export interface MapConverterInput extends Record<string, unknown> {
+export interface MapConverterInput {
   id?: ScalarId | null;
   type?: string | null;
   grid_size?: number | null;
@@ -64,6 +83,8 @@ export interface MapConverterInput extends Record<string, unknown> {
   width?: number | null;
   height?: number | null;
   stencil_dir?: string | null;
+  max_links?: number | null;
+  caps?: [] | null;
 }
 
 function isPaperType(value: unknown): value is PaperType {
@@ -224,7 +245,7 @@ export class MapConverter {
   }
 
   public convert(): MapDocument {
-    const cells: Array<Record<string, unknown>> = [];
+    const cells: Array<joint.dia.Cell.JSON> = [];
 
     for (const node of this.mapData.nodes ?? []) {
       const cell = this.convertNode(node);
@@ -240,7 +261,7 @@ export class MapConverter {
       }
     }
 
-    const graphJson: Record<string, unknown> = {
+    const graphJson: joint.dia.Graph.JSON = {
       cells,
       layers: createGraphLayers(),
       defaultLayer: NODE_LAYER_ID
@@ -278,7 +299,7 @@ export class MapConverter {
     return map;
   }
 
-  private convertNode(node: MapConverterNode): Record<string, unknown> | null {
+  private convertNode(node: MapConverterNode): joint.dia.Cell.JSON | null {
     const nodeId = toId(node.id);
     const shape = toText(node.shape);
     const nodeWidth = toPositiveFiniteNumber(node.shape_width, 64);
@@ -366,7 +387,7 @@ export class MapConverter {
     };
   }
 
-  private convertLink(link: MapConverterLink): Record<string, unknown> | null {
+  private convertLink(link: MapConverterLink): joint.dia.Cell.JSON | null {
     const sourcePortId = toId(link.ports?.[0]);
     const targetPortId = toId(link.ports?.[1]);
     if (!sourcePortId || !targetPortId) {
@@ -395,13 +416,6 @@ export class MapConverter {
       layer: LINK_LAYER_ID,
       source: createIconLinkEnd(srcId),
       target: createIconLinkEnd(dstId),
-      attrs: {
-        connector: toText(link.connector, 'normal'),
-        bw: link.bw ?? 0,
-        in_bw: link.in_bw ?? 0,
-        out_bw: link.out_bw ?? 0,
-        method: toText(link.method)
-      },
       data,
     };
   }

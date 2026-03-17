@@ -1,8 +1,6 @@
 export {
-  normalizeNodeSearchMode,
   NODE_SEARCH_REQUEST_EVENT,
-  NODE_SEARCH_RESULT_EVENT,
-  UNHIGHLIGHT_REQUEST_EVENT
+  NODE_SEARCH_RESULT_EVENT, normalizeNodeSearchMode, UNHIGHLIGHT_REQUEST_EVENT
 } from './core/events';
 export type {
   NodeSearchMode,
@@ -19,12 +17,9 @@ export type {
   LinkDataApi,
   LinkRecord,
   MapDocument,
-  Mode,
-  NodeLabelField,
+  Mode, NodeData, NodeLabelField,
   NodeSearchField,
-  NodeSearchResult,
-  NodeData,
-  PaperConfig,
+  NodeSearchResult, PaperConfig,
   PaperType,
   ViewportSnapshot,
   ViewportStateSnapshot
@@ -36,7 +31,7 @@ export type {
   MapConverterLinkEnd,
   MapConverterNode,
   MapConverterPort,
-  MapConverterPortGroup,
   MapConverterShape
 } from './decoders/MapConverter';
 export { Topology } from './Topology';
+

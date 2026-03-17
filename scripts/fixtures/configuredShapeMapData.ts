@@ -1,4 +1,6 @@
-export const glyphSegmentMapData = {
+import { MapConverterInput } from "../../src";
+
+export const glyphSegmentMapData: MapConverterInput = {
   id: '694f2320f73e86f3d01e51c2',
   type: 'segment',
   max_links: 1000,
@@ -103,7 +105,7 @@ export const glyphSegmentMapData = {
   ]
 };
 
-export const configuredShapeMapData = {
+export const configuredShapeMapData: MapConverterInput = {
   id: '6972456b3819bc893f2ab6c5',
   type: 'configured',
   max_links: 1000,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { convertMapData } from '../src/decoders/MapConverter';
+import { convertMapData, MapConverterInput } from '../src/decoders/MapConverter';
 import { configuredShapeMapData, glyphSegmentMapData } from './fixtures/configuredShapeMapData';
 
 describe('convertMapData', () => {
@@ -47,18 +47,19 @@ describe('convertMapData', () => {
       anchor: { name: 'iconCenter' },
       connectionPoint: { name: 'boundary' }
     });
-    expect((link as Record<string, any>)?.attrs.connector).toBe('normal');
-    expect((link as Record<string, any>)?.attrs.method).toBe('lldp');
-    expect((link as Record<string, any>)?.attrs.bw).toBe(10000000000);
-    expect((link as Record<string, any>)?.attrs.in_bw).toBe(10000000000);
-    expect((link as Record<string, any>)?.attrs.out_bw).toBe(10000000000);
+    expect((link as Record<string, any>)?.data.connector).toBe('normal');
+    expect((link as Record<string, any>)?.data.method).toBe('lldp');
+    expect((link as Record<string, any>)?.data.bw).toBe(10000000000);
+    expect((link as Record<string, any>)?.data.in_bw).toBe(10000000000);
+    expect((link as Record<string, any>)?.data.out_bw).toBe(10000000000);
   });
 
   it('converts shape-based payload into image nodes and preserves port link mapping', () => {
-    const result = convertMapData({
+    const input: MapConverterInput = {
       ...configuredShapeMapData,
-      stencil_dir: '/stencils/custom'
-    });
+      stencil_dir: '/stencils/custom',
+    };
+    const result = convertMapData(input);
 
     expect(result.viewport).toBeUndefined();
     expect(result.graph.layers).toEqual([{ id: 'links' }, { id: 'nodes' }]);
@@ -69,7 +70,7 @@ describe('convertMapData', () => {
       gridSize: 25,
       normalizePosition: false,
       objectStatusRefreshInterval: 60,
-      backgroundImage: '69740ce78ce3e3bca22290ae',
+      backgroundImage: '/bg/demo.png',
       backgroundOpacity: 0.3,
       name: 'configured',
       width: 3200,
@@ -78,7 +79,7 @@ describe('convertMapData', () => {
     });
     expect((result.graph as Record<string, unknown>).mapBounds).toBeUndefined();
     expect(result.graph.cells).toHaveLength(
-      configuredShapeMapData.nodes.length + configuredShapeMapData.links.length
+      (configuredShapeMapData.nodes?.length ?? 0) + (configuredShapeMapData.links?.length ?? 0)
     );
 
     const groupNode = result.graph.cells.find((cell) => cell.id === '6973ffeb8ce3e3bca2229017');
@@ -113,8 +114,8 @@ describe('convertMapData', () => {
       anchor: { name: 'iconCenter' },
       connectionPoint: { name: 'boundary' }
     });
-    expect((mappedLink as Record<string, any>)?.attrs.method).toBe('xmac');
-    expect((mappedLink as Record<string, any>)?.attrs.bw).toBe(1000000000);
+    expect((mappedLink as Record<string, any>)?.data.method).toBe('xmac');
+    expect((mappedLink as Record<string, any>)?.data.bw).toBe(1000000000);
 
     const cloudLink = result.graph.cells.find((cell) => cell.id === '697ba229d58805e96c998be6-22-23');
     expect(cloudLink).toBeDefined();
@@ -130,6 +131,6 @@ describe('convertMapData', () => {
       anchor: { name: 'iconCenter' },
       connectionPoint: { name: 'boundary' }
     });
-    expect((cloudLink as Record<string, any>)?.attrs.bw).toBe(1000000000);
+    expect((cloudLink as Record<string, any>)?.data.bw).toBe(1000000000);
   });
 });
