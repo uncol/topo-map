@@ -1,6 +1,6 @@
 import * as joint from '@joint/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { TopologyInteractionEvents } from '../src/core/events';
+import { InteractionEvents } from '../src/core/events';
 
 type PaperHandler = (...args: unknown[]) => void;
 
@@ -76,7 +76,7 @@ function createCellView(
   } as unknown as joint.dia.CellView;
 }
 
-describe('TopologyInteractionEvents', () => {
+describe('InteractionEvents', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -87,7 +87,7 @@ describe('TopologyInteractionEvents', () => {
     const addSpy = mockHighlighterAdd();
     vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
 
-    const topologyEvents = new TopologyInteractionEvents(element, paper, () => ({
+    const topologyEvents = new InteractionEvents(element, paper, () => ({
       scale: 1,
       tx: 0,
       ty: 0,
@@ -121,7 +121,7 @@ describe('TopologyInteractionEvents', () => {
     mockHighlighterAdd();
     const removeSpy = vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
 
-    const topologyEvents = new TopologyInteractionEvents(element, paper, () => ({
+    const topologyEvents = new InteractionEvents(element, paper, () => ({
       scale: 1,
       tx: 0,
       ty: 0,
@@ -156,7 +156,7 @@ describe('TopologyInteractionEvents', () => {
     mockHighlighterAdd();
     const removeSpy = vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
 
-    const topologyEvents = new TopologyInteractionEvents(element, paper, () => ({
+    const topologyEvents = new InteractionEvents(element, paper, () => ({
       scale: 1,
       tx: 0,
       ty: 0,
@@ -196,7 +196,7 @@ describe('TopologyInteractionEvents', () => {
     mockHighlighterAdd();
     const removeSpy = vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
 
-    const topologyEvents = new TopologyInteractionEvents(element, paper, () => ({
+    const topologyEvents = new InteractionEvents(element, paper, () => ({
       scale: 1,
       tx: 0,
       ty: 0,

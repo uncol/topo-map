@@ -16,7 +16,7 @@ const TOPOLOGY_CELL_CONTEXTMENU_EVENT = 'topology:cell:contextmenu';
 const TOPOLOGY_BLANK_CONTEXTMENU_EVENT = 'topology:blank:contextmenu';
 const TOPOLOGY_WHEEL_EVENT = 'topology:wheel';
 
-export class TopologyInteractionEvents {
+export class InteractionEvents {
   private readonly mainContainer: TopologyConfig['mainContainer'];
 
   private readonly paper: joint.dia.Paper;

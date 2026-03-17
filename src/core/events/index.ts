@@ -5,11 +5,11 @@ export {
   normalizeTopologyNodeSearchMode,
   TOPOLOGY_NODE_SEARCH_REQUEST_EVENT,
   TOPOLOGY_NODE_SEARCH_RESULT_EVENT
-} from './search';
+} from './nodeSearch';
 export type {
   TopologyNodeSearchMode,
   TopologyNodeSearchRequestDetail,
   TopologyNodeSearchResultDetail
-} from './search';
-export { TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT } from './selection';
-export { TopologyInteractionEvents } from './interaction';
+} from './nodeSearch';
+export { TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT } from './highlight';
+export { InteractionEvents } from './InteractionEvents';

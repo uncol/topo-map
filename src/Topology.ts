@@ -8,9 +8,9 @@ import { clamp } from './core/geometry';
 import { MapBoundsState } from './core/MapBoundsState';
 import { createGraphFromData, serializeTopology, toGraphEnvelope } from './core/serialization';
 import {
+  InteractionEvents,
   isTopologyNodeSearchRequestDetail,
   normalizeTopologyNodeSearchMode,
-  TopologyInteractionEvents,
   TOPOLOGY_NODE_SEARCH_REQUEST_EVENT,
   TOPOLOGY_NODE_SEARCH_RESULT_EVENT,
   TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT,
@@ -91,7 +91,7 @@ export class Topology {
 
   private readonly debug: Debug;
 
-  private readonly events: TopologyInteractionEvents;
+  private readonly events: InteractionEvents;
 
   private lastMainWidth = -1;
 
@@ -196,7 +196,7 @@ export class Topology {
     this.zoomInCommand = new ZoomInCommand(this.zoomManager);
     this.zoomOutCommand = new ZoomOutCommand(this.zoomManager);
     this.resetViewCommand = new ResetViewCommand(this.zoomManager);
-    this.events = new TopologyInteractionEvents(
+    this.events = new InteractionEvents(
       this.config.mainContainer,
       this.diagramService.getPaper(),
       () => this.viewportState.getSnapshot()
