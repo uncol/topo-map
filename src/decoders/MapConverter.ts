@@ -1,7 +1,7 @@
 import type * as joint from '@joint/core';
 import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from '../core/graphLayers';
 import {
-  TOPOLOGY_PAPER_TYPES,
+  PAPER_TYPES,
   type MapDocument,
   type PaperConfig,
   type PaperType,
@@ -69,7 +69,7 @@ export interface MapConverterInput extends Record<string, unknown> {
 }
 
 function isPaperType(value: unknown): value is PaperType {
-  return typeof value === 'string' && TOPOLOGY_PAPER_TYPES.includes(value as PaperType);
+  return typeof value === 'string' && PAPER_TYPES.includes(value as PaperType);
 }
 
 function toFiniteNumber(value: unknown, fallback: number): number {

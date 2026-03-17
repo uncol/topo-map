@@ -11,9 +11,9 @@ import {
   InteractionEvents,
   isNodeSearchRequestDetail,
   normalizeNodeSearchMode,
-  TOPOLOGY_NODE_SEARCH_REQUEST_EVENT,
-  TOPOLOGY_NODE_SEARCH_RESULT_EVENT,
-  TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT,
+  NODE_SEARCH_REQUEST_EVENT,
+  NODE_SEARCH_RESULT_EVENT,
+  UNHIGHLIGHT_REQUEST_EVENT,
   type NodeSearchResultDetail
 } from './core/events';
 import { DataFacade } from './core/DataFacade';
@@ -203,8 +203,8 @@ export class Topology {
     );
 
     this.events.setup();
-    this.config.mainContainer.addEventListener(TOPOLOGY_NODE_SEARCH_REQUEST_EVENT, this.onNodeSearchRequestBound as EventListener);
-    this.config.mainContainer.addEventListener(TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT, this.onUnhighlightRequestBound as EventListener);
+    this.config.mainContainer.addEventListener(NODE_SEARCH_REQUEST_EVENT, this.onNodeSearchRequestBound as EventListener);
+    this.config.mainContainer.addEventListener(UNHIGHLIGHT_REQUEST_EVENT, this.onUnhighlightRequestBound as EventListener);
     this.debug.setup(this.diagramService.getGraph(), this.diagramService.getPaper(), (listener) =>
       this.viewportState.subscribe(listener)
     );
@@ -458,8 +458,8 @@ export class Topology {
   public destroy(): void {
     this.logDebug('destroy:start');
     this.cancelViewportAnimation();
-    this.config.mainContainer.removeEventListener(TOPOLOGY_NODE_SEARCH_REQUEST_EVENT, this.onNodeSearchRequestBound as EventListener);
-    this.config.mainContainer.removeEventListener(TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT, this.onUnhighlightRequestBound as EventListener);
+    this.config.mainContainer.removeEventListener(NODE_SEARCH_REQUEST_EVENT, this.onNodeSearchRequestBound as EventListener);
+    this.config.mainContainer.removeEventListener(UNHIGHLIGHT_REQUEST_EVENT, this.onUnhighlightRequestBound as EventListener);
     this.events.teardown();
     this.events.clearInteractionState();
     this.debug.teardown(this.diagramService.getGraph(), this.diagramService.getPaper());
@@ -507,7 +507,7 @@ export class Topology {
         };
 
     this.config.mainContainer.dispatchEvent(
-      new CustomEvent(TOPOLOGY_NODE_SEARCH_RESULT_EVENT, {
+      new CustomEvent(NODE_SEARCH_RESULT_EVENT, {
         bubbles: true,
         composed: true,
         detail

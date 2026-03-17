@@ -6,8 +6,8 @@ import { ViewportState } from '../core/ViewportState';
 import { cellNamespace } from '../shapes/cellNamespace';
 
 const MINIMAP_ELEMENT_HIGHLIGHT_ID = 'topology-minimap-element-highlight';
-const TOPOLOGY_CELL_HIGHLIGHT_EVENT = 'topology:cell:highlight';
-const TOPOLOGY_CELL_UNHIGHLIGHT_EVENT = 'topology:cell:unhighlight';
+const CELL_HIGHLIGHT_EVENT = 'topology:cell:highlight';
+const CELL_UNHIGHLIGHT_EVENT = 'topology:cell:unhighlight';
 
 interface MinimapRect {
   rect: Rect;
@@ -130,8 +130,8 @@ export class MinimapManager {
       this.scheduleGraphRefresh();
     });
 
-    this.selectionEventTarget.addEventListener(TOPOLOGY_CELL_HIGHLIGHT_EVENT, this.onCellHighlightBound);
-    this.selectionEventTarget.addEventListener(TOPOLOGY_CELL_UNHIGHLIGHT_EVENT, this.onCellUnhighlightBound);
+    this.selectionEventTarget.addEventListener(CELL_HIGHLIGHT_EVENT, this.onCellHighlightBound);
+    this.selectionEventTarget.addEventListener(CELL_UNHIGHLIGHT_EVENT, this.onCellUnhighlightBound);
     this.container.addEventListener('pointerdown', this.onPointerDownBound);
     window.addEventListener('pointermove', this.onPointerMoveBound);
     window.addEventListener('pointerup', this.onPointerUpBound);
@@ -156,8 +156,8 @@ export class MinimapManager {
     this.unsubscribeViewport();
     this.unsubscribeMapBounds();
 
-    this.selectionEventTarget.removeEventListener(TOPOLOGY_CELL_HIGHLIGHT_EVENT, this.onCellHighlightBound);
-    this.selectionEventTarget.removeEventListener(TOPOLOGY_CELL_UNHIGHLIGHT_EVENT, this.onCellUnhighlightBound);
+    this.selectionEventTarget.removeEventListener(CELL_HIGHLIGHT_EVENT, this.onCellHighlightBound);
+    this.selectionEventTarget.removeEventListener(CELL_UNHIGHLIGHT_EVENT, this.onCellUnhighlightBound);
     this.container.removeEventListener('pointerdown', this.onPointerDownBound);
     window.removeEventListener('pointermove', this.onPointerMoveBound);
     window.removeEventListener('pointerup', this.onPointerUpBound);

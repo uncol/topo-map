@@ -19,7 +19,7 @@ export interface Config {
   padding?: number;
 }
 
-export const TOPOLOGY_PAPER_TYPES = [
+export const PAPER_TYPES = [
   'segment',
   'configured',
   'l2domain',
@@ -28,7 +28,7 @@ export const TOPOLOGY_PAPER_TYPES = [
   'objectlevelneighbor'
 ] as const;
 
-export type PaperType = (typeof TOPOLOGY_PAPER_TYPES)[number];
+export type PaperType = (typeof PAPER_TYPES)[number];
 
 export interface PaperConfig {
   id?: string;

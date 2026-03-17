@@ -7,14 +7,14 @@ const LINK_HOVER_STROKE_WIDTH = 3;
 const LINK_HOVER_OPACITY = 0.6;
 const LINK_HOVER_HIGHLIGHT_ID = 'topology:link-hover-highlight';
 const ELEMENT_HIGHLIGHT_ID = 'topology:element-highlight';
-const TOPOLOGY_CELL_POINTERDOWN_EVENT = 'topology:cell:pointerdown';
-const TOPOLOGY_CELL_POINTERDBLCLICK_EVENT = 'topology:cell:pointerdblclick';
-const TOPOLOGY_BLANK_POINTERDOWN_EVENT = 'topology:blank:pointerdown';
-const TOPOLOGY_CELL_HIGHLIGHT_EVENT = 'topology:cell:highlight';
-const TOPOLOGY_CELL_UNHIGHLIGHT_EVENT = 'topology:cell:unhighlight';
-const TOPOLOGY_CELL_CONTEXTMENU_EVENT = 'topology:cell:contextmenu';
-const TOPOLOGY_BLANK_CONTEXTMENU_EVENT = 'topology:blank:contextmenu';
-const TOPOLOGY_WHEEL_EVENT = 'topology:wheel';
+const CELL_POINTERDOWN_EVENT = 'topology:cell:pointerdown';
+const CELL_POINTERDBLCLICK_EVENT = 'topology:cell:pointerdblclick';
+const BLANK_POINTERDOWN_EVENT = 'topology:blank:pointerdown';
+const CELL_HIGHLIGHT_EVENT = 'topology:cell:highlight';
+const CELL_UNHIGHLIGHT_EVENT = 'topology:cell:unhighlight';
+const CELL_CONTEXTMENU_EVENT = 'topology:cell:contextmenu';
+const BLANK_CONTEXTMENU_EVENT = 'topology:blank:contextmenu';
+const WHEEL_EVENT = 'topology:wheel';
 
 export class InteractionEvents {
   private readonly mainContainer: Config['mainContainer'];
@@ -154,7 +154,7 @@ export class InteractionEvents {
     }
 
     this.updateElementHighlight(cellView);
-    this.emitBubbledEvent(TOPOLOGY_CELL_POINTERDOWN_EVENT, {
+    this.emitBubbledEvent(CELL_POINTERDOWN_EVENT, {
       ...this.getCellEventDetail(cellView),
       x,
       y
@@ -166,7 +166,7 @@ export class InteractionEvents {
       return;
     }
 
-    this.emitBubbledEvent(TOPOLOGY_CELL_POINTERDBLCLICK_EVENT, {
+    this.emitBubbledEvent(CELL_POINTERDBLCLICK_EVENT, {
       ...this.getCellEventDetail(cellView),
       x,
       y
@@ -179,7 +179,7 @@ export class InteractionEvents {
     }
 
     this.clearElementHighlight();
-    this.emitBubbledEvent(TOPOLOGY_BLANK_POINTERDOWN_EVENT, { x, y });
+    this.emitBubbledEvent(BLANK_POINTERDOWN_EVENT, { x, y });
   }
 
   private handleCellContextMenu(
@@ -190,7 +190,7 @@ export class InteractionEvents {
   ): void {
     this.preventDefaultEvent(event);
     const clientPoint = getEventClientPoint(event);
-    this.emitBubbledContextMenuEvent(TOPOLOGY_CELL_CONTEXTMENU_EVENT, {
+    this.emitBubbledContextMenuEvent(CELL_CONTEXTMENU_EVENT, {
       ...this.getCellEventDetail(cellView),
       clientX: clientPoint?.x ?? 0,
       clientY: clientPoint?.y ?? 0
@@ -200,7 +200,7 @@ export class InteractionEvents {
   private handleBlankContextMenu(event: joint.dia.Event, _x: number, _y: number): void {
     this.preventDefaultEvent(event);
     const clientPoint = getEventClientPoint(event);
-    this.emitBubbledContextMenuEvent(TOPOLOGY_BLANK_CONTEXTMENU_EVENT, {
+    this.emitBubbledContextMenuEvent(BLANK_CONTEXTMENU_EVENT, {
       clientX: clientPoint?.x ?? 0,
       clientY: clientPoint?.y ?? 0
     });
@@ -209,7 +209,7 @@ export class InteractionEvents {
   private handlePaperWheel(_: WheelEvent): void {
     const snapshot = this.getViewportSnapshot();
 
-    this.emitBubbledEvent(TOPOLOGY_WHEEL_EVENT, {
+    this.emitBubbledEvent(WHEEL_EVENT, {
       scale: snapshot.scale
     });
   }
@@ -231,7 +231,7 @@ export class InteractionEvents {
 
   private highlightElement(elementView: joint.dia.ElementView): void {
     if (this.highlightedElementView && this.highlightedElementView !== elementView) {
-      this.emitBubbledEvent(TOPOLOGY_CELL_UNHIGHLIGHT_EVENT, this.getCellEventDetail(this.highlightedElementView));
+      this.emitBubbledEvent(CELL_UNHIGHLIGHT_EVENT, this.getCellEventDetail(this.highlightedElementView));
       joint.highlighters.mask.remove(this.highlightedElementView, ELEMENT_HIGHLIGHT_ID);
     }
 
@@ -245,14 +245,14 @@ export class InteractionEvents {
       }
     });
     this.highlightedElementView = elementView;
-    this.emitBubbledEvent(TOPOLOGY_CELL_HIGHLIGHT_EVENT, this.getCellEventDetail(elementView));
+    this.emitBubbledEvent(CELL_HIGHLIGHT_EVENT, this.getCellEventDetail(elementView));
   }
 
   private clearElementHighlight(): void {
     if (!this.highlightedElementView) {
       return;
     }
-    this.emitBubbledEvent(TOPOLOGY_CELL_UNHIGHLIGHT_EVENT, this.getCellEventDetail(this.highlightedElementView));
+    this.emitBubbledEvent(CELL_UNHIGHLIGHT_EVENT, this.getCellEventDetail(this.highlightedElementView));
     joint.highlighters.mask.remove(this.highlightedElementView, ELEMENT_HIGHLIGHT_ID);
     this.highlightedElementView = null;
   }
