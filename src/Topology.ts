@@ -17,7 +17,7 @@ import {
   type TopologyNodeSearchResultDetail
 } from './core/events';
 import { DataFacade } from './core/DataFacade';
-import { TopologyDebug } from './core/TopologyDebug';
+import { Debug } from './core/Debug';
 import type {
   DataApi,
   LinkData,
@@ -89,7 +89,7 @@ export class Topology {
 
   private readonly resetViewCommand: ResetViewCommand;
 
-  private readonly debug: TopologyDebug;
+  private readonly debug: Debug;
 
   private readonly events: TopologyInteractionEvents;
 
@@ -129,7 +129,7 @@ export class Topology {
       onReady: config.onReady
     };
 
-    this.debug = new TopologyDebug(this.config.debugLogs);
+    this.debug = new Debug(this.config.debugLogs);
     this.viewportState = new ViewportState(this.config.initialScale, this.config.minScale, this.config.maxScale);
     this.diagramService = new DiagramService(
       this.config.mainContainer,

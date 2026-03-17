@@ -11,7 +11,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-export class TopologyDebug {
+export class Debug {
   private readonly enabled: boolean;
 
   private readonly debugDisposers: Array<() => void> = [];
