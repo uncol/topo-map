@@ -1,5 +1,5 @@
 import * as joint from '@joint/core';
-import type { Rect, ViewportSnapshot } from './types';
+import type { Rect, ViewportStateSnapshot } from './types';
 
 export type FitMode = 'page' | 'width' | 'height';
 
@@ -36,7 +36,7 @@ export function fitPaperToContent(
   paper: joint.dia.Paper,
   contentArea: Rect | null,
   size: { width: number; height: number },
-  snapshot: ViewportSnapshot,
+  snapshot: ViewportStateSnapshot,
   mode: FitMode,
   padding: number
 ): { scale: number; tx: number; ty: number } | null {

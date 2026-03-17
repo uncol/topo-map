@@ -99,6 +99,9 @@ export interface ViewportSnapshot {
   scale: number;
   tx: number;
   ty: number;
+}
+
+export interface ViewportStateSnapshot extends ViewportSnapshot {
   minScale: number;
   maxScale: number;
 }
@@ -120,17 +123,17 @@ export interface TranslateBounds {
   maxTy: number;
 }
 
-export type TranslateBoundsResolver = (snapshot: ViewportSnapshot) => TranslateBounds | null;
+export type TranslateBoundsResolver = (snapshot: ViewportStateSnapshot) => TranslateBounds | null;
 
 export interface SerializedMap {
   schemaVersion: string;
-  viewport: Pick<ViewportSnapshot, 'scale' | 'tx' | 'ty'>;
+  viewport: ViewportSnapshot;
   graph: joint.dia.Graph.JSON;
 }
 
 export interface MapDocument {
   graph: joint.dia.Graph.JSON;
-  viewport?: Pick<ViewportSnapshot, 'scale' | 'tx' | 'ty'>;
+  viewport?: ViewportSnapshot;
   paperConfig: PaperConfig;
 }
 

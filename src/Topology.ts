@@ -28,7 +28,7 @@ import type {
   NodeSearchResult,
   NodeData,
   PaperConfig,
-  ViewportSnapshot
+  ViewportStateSnapshot
 } from './core/types';
 import { ViewportState } from './core/ViewportState';
 import type { MapConverterInput } from './decoders/MapConverter';
@@ -400,7 +400,7 @@ export class Topology {
     this.fitToContent('height');
   }
 
-  public getViewportSnapshot(): ViewportSnapshot {
+  public getViewportSnapshot(): ViewportStateSnapshot {
     return this.viewportState.getSnapshot();
   }
 

@@ -1,12 +1,12 @@
-import type { Disposer, TranslateBounds, TranslateBoundsResolver, ViewportSnapshot } from './types';
+import type { Disposer, TranslateBounds, TranslateBoundsResolver, ViewportStateSnapshot } from './types';
 import { clamp } from './geometry';
 
-type Listener = (snapshot: ViewportSnapshot) => void;
+type Listener = (snapshot: ViewportStateSnapshot) => void;
 
 export class ViewportState {
   private readonly listeners = new Set<Listener>();
 
-  private snapshot: ViewportSnapshot;
+  private snapshot: ViewportStateSnapshot;
 
   private translateBoundsResolver: TranslateBoundsResolver | null = null;
 
@@ -21,7 +21,7 @@ export class ViewportState {
     };
   }
 
-  public getSnapshot(): ViewportSnapshot {
+  public getSnapshot(): ViewportStateSnapshot {
     return { ...this.snapshot };
   }
 

@@ -11,11 +11,7 @@ const DEFAULT_NODE_SIZE = 64;
 
 export interface GraphEnvelope {
   graph: joint.dia.Graph.JSON;
-  viewport?: {
-    scale: number;
-    tx: number;
-    ty: number;
-  };
+  viewport?: ViewportSnapshot;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

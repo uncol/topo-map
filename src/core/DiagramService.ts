@@ -196,7 +196,7 @@ export class DiagramService {
     const scale = Math.min(maxScale, Math.max(minScale, Math.min(scaleX, scaleY)));
     const tx = width / 2 - (rect.x + rect.width / 2) * scale;
     const ty = height / 2 - (rect.y + rect.height / 2) * scale;
-    this.applyViewport({ scale, tx, ty, minScale, maxScale });
+    this.applyViewport({ scale, tx, ty });
   }
 
   public clientToLocal(clientX: number, clientY: number): joint.g.Point {

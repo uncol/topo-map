@@ -49,8 +49,6 @@ export interface MapConverterLink extends Record<string, unknown> {
   method?: string | null;
 }
 
-type MapConvertedViewport = Pick<ViewportSnapshot, 'scale' | 'tx' | 'ty'>;
-
 export interface MapConverterInput extends Record<string, unknown> {
   id?: ScalarId | null;
   type?: string | null;
@@ -62,7 +60,7 @@ export interface MapConverterInput extends Record<string, unknown> {
   name?: string | null;
   nodes?: MapConverterNode[] | null;
   links?: MapConverterLink[] | null;
-  viewport?: Partial<MapConvertedViewport> | null;
+  viewport?: Partial<ViewportSnapshot> | null;
   width?: number | null;
   height?: number | null;
   stencil_dir?: string | null;
@@ -145,7 +143,7 @@ function toGlyphText(value: unknown): string | null {
   return null;
 }
 
-function normalizeViewport(viewport: MapConverterInput['viewport']): MapConvertedViewport | undefined {
+function normalizeViewport(viewport: MapConverterInput['viewport']): ViewportSnapshot | undefined {
   if (!viewport) {
     return undefined;
   }

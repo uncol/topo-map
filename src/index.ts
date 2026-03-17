@@ -25,7 +25,9 @@ export type {
   NodeSearchResult,
   NodeData,
   PaperConfig,
-  PaperType
+  PaperType,
+  ViewportSnapshot,
+  ViewportStateSnapshot
 } from './core/types';
 export { convertMapData, MapConverter } from './decoders/MapConverter';
 export type {
