@@ -6,8 +6,8 @@ import { ViewportState } from '../core/ViewportState';
 import { cellNamespace } from '../shapes/cellNamespace';
 
 const MINIMAP_ELEMENT_HIGHLIGHT_ID = 'topology-minimap-element-highlight';
-const CELL_HIGHLIGHT_EVENT = 'topology:cell:highlight';
-const CELL_UNHIGHLIGHT_EVENT = 'topology:cell:unhighlight';
+const CELL_HIGHLIGHT_EVENT = 'topo:cell:highlight';
+const CELL_UNHIGHLIGHT_EVENT = 'topo:cell:unhighlight';
 
 interface MinimapRect {
   rect: Rect;

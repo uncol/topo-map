@@ -5,16 +5,16 @@ import { getEventClientPoint, isPrimaryMouseButton } from './pointer';
 const LINK_HOVER_STROKE = '#3498db';
 const LINK_HOVER_STROKE_WIDTH = 3;
 const LINK_HOVER_OPACITY = 0.6;
-const LINK_HOVER_HIGHLIGHT_ID = 'topology:link-hover-highlight';
-const ELEMENT_HIGHLIGHT_ID = 'topology:element-highlight';
-const CELL_POINTERDOWN_EVENT = 'topology:cell:pointerdown';
-const CELL_POINTERDBLCLICK_EVENT = 'topology:cell:pointerdblclick';
-const BLANK_POINTERDOWN_EVENT = 'topology:blank:pointerdown';
-const CELL_HIGHLIGHT_EVENT = 'topology:cell:highlight';
-const CELL_UNHIGHLIGHT_EVENT = 'topology:cell:unhighlight';
-const CELL_CONTEXTMENU_EVENT = 'topology:cell:contextmenu';
-const BLANK_CONTEXTMENU_EVENT = 'topology:blank:contextmenu';
-const WHEEL_EVENT = 'topology:wheel';
+const LINK_HOVER_HIGHLIGHT_ID = 'topo:link-hover-highlight';
+const ELEMENT_HIGHLIGHT_ID = 'topo:element-highlight';
+const CELL_POINTERDOWN_EVENT = 'topo:cell:pointerdown';
+const CELL_POINTERDBLCLICK_EVENT = 'topo:cell:pointerdblclick';
+const BLANK_POINTERDOWN_EVENT = 'topo:blank:pointerdown';
+const CELL_HIGHLIGHT_EVENT = 'topo:cell:highlight';
+const CELL_UNHIGHLIGHT_EVENT = 'topo:cell:unhighlight';
+const CELL_CONTEXTMENU_EVENT = 'topo:cell:contextmenu';
+const BLANK_CONTEXTMENU_EVENT = 'topo:blank:contextmenu';
+const WHEEL_EVENT = 'topo:wheel';
 
 export class InteractionEvents {
   private readonly mainContainer: Config['mainContainer'];

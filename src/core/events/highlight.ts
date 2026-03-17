@@ -1,1 +1,1 @@
-export const UNHIGHLIGHT_REQUEST_EVENT = 'topology:unhighlight:request';
+export const UNHIGHLIGHT_REQUEST_EVENT = 'topo:unhighlight:request';

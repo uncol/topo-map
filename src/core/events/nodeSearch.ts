@@ -1,7 +1,7 @@
 import type { NodeSearchField, NodeSearchResult } from '../types';
 
-export const NODE_SEARCH_REQUEST_EVENT = 'topology:node-search:request';
-export const NODE_SEARCH_RESULT_EVENT = 'topology:node-search:result';
+export const NODE_SEARCH_REQUEST_EVENT = 'topo:node-search:request';
+export const NODE_SEARCH_RESULT_EVENT = 'topo:node-search:result';
 
 export type NodeSearchMode = 'labelAndMove' | 'idAndMove';
 
