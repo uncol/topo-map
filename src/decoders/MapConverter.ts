@@ -59,7 +59,7 @@ export interface MapConverterLinkEnd{
 
 export interface MapConverterLink {
   id?: ScalarId | null;
-  ports?: Array<number> | null;
+  ports?: Array<ScalarId> | null;
   connector?: string | null;
   bw?: number | null;
   in_bw?: number | null;
