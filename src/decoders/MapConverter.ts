@@ -1,6 +1,12 @@
 import type * as joint from '@joint/core';
 import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from '../core/graphLayers';
-import { TOPOLOGY_PAPER_TYPES, type PaperConfig, type TopologyPaperType } from '../core/types';
+import {
+  TOPOLOGY_PAPER_TYPES,
+  type MapDocument,
+  type PaperConfig,
+  type TopologyPaperType,
+  type ViewportSnapshot
+} from '../core/types';
 import { createIconLinkEnd } from '../shapes/linkEndpoints';
 
 const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
@@ -43,11 +49,7 @@ export interface MapConverterLink extends Record<string, unknown> {
   method?: string | null;
 }
 
-export interface MapConvertedViewport {
-  scale: number;
-  tx: number;
-  ty: number;
-}
+type MapConvertedViewport = Pick<ViewportSnapshot, 'scale' | 'tx' | 'ty'>;
 
 export interface MapConverterInput extends Record<string, unknown> {
   id?: ScalarId | null;
@@ -64,12 +66,6 @@ export interface MapConverterInput extends Record<string, unknown> {
   width?: number | null;
   height?: number | null;
   stencil_dir?: string | null;
-}
-
-export interface MapConvertedDocument {
-  graph: joint.dia.Graph.JSON;
-  viewport?: MapConvertedViewport;
-  paperConfig: PaperConfig;
 }
 
 function isPaperType(value: unknown): value is TopologyPaperType {
@@ -229,7 +225,7 @@ export class MapConverter {
     return `img-${shape.replace(/\//g, '-').replace(/ /g, '-').replace(/_/g, '-')}`;
   }
 
-  public convert(): MapConvertedDocument {
+  public convert(): MapDocument {
     const cells: Array<Record<string, unknown>> = [];
 
     for (const node of this.mapData.nodes ?? []) {
@@ -252,7 +248,7 @@ export class MapConverter {
       defaultLayer: NODE_LAYER_ID
     };
 
-    const document: MapConvertedDocument = {
+    const document: MapDocument = {
       graph: graphJson as joint.dia.Graph.JSON,
       paperConfig: normalizePaperConfig(this.mapData)
     };
@@ -413,6 +409,6 @@ export class MapConverter {
   }
 }
 
-export function convertMapData(input: MapConverterInput): MapConvertedDocument {
+export function convertMapData(input: MapConverterInput): MapDocument {
   return new MapConverter(input).convert();
 }

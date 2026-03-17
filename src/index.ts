@@ -11,6 +11,7 @@ export type {
 } from './core/events';
 export type {
   LinkData,
+  MapDocument,
   NodeData, PaperConfig, TopologyCellData,
   TopologyConfig,
   TopologyDataApi,
@@ -25,8 +26,6 @@ export type {
 } from './core/types';
 export { convertMapData, MapConverter } from './decoders/MapConverter';
 export type {
-  MapConvertedDocument,
-  MapConvertedViewport,
   MapConverterInput,
   MapConverterLink,
   MapConverterLinkEnd,
@@ -36,4 +35,3 @@ export type {
   MapConverterShape
 } from './decoders/MapConverter';
 export { Topology } from './Topology';
-

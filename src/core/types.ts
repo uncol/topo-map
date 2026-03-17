@@ -128,6 +128,12 @@ export interface SerializedTopology {
   graph: joint.dia.Graph.JSON;
 }
 
+export interface MapDocument {
+  graph: joint.dia.Graph.JSON;
+  viewport?: Pick<ViewportSnapshot, 'scale' | 'tx' | 'ty'>;
+  paperConfig: PaperConfig;
+}
+
 export interface Point {
   x: number;
   y: number;
