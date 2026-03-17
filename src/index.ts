@@ -1,4 +1,3 @@
-export { Topology } from './Topology';
 export {
   normalizeTopologyNodeSearchMode,
   TOPOLOGY_NODE_SEARCH_REQUEST_EVENT,
@@ -6,9 +5,13 @@ export {
   TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT
 } from './core/events';
 export type {
+  TopologyNodeSearchMode,
+  TopologyNodeSearchRequestDetail,
+  TopologyNodeSearchResultDetail
+} from './core/events';
+export type {
   LinkData,
-  NodeData,
-  TopologyCellData,
+  NodeData, PaperConfig, TopologyCellData,
   TopologyConfig,
   TopologyDataApi,
   TopologyElementDataApi,
@@ -18,19 +21,11 @@ export type {
   TopologyMode,
   TopologyNodeLabelField,
   TopologyNodeSearchField,
-  TopologyNodeSearchResult,
-  TopologyPaperConfig,
-  TopologyPaperType
+  TopologyNodeSearchResult, TopologyPaperType
 } from './core/types';
-export type {
-  TopologyNodeSearchMode,
-  TopologyNodeSearchRequestDetail,
-  TopologyNodeSearchResultDetail
-} from './core/events';
 export { convertMapData, MapConverter } from './decoders/MapConverter';
 export type {
   MapConvertedDocument,
-  MapConvertedPaperConfig,
   MapConvertedViewport,
   MapConverterInput,
   MapConverterLink,
@@ -40,3 +35,5 @@ export type {
   MapConverterPortGroup,
   MapConverterShape
 } from './decoders/MapConverter';
+export { Topology } from './Topology';
+

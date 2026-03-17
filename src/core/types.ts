@@ -30,7 +30,7 @@ export const TOPOLOGY_PAPER_TYPES = [
 
 export type TopologyPaperType = (typeof TOPOLOGY_PAPER_TYPES)[number];
 
-export interface TopologyPaperConfig {
+export interface PaperConfig {
   id?: string;
   type?: TopologyPaperType;
   gridSize?: number;

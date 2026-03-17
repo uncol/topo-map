@@ -1,6 +1,6 @@
 import type * as joint from '@joint/core';
 import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from '../core/graphLayers';
-import { TOPOLOGY_PAPER_TYPES, type TopologyPaperConfig, type TopologyPaperType } from '../core/types';
+import { TOPOLOGY_PAPER_TYPES, type PaperConfig, type TopologyPaperType } from '../core/types';
 import { createIconLinkEnd } from '../shapes/linkEndpoints';
 
 const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
@@ -66,12 +66,10 @@ export interface MapConverterInput extends Record<string, unknown> {
   stencil_dir?: string | null;
 }
 
-export type MapConvertedPaperConfig = TopologyPaperConfig;
-
 export interface MapConvertedDocument {
   graph: joint.dia.Graph.JSON;
   viewport?: MapConvertedViewport;
-  paperConfig: MapConvertedPaperConfig;
+  paperConfig: PaperConfig;
 }
 
 function isPaperType(value: unknown): value is TopologyPaperType {
@@ -166,8 +164,8 @@ function normalizeViewport(viewport: MapConverterInput['viewport']): MapConverte
   return { scale, tx, ty };
 }
 
-function normalizePaperConfig(input: MapConverterInput): MapConvertedPaperConfig {
-  const paperConfig: MapConvertedPaperConfig = {};
+function normalizePaperConfig(input: MapConverterInput): PaperConfig {
+  const paperConfig: PaperConfig = {};
   const id = toId(input.id);
   const type = toOptionalText(input.type);
   const gridSize = toOptionalFiniteNumber(input.grid_size);

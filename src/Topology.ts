@@ -27,7 +27,7 @@ import type {
   TopologyNodeLabelField,
   TopologyNodeSearchField,
   TopologyNodeSearchResult,
-  TopologyPaperConfig,
+  PaperConfig,
   ViewportSnapshot
 } from './core/types';
 import { ViewportState } from './core/ViewportState';
@@ -594,7 +594,7 @@ export class Topology {
     this.viewportState.setViewport(fittedViewport.scale, fittedViewport.tx, fittedViewport.ty);
   }
 
-  private applyMapPaperConfig(paperConfig: TopologyPaperConfig): void {
+  private applyMapPaperConfig(paperConfig: PaperConfig): void {
     setStencilDir(paperConfig.stencilDir ?? '/stencils');
     this.editMode.setGridSize(paperConfig.gridSize ?? this.config.gridSize);
     this.diagramService.applyPaperConfig(paperConfig);

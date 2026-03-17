@@ -2,7 +2,7 @@ import * as joint from '@joint/core';
 import { cellNamespace } from '../shapes/cellNamespace';
 import { ensureIconCenterAnchorRegistered } from '../shapes/linkEndpoints';
 import { clamp } from './geometry';
-import type { Point, Rect, Size, TopologyPaperConfig, TranslateBounds, ViewportSnapshot } from './types';
+import type { PaperConfig, Point, Rect, Size, TranslateBounds, ViewportSnapshot } from './types';
 import { ViewportState } from './ViewportState';
 
 const DEFAULT_BACKGROUND_COLOR = '#f8fafc';
@@ -139,7 +139,7 @@ export class DiagramService {
     this.mapBoundsProvider = provider;
   }
 
-  public applyPaperConfig(config: TopologyPaperConfig): void {
+  public applyPaperConfig(config: PaperConfig): void {
     const background: joint.dia.Paper.BackgroundOptions = {
       color: DEFAULT_BACKGROUND_COLOR
     };
