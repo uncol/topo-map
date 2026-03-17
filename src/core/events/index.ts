@@ -1,4 +1,4 @@
-export { getEventClientPoint, isPrimaryMouseButton } from './eventUtils';
+export { getEventClientPoint, isPrimaryMouseButton } from './pointer';
 export {
   isTopologyNodeSearchMode,
   isTopologyNodeSearchRequestDetail,
@@ -12,4 +12,4 @@ export type {
   TopologyNodeSearchResultDetail
 } from './search';
 export { TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT } from './selection';
-export { TopologyInteractionEvents } from './TopologyInteractionEvents';
+export { TopologyInteractionEvents } from './interaction';

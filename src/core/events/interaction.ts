@@ -1,6 +1,6 @@
 import * as joint from '@joint/core';
 import type { TopologyConfig, ViewportSnapshot } from '../types';
-import { getEventClientPoint, isPrimaryMouseButton } from './eventUtils';
+import { getEventClientPoint, isPrimaryMouseButton } from './pointer';
 
 const LINK_HOVER_STROKE = '#3498db';
 const LINK_HOVER_STROKE_WIDTH = 3;
