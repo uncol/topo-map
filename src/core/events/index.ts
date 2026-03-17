@@ -1,8 +1,8 @@
 export { getEventClientPoint, isPrimaryMouseButton } from './pointer';
 export {
-  isTopologyNodeSearchMode,
-  isTopologyNodeSearchRequestDetail,
-  normalizeTopologyNodeSearchMode,
+  isNodeSearchMode,
+  isNodeSearchRequestDetail,
+  normalizeNodeSearchMode,
   TOPOLOGY_NODE_SEARCH_REQUEST_EVENT,
   TOPOLOGY_NODE_SEARCH_RESULT_EVENT
 } from './nodeSearch';

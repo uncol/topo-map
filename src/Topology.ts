@@ -6,11 +6,11 @@ import { DiagramService } from './core/DiagramService';
 import { fitPaperToContent, type FitMode } from './core/fitBounds';
 import { clamp } from './core/geometry';
 import { MapBoundsState } from './core/MapBoundsState';
-import { createGraphFromData, serializeTopology, toGraphEnvelope } from './core/serialization';
+import { createGraphFromData, serializeMap, toGraphEnvelope } from './core/serialization';
 import {
   InteractionEvents,
-  isTopologyNodeSearchRequestDetail,
-  normalizeTopologyNodeSearchMode,
+  isNodeSearchRequestDetail,
+  normalizeNodeSearchMode,
   TOPOLOGY_NODE_SEARCH_REQUEST_EVENT,
   TOPOLOGY_NODE_SEARCH_RESULT_EVENT,
   TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT,
@@ -228,7 +228,7 @@ export class Topology {
   }
 
   public toJSON(): object {
-    return serializeTopology(this.diagramService.toJSON(), this.viewportState.getSnapshot());
+    return serializeMap(this.diagramService.toJSON(), this.viewportState.getSnapshot());
   }
 
   public fromJSON(data: object): void {
@@ -479,12 +479,12 @@ export class Topology {
   }
 
   private handleNodeSearchRequest(event: Event): void {
-    if (!(event instanceof CustomEvent) || !isTopologyNodeSearchRequestDetail(event.detail)) {
+    if (!(event instanceof CustomEvent) || !isNodeSearchRequestDetail(event.detail)) {
       return;
     }
 
     const { query } = event.detail;
-    const mode = normalizeTopologyNodeSearchMode(event.detail.mode);
+    const mode = normalizeNodeSearchMode(event.detail.mode);
     const field: NodeSearchField = mode === 'idAndMove' ? 'id' : this.getVisibleNodeLabelField();
     const result =
       mode === 'idAndMove'

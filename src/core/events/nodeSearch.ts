@@ -18,15 +18,15 @@ export interface NodeSearchResultDetail extends Partial<NodeSearchResult> {
   found: boolean;
 }
 
-export function isTopologyNodeSearchMode(value: unknown): value is NodeSearchMode {
+export function isNodeSearchMode(value: unknown): value is NodeSearchMode {
   return value === 'labelAndMove' || value === 'idAndMove';
 }
 
-export function normalizeTopologyNodeSearchMode(value: unknown): NodeSearchMode {
-  return isTopologyNodeSearchMode(value) ? value : 'labelAndMove';
+export function normalizeNodeSearchMode(value: unknown): NodeSearchMode {
+  return isNodeSearchMode(value) ? value : 'labelAndMove';
 }
 
-export function isTopologyNodeSearchRequestDetail(value: unknown): value is NodeSearchRequestDetail {
+export function isNodeSearchRequestDetail(value: unknown): value is NodeSearchRequestDetail {
   if (typeof value !== 'object' || value === null) {
     return false;
   }
@@ -35,7 +35,7 @@ export function isTopologyNodeSearchRequestDetail(value: unknown): value is Node
     return false;
   }
 
-  if ('mode' in value && !isTopologyNodeSearchMode((value as { mode?: unknown }).mode)) {
+  if ('mode' in value && !isNodeSearchMode((value as { mode?: unknown }).mode)) {
     return false;
   }
 

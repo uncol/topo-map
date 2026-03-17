@@ -112,7 +112,7 @@ export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint
   } as joint.dia.Graph.JSON;
 }
 
-export function serializeTopology(graph: joint.dia.Graph.JSON, snapshot: ViewportSnapshot): SerializedMap {
+export function serializeMap(graph: joint.dia.Graph.JSON, snapshot: ViewportSnapshot): SerializedMap {
   return {
     schemaVersion: DEFAULT_SCHEMA_VERSION,
     viewport: {
