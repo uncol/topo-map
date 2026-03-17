@@ -67,32 +67,32 @@ export interface LinkData {
   attrs?: Record<string, unknown>;
 }
 
-export type TopologyCellData = Record<string, unknown>;
+export type CellData = Record<string, unknown>;
 
-export interface TopologyElementRecord<TData extends TopologyCellData = TopologyCellData> {
+export interface ElementRecord<TData extends CellData = CellData> {
   id: string;
   data: TData;
 }
 
-export interface TopologyLinkRecord<TData extends TopologyCellData = TopologyCellData> {
+export interface LinkRecord<TData extends CellData = CellData> {
   id: string;
   data: TData;
 }
 
-export interface TopologyElementDataApi {
+export interface ElementDataApi {
   getIdsByDataType(type: string): string[];
-  getById<TData extends TopologyCellData = TopologyCellData>(id: string): TopologyElementRecord<TData> | null;
-  getAll<TData extends TopologyCellData = TopologyCellData>(): TopologyElementRecord<TData>[];
+  getById<TData extends CellData = CellData>(id: string): ElementRecord<TData> | null;
+  getAll<TData extends CellData = CellData>(): ElementRecord<TData>[];
 }
 
-export interface TopologyLinkDataApi {
-  getById<TData extends TopologyCellData = TopologyCellData>(id: string): TopologyLinkRecord<TData> | null;
-  getAll<TData extends TopologyCellData = TopologyCellData>(): TopologyLinkRecord<TData>[];
+export interface LinkDataApi {
+  getById<TData extends CellData = CellData>(id: string): LinkRecord<TData> | null;
+  getAll<TData extends CellData = CellData>(): LinkRecord<TData>[];
 }
 
-export interface TopologyDataApi {
-  readonly elements: TopologyElementDataApi;
-  readonly links: TopologyLinkDataApi;
+export interface DataApi {
+  readonly elements: ElementDataApi;
+  readonly links: LinkDataApi;
 }
 
 export interface ViewportSnapshot {

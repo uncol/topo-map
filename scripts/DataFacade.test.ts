@@ -1,12 +1,12 @@
 import * as joint from '@joint/core';
 import { describe, expect, it } from 'vitest';
-import { TopologyDataFacade } from '../src/core/TopologyDataApi';
+import { DataFacade } from '../src/core/DataFacade';
 
 function createGraph() {
   return new joint.dia.Graph({}, { cellNamespace: {} });
 }
 
-describe('TopologyDataFacade', () => {
+describe('DataFacade', () => {
   it('returns element ids filtered by data.type', () => {
     const graph = createGraph();
     graph.addCells([
@@ -29,7 +29,7 @@ describe('TopologyDataFacade', () => {
       })
     ]);
 
-    const api = new TopologyDataFacade(graph);
+    const api = new DataFacade(graph);
 
     expect(api.elements.getIdsByDataType('managedobject')).toEqual(['node-1']);
   });
@@ -51,7 +51,7 @@ describe('TopologyDataFacade', () => {
       })
     ]);
 
-    const api = new TopologyDataFacade(graph);
+    const api = new DataFacade(graph);
     const elementRecord = api.elements.getById<{ type: string; nested: { name: string } }>('node-1');
     const linkRecord = api.links.getById<{ type: string; nested: { weight: number } }>('link-1');
 

@@ -10,19 +10,22 @@ export type {
   TopologyNodeSearchResultDetail
 } from './core/events';
 export type {
+  CellData,
+  DataApi,
+  ElementDataApi,
+  ElementRecord,
   LinkData,
+  LinkDataApi,
+  LinkRecord,
   MapDocument,
-  NodeData, PaperConfig, TopologyCellData,
+  NodeData,
+  PaperConfig,
   TopologyConfig,
-  TopologyDataApi,
-  TopologyElementDataApi,
-  TopologyElementRecord,
-  TopologyLinkDataApi,
-  TopologyLinkRecord,
   TopologyMode,
   TopologyNodeLabelField,
   TopologyNodeSearchField,
-  TopologyNodeSearchResult, TopologyPaperType
+  TopologyNodeSearchResult,
+  TopologyPaperType
 } from './core/types';
 export { convertMapData, MapConverter } from './decoders/MapConverter';
 export type {

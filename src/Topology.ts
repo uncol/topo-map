@@ -16,12 +16,12 @@ import {
   TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT,
   type TopologyNodeSearchResultDetail
 } from './core/events';
-import { TopologyDataFacade } from './core/TopologyDataApi';
+import { DataFacade } from './core/DataFacade';
 import { TopologyDebug } from './core/TopologyDebug';
 import type {
+  DataApi,
   LinkData,
   NodeData,
-  TopologyDataApi,
   TopologyConfig,
   TopologyMode,
   TopologyNodeLabelField,
@@ -55,7 +55,7 @@ const DEFAULT_PADDING = 10;
 const DEFAULT_FOCUS_ANIMATION_MS = 650;
 
 export class Topology {
-  public readonly data: TopologyDataApi;
+  public readonly data: DataApi;
 
   private readonly config: Required<Omit<TopologyConfig, 'onReady'>> & { onReady: (() => void) | undefined };
 
@@ -138,7 +138,7 @@ export class Topology {
       this.config.asyncRendering,
       DEFAULT_PADDING
     );
-    this.data = new TopologyDataFacade(this.diagramService.getGraph());
+    this.data = new DataFacade(this.diagramService.getGraph());
     this.mapBoundsManager = new MapBoundsManager(
       this.diagramService.getGraph(),
       this.diagramService.getPaper(),

@@ -1,11 +1,11 @@
 import type * as joint from '@joint/core';
 import type {
-  TopologyCellData,
-  TopologyDataApi,
-  TopologyElementDataApi,
-  TopologyElementRecord,
-  TopologyLinkDataApi,
-  TopologyLinkRecord
+  CellData,
+  DataApi,
+  ElementDataApi,
+  ElementRecord,
+  LinkDataApi,
+  LinkRecord
 } from './types';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -28,9 +28,9 @@ function cloneValue<T>(value: T): T {
   return clone as T;
 }
 
-function toRecord<TData extends TopologyCellData>(
+function toRecord<TData extends CellData>(
   cell: joint.dia.Cell
-): TopologyElementRecord<TData> | TopologyLinkRecord<TData> | null {
+): ElementRecord<TData> | LinkRecord<TData> | null {
   const data = cell.get('data');
   if (!isRecord(data)) {
     return null;
@@ -42,7 +42,7 @@ function toRecord<TData extends TopologyCellData>(
   };
 }
 
-class TopologyElementDataFacade implements TopologyElementDataApi {
+class ElementDataFacade implements ElementDataApi {
   public constructor(private readonly graph: joint.dia.Graph) {}
 
   public getIdsByDataType(type: string): string[] {
@@ -61,7 +61,7 @@ class TopologyElementDataFacade implements TopologyElementDataApi {
     });
   }
 
-  public getById<TData extends TopologyCellData = TopologyCellData>(id: string): TopologyElementRecord<TData> | null {
+  public getById<TData extends CellData = CellData>(id: string): ElementRecord<TData> | null {
     const cell = this.graph.getCell(id);
     if (!cell?.isElement()) {
       return null;
@@ -70,7 +70,7 @@ class TopologyElementDataFacade implements TopologyElementDataApi {
     return toRecord<TData>(cell);
   }
 
-  public getAll<TData extends TopologyCellData = TopologyCellData>(): TopologyElementRecord<TData>[] {
+  public getAll<TData extends CellData = CellData>(): ElementRecord<TData>[] {
     return this.graph.getElements().flatMap((element) => {
       const record = toRecord<TData>(element);
       return record ? [record] : [];
@@ -78,10 +78,10 @@ class TopologyElementDataFacade implements TopologyElementDataApi {
   }
 }
 
-class TopologyLinkDataFacade implements TopologyLinkDataApi {
+class LinkDataFacade implements LinkDataApi {
   public constructor(private readonly graph: joint.dia.Graph) {}
 
-  public getById<TData extends TopologyCellData = TopologyCellData>(id: string): TopologyLinkRecord<TData> | null {
+  public getById<TData extends CellData = CellData>(id: string): LinkRecord<TData> | null {
     const cell = this.graph.getCell(id);
     if (!cell?.isLink()) {
       return null;
@@ -90,7 +90,7 @@ class TopologyLinkDataFacade implements TopologyLinkDataApi {
     return toRecord<TData>(cell);
   }
 
-  public getAll<TData extends TopologyCellData = TopologyCellData>(): TopologyLinkRecord<TData>[] {
+  public getAll<TData extends CellData = CellData>(): LinkRecord<TData>[] {
     return this.graph.getLinks().flatMap((link) => {
       const record = toRecord<TData>(link);
       return record ? [record] : [];
@@ -98,13 +98,13 @@ class TopologyLinkDataFacade implements TopologyLinkDataApi {
   }
 }
 
-export class TopologyDataFacade implements TopologyDataApi {
-  public readonly elements: TopologyElementDataApi;
+export class DataFacade implements DataApi {
+  public readonly elements: ElementDataApi;
 
-  public readonly links: TopologyLinkDataApi;
+  public readonly links: LinkDataApi;
 
   public constructor(graph: joint.dia.Graph) {
-    this.elements = new TopologyElementDataFacade(graph);
-    this.links = new TopologyLinkDataFacade(graph);
+    this.elements = new ElementDataFacade(graph);
+    this.links = new LinkDataFacade(graph);
   }
 }
