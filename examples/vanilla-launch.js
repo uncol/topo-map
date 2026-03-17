@@ -1,10 +1,10 @@
 import '@gufo-labs/font/gufo-font.css';
 import { configuredShapeMapData, glyphSegmentMapData } from '../scripts/fixtures/configuredShapeMapData.ts';
 import {
-  normalizeTopologyNodeSearchMode,
-  Topology,
-  TOPOLOGY_NODE_SEARCH_REQUEST_EVENT,
-  TOPOLOGY_NODE_SEARCH_RESULT_EVENT
+  NODE_SEARCH_REQUEST_EVENT,
+  NODE_SEARCH_RESULT_EVENT,
+  normalizeNodeSearchMode,
+  Topology
 } from '../src/index.ts';
 
 const mainContainer = document.getElementById('topology-main');
@@ -142,7 +142,7 @@ const nodeSearchModeSelect = document.getElementById('node-search-mode');
 const nodeSearchSubmitBtn = document.getElementById('node-search-submit');
 const nodeSearchStatus = document.getElementById('node-search-status');
 const renderStats = document.getElementById('render-stats');
-const TOPOLOGY_CELL_POINTERDOWN_EVENT = 'topology:cell:pointerdown';
+const TOPOLOGY_CELL_POINTERDOWN_EVENT = 'topo:cell:pointerdown';
 const ZOOM_CUSTOM_OPTION_VALUE = '__custom__';
 const ZOOM_PRESET_TOLERANCE = 0.001;
 const FIT_SETTLE_MAX_PASSES = 4;
@@ -157,7 +157,7 @@ let fitRafId = 0;
 function updateSearchUi() {
   const mode =
     nodeSearchModeSelect instanceof HTMLSelectElement
-      ? normalizeTopologyNodeSearchMode(nodeSearchModeSelect.value)
+      ? normalizeNodeSearchMode(nodeSearchModeSelect.value)
       : 'labelAndMove';
   const field = mode === 'idAndMove' ? 'id' : instance.getVisibleNodeLabelField();
   const humanField = field === 'id' ? 'node id' : field === 'ipaddr' ? 'IP' : 'node name';
@@ -192,11 +192,11 @@ function runNodeSearch() {
 
   const mode =
     nodeSearchModeSelect instanceof HTMLSelectElement
-      ? normalizeTopologyNodeSearchMode(nodeSearchModeSelect.value)
+      ? normalizeNodeSearchMode(nodeSearchModeSelect.value)
       : 'labelAndMove';
 
   mainContainer.dispatchEvent(
-    new CustomEvent(TOPOLOGY_NODE_SEARCH_REQUEST_EVENT, {
+    new CustomEvent(NODE_SEARCH_REQUEST_EVENT, {
       bubbles: true,
       composed: true,
       detail: {
@@ -327,6 +327,7 @@ function requestGeneratedMapConfig() {
 }
 
 function loadSelectedMap(mapKey) {
+  clearCurrentMap();
   if (mapKey === GENERATED_MAP_KEY) {
     const config = requestGeneratedMapConfig();
     if (!config) {
@@ -337,7 +338,6 @@ function loadSelectedMap(mapKey) {
     }
 
     const generated = generateTopology(config.rows, config.cols);
-    clearCurrentMap();
     instance.loadData(generated.nodes, generated.links);
     runStableFit(() => {
       instance.fitToPage();
@@ -367,7 +367,6 @@ function loadSelectedMap(mapKey) {
     return;
   }
 
-  clearCurrentMap();
   instance.fromMapData(selected.data);
   runStableFit(() => {
     instance.fitToPage();
@@ -527,7 +526,7 @@ nodeSearchSubmitBtn?.addEventListener('click', runNodeSearch);
 nodeSearchInput?.addEventListener('keydown', onNodeSearchKeydown);
 nodeSearchModeSelect?.addEventListener('change', updateSearchUi);
 mainContainer.addEventListener('topology:wheel', onTopologyWheel);
-mainContainer.addEventListener(TOPOLOGY_NODE_SEARCH_RESULT_EVENT, onNodeSearchResult);
+mainContainer.addEventListener(NODE_SEARCH_RESULT_EVENT, onNodeSearchResult);
 if (mapSelect instanceof HTMLSelectElement) {
   loadSelectedMap(mapSelect.value);
 } else {
