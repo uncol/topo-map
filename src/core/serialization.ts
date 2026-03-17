@@ -1,18 +1,13 @@
 import * as joint from '@joint/core';
 import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from './graphLayers';
 import { createIconLinkEnd } from '../shapes/linkEndpoints';
-import type { LinkData, NodeData, SerializedMap, ViewportSnapshot } from './types';
+import type { GraphEnvelope, LinkData, NodeData, SerializedMap, ViewportSnapshot } from './types';
 
 const DEFAULT_SCHEMA_VERSION = '1.0.0';
 const DEFAULT_FONT_ICON_UNICODE = '\uF20A';
 const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
 const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
 const DEFAULT_NODE_SIZE = 64;
-
-export interface GraphEnvelope {
-  graph: joint.dia.Graph.JSON;
-  viewport?: ViewportSnapshot;
-}
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;

@@ -126,9 +126,14 @@ export interface TranslateBounds {
 export type TranslateBoundsResolver = (snapshot: ViewportStateSnapshot) => TranslateBounds | null;
 
 export interface SerializedMap {
-  schemaVersion: string;
-  viewport: ViewportSnapshot;
   graph: joint.dia.Graph.JSON;
+  viewport: ViewportSnapshot;
+  schemaVersion: string;
+}
+
+export interface GraphEnvelope {
+  graph: joint.dia.Graph.JSON;
+  viewport?: ViewportSnapshot;
 }
 
 export interface MapDocument {
