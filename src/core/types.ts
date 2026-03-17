@@ -44,6 +44,16 @@ export interface PaperConfig {
   stencilDir?: string;
 }
 
+export type ShapeOverlayPosition = 'NW' | 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SW' | 'W';
+
+export type ShapeOverlayForm = 'c' | 's';
+
+export interface ShapeOverlay {
+  code: number;
+  position: ShapeOverlayPosition;
+  form: ShapeOverlayForm;
+}
+
 export interface NodeData {
   id: string;
   x: number;

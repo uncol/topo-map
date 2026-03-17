@@ -21,17 +21,15 @@ export type {
   NodeSearchField,
   NodeSearchResult, PaperConfig,
   PaperType,
+  ShapeOverlay,
+  ShapeOverlayForm,
+  ShapeOverlayPosition,
   ViewportSnapshot,
   ViewportStateSnapshot
 } from './core/types';
-export { convertMapData, MapConverter } from './decoders/MapConverter';
+export { convertMapData } from './decoders/MapConverter';
 export type {
-  MapConverterInput,
-  MapConverterLink,
-  MapConverterLinkEnd,
-  MapConverterNode,
-  MapConverterPort,
-  MapConverterShape
+  MapConverterInput
 } from './decoders/MapConverter';
 export { Topology } from './Topology';
 

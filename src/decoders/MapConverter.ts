@@ -5,6 +5,7 @@ import {
   type MapDocument,
   type PaperConfig,
   type PaperType,
+  type ShapeOverlay,
   type ViewportSnapshot
 } from '../core/types';
 import { createIconLinkEnd } from '../shapes/linkEndpoints';
@@ -14,22 +15,12 @@ const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
 
 type ScalarId = string | number;
 
-export interface MapConverterPort {
+interface MapConverterPort {
   id?: ScalarId | null;
   ports?: Array<string> | null;
 }
-export type MapConverterShapeOverlayPosition = 'NW' | 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SW' | 'W';
-export type MapConverterShapeOverlayForm = 'c' | 's';
 
-export interface MapConverterShapeOverlay {
-  code: number;
-  position: MapConverterShapeOverlayPosition;
-  form: MapConverterShapeOverlayForm;
-}
-
-export type MapConverterShape = string;
-
-export interface MapConverterNode {
+interface MapConverterNode {
   id?: ScalarId | null;
   x?: number | null;
   y?: number | null;
@@ -48,16 +39,12 @@ export interface MapConverterNode {
   metrics_template?: string | null;
   node_id?: ScalarId | null;
   object_filter?: object | null;
-  shape_overlay?: Array<MapConverterShapeOverlay> | null;
+  shape_overlay?: Array<ShapeOverlay> | null;
   type?: string | null;
   role?: string | null;
 }
 
-export interface MapConverterLinkEnd{
-  id?: ScalarId | null;
-}
-
-export interface MapConverterLink {
+interface MapConverterLink {
   id?: ScalarId | null;
   ports?: Array<ScalarId> | null;
   connector?: string | null;
@@ -230,7 +217,11 @@ function normalizePaperConfig(input: MapConverterInput): PaperConfig {
   return paperConfig;
 }
 
-export class MapConverter {
+function getImageId(shape: string): string {
+  return `img-${shape.replace(/\//g, '-').replace(/ /g, '-').replace(/_/g, '-')}`;
+}
+
+class MapConverter {
   private readonly mapData: MapConverterInput;
 
   private readonly portToNode: Record<string, string>;
@@ -238,10 +229,6 @@ export class MapConverter {
   public constructor(mapData: MapConverterInput) {
     this.mapData = mapData;
     this.portToNode = this.buildPortMap();
-  }
-
-  public static getImageId(shape: string): string {
-    return `img-${shape.replace(/\//g, '-').replace(/ /g, '-').replace(/_/g, '-')}`;
   }
 
   public convert(): MapDocument {
@@ -371,7 +358,7 @@ export class MapConverter {
       },
       attrs: {
         icon: {
-          href: `#${MapConverter.getImageId(shape)}`,
+          href: `#${getImageId(shape)}`,
           width: String(nodeWidth),
           height: String(nodeHeight),
           status: 'Unknown'
