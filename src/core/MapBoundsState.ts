@@ -12,7 +12,7 @@ type RectLike = {
 
 const EPSILON = 0.0001;
 
-export class MapBoundsManager {
+export class MapBoundsState {
   private readonly listeners = new Set<Listener>();
 
   private bounds: Rect | null = null;

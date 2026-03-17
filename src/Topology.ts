@@ -5,7 +5,7 @@ import { ZoomOutCommand } from './commands/ZoomOutCommand';
 import { DiagramService } from './core/DiagramService';
 import { fitPaperToContent, type FitMode } from './core/fitBounds';
 import { clamp } from './core/geometry';
-import { MapBoundsManager } from './core/MapBoundsManager';
+import { MapBoundsState } from './core/MapBoundsState';
 import { createGraphFromData, serializeTopology, toGraphEnvelope } from './core/serialization';
 import {
   isTopologyNodeSearchRequestDetail,
@@ -65,7 +65,7 @@ export class Topology {
 
   private readonly viewportManager: ViewportManager;
 
-  private readonly mapBoundsManager: MapBoundsManager;
+  private readonly mapBoundsState: MapBoundsState;
 
   private readonly zoomManager: ZoomManager;
 
@@ -139,11 +139,11 @@ export class Topology {
       DEFAULT_PADDING
     );
     this.data = new DataFacade(this.diagramService.getGraph());
-    this.mapBoundsManager = new MapBoundsManager(
+    this.mapBoundsState = new MapBoundsState(
       this.diagramService.getGraph(),
       this.diagramService.getPaper(),
       this.config.padding);
-    this.diagramService.setMapBoundsProvider(() => this.mapBoundsManager.get());
+    this.diagramService.setMapBoundsProvider(() => this.mapBoundsState.get());
     this.viewportState.setTranslateBoundsResolver((snapshot) => this.diagramService.getTranslateBounds(snapshot.scale));
 
     this.viewportManager = new ViewportManager(
@@ -172,7 +172,7 @@ export class Topology {
       this.diagramService.getGraph(),
       this.diagramService.getPaper(),
       this.viewportState,
-      this.mapBoundsManager,
+      this.mapBoundsState,
       this.config.asyncRendering,
       DEFAULT_PADDING
     );
@@ -216,7 +216,7 @@ export class Topology {
     this.logDebug('loadData:start', { nodes: nodes.length, links: links.length });
     this.events.clearInteractionState();
     this.diagramService.fromJSON(createGraphFromData(nodes, links));
-    this.mapBoundsManager.refreshNow();
+    this.mapBoundsState.refreshNow();
     this.viewportManager.rebuildIndex();
     this.nodeSearchIndexManager.rebuildIndex();
     this.viewportState.enforceConstraints();
@@ -237,7 +237,7 @@ export class Topology {
     const envelope = toGraphEnvelope(data);
 
     this.diagramService.fromJSON(envelope.graph);
-    this.mapBoundsManager.refreshNow();
+    this.mapBoundsState.refreshNow();
     this.viewportManager.rebuildIndex();
     this.nodeSearchIndexManager.rebuildIndex();
     this.viewportState.enforceConstraints();
@@ -436,7 +436,7 @@ export class Topology {
     this.lastMainHeight = height;
     this.logDebug('resizeMain:apply', { width, height });
     this.diagramService.resize(width, height);
-    this.mapBoundsManager.refreshNow();
+    this.mapBoundsState.refreshNow();
     this.viewportState.enforceConstraints();
   }
 
@@ -469,7 +469,7 @@ export class Topology {
     this.minimapManager.destroy();
     this.nodeSearchIndexManager.destroy();
     this.viewportManager.destroy();
-    this.mapBoundsManager.destroy();
+    this.mapBoundsState.destroy();
     this.diagramService.destroy();
     this.logDebug('destroy:done');
   }
@@ -579,7 +579,7 @@ export class Topology {
   private fitToContent(mode: FitMode): void {
     const fittedViewport = fitPaperToContent(
       this.diagramService.getPaper(),
-      this.mapBoundsManager.get(),
+      this.mapBoundsState.get(),
       this.diagramService.getSize(),
       this.viewportState.getSnapshot(),
       mode,

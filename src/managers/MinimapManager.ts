@@ -1,6 +1,6 @@
 import * as joint from '@joint/core';
 import { centerOfRect, containsPoint } from '../core/geometry';
-import { MapBoundsManager } from '../core/MapBoundsManager';
+import { MapBoundsState } from '../core/MapBoundsState';
 import type { Point, Rect } from '../core/types';
 import { ViewportState } from '../core/ViewportState';
 import { cellNamespace } from '../shapes/cellNamespace';
@@ -14,7 +14,7 @@ interface MinimapRect {
 }
 
 export class MinimapManager {
-  private readonly mapBoundsManager: MapBoundsManager;
+  private readonly mapBoundsState: MapBoundsState;
 
   private readonly container: HTMLElement;
 
@@ -86,7 +86,7 @@ export class MinimapManager {
     graph: joint.dia.Graph,
     mainPaper: joint.dia.Paper,
     viewportState: ViewportState,
-    mapBoundsManager: MapBoundsManager,
+    mapBoundsState: MapBoundsState,
     asyncRendering: boolean,
     padding: number
   ) {
@@ -95,7 +95,7 @@ export class MinimapManager {
     this.graph = graph;
     this.mainPaper = mainPaper;
     this.viewportState = viewportState;
-    this.mapBoundsManager = mapBoundsManager;
+    this.mapBoundsState = mapBoundsState;
     this.asyncRendering = asyncRendering;
     this.padding = Number.isFinite(padding) && padding > 0 ? padding : 0;
     if (window.getComputedStyle(container).position === 'static') {
@@ -126,7 +126,7 @@ export class MinimapManager {
     this.unsubscribeViewport = this.viewportState.subscribe(() => {
       this.updateViewportRect();
     });
-    this.unsubscribeMapBounds = this.mapBoundsManager.subscribe(() => {
+    this.unsubscribeMapBounds = this.mapBoundsState.subscribe(() => {
       this.scheduleGraphRefresh();
     });
 
@@ -410,7 +410,7 @@ export class MinimapManager {
   }
 
   private getMainContentRect(): Rect | null {
-    return this.mapBoundsManager.get();
+    return this.mapBoundsState.get();
   }
 
   /**
