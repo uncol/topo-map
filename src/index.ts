@@ -5,12 +5,13 @@ export {
   TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT
 } from './core/events';
 export type {
-  TopologyNodeSearchMode,
-  TopologyNodeSearchRequestDetail,
-  TopologyNodeSearchResultDetail
+  NodeSearchMode,
+  NodeSearchRequestDetail,
+  NodeSearchResultDetail
 } from './core/events';
 export type {
   CellData,
+  Config,
   DataApi,
   ElementDataApi,
   ElementRecord,
@@ -18,14 +19,13 @@ export type {
   LinkDataApi,
   LinkRecord,
   MapDocument,
+  Mode,
+  NodeLabelField,
+  NodeSearchField,
+  NodeSearchResult,
   NodeData,
   PaperConfig,
-  TopologyConfig,
-  TopologyMode,
-  TopologyNodeLabelField,
-  TopologyNodeSearchField,
-  TopologyNodeSearchResult,
-  TopologyPaperType
+  PaperType
 } from './core/types';
 export { convertMapData, MapConverter } from './decoders/MapConverter';
 export type {

@@ -14,19 +14,19 @@ import {
   TOPOLOGY_NODE_SEARCH_REQUEST_EVENT,
   TOPOLOGY_NODE_SEARCH_RESULT_EVENT,
   TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT,
-  type TopologyNodeSearchResultDetail
+  type NodeSearchResultDetail
 } from './core/events';
 import { DataFacade } from './core/DataFacade';
 import { Debug } from './core/Debug';
 import type {
+  Config,
   DataApi,
   LinkData,
+  Mode,
+  NodeLabelField,
+  NodeSearchField,
+  NodeSearchResult,
   NodeData,
-  TopologyConfig,
-  TopologyMode,
-  TopologyNodeLabelField,
-  TopologyNodeSearchField,
-  TopologyNodeSearchResult,
   PaperConfig,
   ViewportSnapshot
 } from './core/types';
@@ -57,7 +57,7 @@ const DEFAULT_FOCUS_ANIMATION_MS = 650;
 export class Topology {
   public readonly data: DataApi;
 
-  private readonly config: Required<Omit<TopologyConfig, 'onReady'>> & { onReady: (() => void) | undefined };
+  private readonly config: Required<Omit<Config, 'onReady'>> & { onReady: (() => void) | undefined };
 
   private readonly viewportState: ViewportState;
 
@@ -111,7 +111,7 @@ export class Topology {
     this.events.clearHighlightedElement();
   };
 
-  public constructor(config: TopologyConfig) {
+  public constructor(config: Config) {
     this.config = {
       mainContainer: config.mainContainer,
       minimapContainer: config.minimapContainer,
@@ -270,7 +270,7 @@ export class Topology {
     this.fromJSON(document.viewport ? { graph: document.graph, viewport: document.viewport } : { graph: document.graph });
   }
 
-  public setMode(mode: TopologyMode): void {
+  public setMode(mode: Mode): void {
     this.logDebug('setMode', { from: this.modeManager.getMode(), to: mode });
     this.modeManager.setMode(mode);
   }
@@ -300,7 +300,7 @@ export class Topology {
       });
   }
 
-  public getVisibleNodeLabelField(): TopologyNodeLabelField {
+  public getVisibleNodeLabelField(): NodeLabelField {
     const elements = this.diagramService.getGraph().getElements();
     const active = elements.find((element) => {
       const titleDisplay = String(element.attr('title/display') ?? '');
@@ -321,16 +321,16 @@ export class Topology {
     return 'title';
   }
 
-  public findNodeByVisibleLabel(query: string): TopologyNodeSearchResult | null {
+  public findNodeByVisibleLabel(query: string): NodeSearchResult | null {
     const field = this.getVisibleNodeLabelField();
     return this.nodeSearchIndexManager.search(field, query);
   }
 
-  public findNodeById(query: string): TopologyNodeSearchResult | null {
+  public findNodeById(query: string): NodeSearchResult | null {
     return this.nodeSearchIndexManager.search('id', query);
   }
 
-  public focusNodeByVisibleLabel(query: string, durationMs = DEFAULT_FOCUS_ANIMATION_MS): TopologyNodeSearchResult | null {
+  public focusNodeByVisibleLabel(query: string, durationMs = DEFAULT_FOCUS_ANIMATION_MS): NodeSearchResult | null {
     const field = this.getVisibleNodeLabelField();
     const matched = this.nodeSearchIndexManager.search(field, query);
     if (!matched) {
@@ -348,7 +348,7 @@ export class Topology {
     return matched;
   }
 
-  public focusNodeById(query: string, durationMs = DEFAULT_FOCUS_ANIMATION_MS): TopologyNodeSearchResult | null {
+  public focusNodeById(query: string, durationMs = DEFAULT_FOCUS_ANIMATION_MS): NodeSearchResult | null {
     const matched = this.nodeSearchIndexManager.search('id', query);
     if (!matched) {
       return null;
@@ -485,13 +485,13 @@ export class Topology {
 
     const { query } = event.detail;
     const mode = normalizeTopologyNodeSearchMode(event.detail.mode);
-    const field: TopologyNodeSearchField = mode === 'idAndMove' ? 'id' : this.getVisibleNodeLabelField();
+    const field: NodeSearchField = mode === 'idAndMove' ? 'id' : this.getVisibleNodeLabelField();
     const result =
       mode === 'idAndMove'
         ? this.focusNodeById(query, event.detail.durationMs ?? DEFAULT_FOCUS_ANIMATION_MS)
         : this.focusNodeByVisibleLabel(query, event.detail.durationMs ?? DEFAULT_FOCUS_ANIMATION_MS);
 
-    const detail: TopologyNodeSearchResultDetail = result
+    const detail: NodeSearchResultDetail = result
       ? {
           ...result,
           query,

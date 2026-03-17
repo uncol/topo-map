@@ -7,9 +7,9 @@ export {
   TOPOLOGY_NODE_SEARCH_RESULT_EVENT
 } from './nodeSearch';
 export type {
-  TopologyNodeSearchMode,
-  TopologyNodeSearchRequestDetail,
-  TopologyNodeSearchResultDetail
+  NodeSearchMode,
+  NodeSearchRequestDetail,
+  NodeSearchResultDetail
 } from './nodeSearch';
 export { TOPOLOGY_UNHIGHLIGHT_REQUEST_EVENT } from './highlight';
 export { InteractionEvents } from './InteractionEvents';

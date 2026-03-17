@@ -4,7 +4,7 @@ import {
   TOPOLOGY_PAPER_TYPES,
   type MapDocument,
   type PaperConfig,
-  type TopologyPaperType,
+  type PaperType,
   type ViewportSnapshot
 } from '../core/types';
 import { createIconLinkEnd } from '../shapes/linkEndpoints';
@@ -68,8 +68,8 @@ export interface MapConverterInput extends Record<string, unknown> {
   stencil_dir?: string | null;
 }
 
-function isPaperType(value: unknown): value is TopologyPaperType {
-  return typeof value === 'string' && TOPOLOGY_PAPER_TYPES.includes(value as TopologyPaperType);
+function isPaperType(value: unknown): value is PaperType {
+  return typeof value === 'string' && TOPOLOGY_PAPER_TYPES.includes(value as PaperType);
 }
 
 function toFiniteNumber(value: unknown, fallback: number): number {

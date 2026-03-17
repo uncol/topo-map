@@ -1,13 +1,13 @@
 import * as joint from '@joint/core';
-import type { TopologyMode } from '../core/types';
+import type { Mode } from '../core/types';
 import { InteractionMode } from '../modes/InteractionMode';
 
 export class ModeManager {
   private readonly paper: joint.dia.Paper;
 
-  private readonly modes: Record<TopologyMode, InteractionMode>;
+  private readonly modes: Record<Mode, InteractionMode>;
 
-  private activeModeKey: TopologyMode;
+  private activeModeKey: Mode;
 
   private readonly onBlankPointerDownBound = (event: joint.dia.Event, x: number, y: number): void => {
     this.getActiveMode().onBlankPointerDown(event, x, y);
@@ -48,7 +48,7 @@ export class ModeManager {
     this.getActiveMode().onElementPointerUp(elementView, event, x, y);
   };
 
-  public constructor(paper: joint.dia.Paper, modes: Record<TopologyMode, InteractionMode>, initialMode: TopologyMode) {
+  public constructor(paper: joint.dia.Paper, modes: Record<Mode, InteractionMode>, initialMode: Mode) {
     this.paper = paper;
     this.modes = modes;
     this.activeModeKey = initialMode;
@@ -63,7 +63,7 @@ export class ModeManager {
     this.getActiveMode().activate();
   }
 
-  public setMode(mode: TopologyMode): void {
+  public setMode(mode: Mode): void {
     if (mode === this.activeModeKey) {
       return;
     }
@@ -73,7 +73,7 @@ export class ModeManager {
     this.getActiveMode().activate();
   }
 
-  public getMode(): TopologyMode {
+  public getMode(): Mode {
     return this.activeModeKey;
   }
 

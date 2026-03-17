@@ -1,8 +1,8 @@
 import type * as joint from '@joint/core';
 
-export type TopologyMode = 'pan' | 'zoomToArea' | 'edit';
+export type Mode = 'pan' | 'zoomToArea' | 'edit';
 
-export interface TopologyConfig {
+export interface Config {
   mainContainer: HTMLElement;
   minimapContainer: HTMLElement;
   initialScale?: number;
@@ -28,11 +28,11 @@ export const TOPOLOGY_PAPER_TYPES = [
   'objectlevelneighbor'
 ] as const;
 
-export type TopologyPaperType = (typeof TOPOLOGY_PAPER_TYPES)[number];
+export type PaperType = (typeof TOPOLOGY_PAPER_TYPES)[number];
 
 export interface PaperConfig {
   id?: string;
-  type?: TopologyPaperType;
+  type?: PaperType;
   gridSize?: number;
   normalizePosition?: boolean;
   objectStatusRefreshInterval?: number;
@@ -103,14 +103,14 @@ export interface ViewportSnapshot {
   maxScale: number;
 }
 
-export type TopologyNodeLabelField = 'title' | 'ipaddr';
+export type NodeLabelField = 'title' | 'ipaddr';
 
-export type TopologyNodeSearchField = TopologyNodeLabelField | 'id';
+export type NodeSearchField = NodeLabelField | 'id';
 
-export interface TopologyNodeSearchResult {
+export interface NodeSearchResult {
   id: string;
   text: string;
-  field: TopologyNodeSearchField;
+  field: NodeSearchField;
 }
 
 export interface TranslateBounds {
@@ -122,7 +122,7 @@ export interface TranslateBounds {
 
 export type TranslateBoundsResolver = (snapshot: ViewportSnapshot) => TranslateBounds | null;
 
-export interface SerializedTopology {
+export interface SerializedMap {
   schemaVersion: string;
   viewport: Pick<ViewportSnapshot, 'scale' | 'tx' | 'ty'>;
   graph: joint.dia.Graph.JSON;

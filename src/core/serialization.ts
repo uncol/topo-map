@@ -1,7 +1,7 @@
 import * as joint from '@joint/core';
 import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from './graphLayers';
 import { createIconLinkEnd } from '../shapes/linkEndpoints';
-import type { LinkData, NodeData, SerializedTopology, ViewportSnapshot } from './types';
+import type { LinkData, NodeData, SerializedMap, ViewportSnapshot } from './types';
 
 const DEFAULT_SCHEMA_VERSION = '1.0.0';
 const DEFAULT_FONT_ICON_UNICODE = '\uF20A';
@@ -112,7 +112,7 @@ export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint
   } as joint.dia.Graph.JSON;
 }
 
-export function serializeTopology(graph: joint.dia.Graph.JSON, snapshot: ViewportSnapshot): SerializedTopology {
+export function serializeTopology(graph: joint.dia.Graph.JSON, snapshot: ViewportSnapshot): SerializedMap {
   return {
     schemaVersion: DEFAULT_SCHEMA_VERSION,
     viewport: {

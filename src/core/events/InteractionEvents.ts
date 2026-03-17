@@ -1,5 +1,5 @@
 import * as joint from '@joint/core';
-import type { TopologyConfig, ViewportSnapshot } from '../types';
+import type { Config, ViewportSnapshot } from '../types';
 import { getEventClientPoint, isPrimaryMouseButton } from './pointer';
 
 const LINK_HOVER_STROKE = '#3498db';
@@ -17,7 +17,7 @@ const TOPOLOGY_BLANK_CONTEXTMENU_EVENT = 'topology:blank:contextmenu';
 const TOPOLOGY_WHEEL_EVENT = 'topology:wheel';
 
 export class InteractionEvents {
-  private readonly mainContainer: TopologyConfig['mainContainer'];
+  private readonly mainContainer: Config['mainContainer'];
 
   private readonly paper: joint.dia.Paper;
 
@@ -75,7 +75,7 @@ export class InteractionEvents {
   };
 
   public constructor(
-    mainContainer: TopologyConfig['mainContainer'],
+    mainContainer: Config['mainContainer'],
     paper: joint.dia.Paper,
     getViewportSnapshot: () => ViewportSnapshot
   ) {

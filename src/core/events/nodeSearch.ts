@@ -1,32 +1,32 @@
-import type { TopologyNodeSearchField, TopologyNodeSearchResult } from '../types';
+import type { NodeSearchField, NodeSearchResult } from '../types';
 
 export const TOPOLOGY_NODE_SEARCH_REQUEST_EVENT = 'topology:node-search:request';
 export const TOPOLOGY_NODE_SEARCH_RESULT_EVENT = 'topology:node-search:result';
 
-export type TopologyNodeSearchMode = 'labelAndMove' | 'idAndMove';
+export type NodeSearchMode = 'labelAndMove' | 'idAndMove';
 
-export interface TopologyNodeSearchRequestDetail {
+export interface NodeSearchRequestDetail {
   query: string;
-  mode?: TopologyNodeSearchMode;
+  mode?: NodeSearchMode;
   durationMs?: number;
 }
 
-export interface TopologyNodeSearchResultDetail extends Partial<TopologyNodeSearchResult> {
+export interface NodeSearchResultDetail extends Partial<NodeSearchResult> {
   query: string;
-  mode: TopologyNodeSearchMode;
-  field: TopologyNodeSearchField;
+  mode: NodeSearchMode;
+  field: NodeSearchField;
   found: boolean;
 }
 
-export function isTopologyNodeSearchMode(value: unknown): value is TopologyNodeSearchMode {
+export function isTopologyNodeSearchMode(value: unknown): value is NodeSearchMode {
   return value === 'labelAndMove' || value === 'idAndMove';
 }
 
-export function normalizeTopologyNodeSearchMode(value: unknown): TopologyNodeSearchMode {
+export function normalizeTopologyNodeSearchMode(value: unknown): NodeSearchMode {
   return isTopologyNodeSearchMode(value) ? value : 'labelAndMove';
 }
 
-export function isTopologyNodeSearchRequestDetail(value: unknown): value is TopologyNodeSearchRequestDetail {
+export function isTopologyNodeSearchRequestDetail(value: unknown): value is NodeSearchRequestDetail {
   if (typeof value !== 'object' || value === null) {
     return false;
   }
