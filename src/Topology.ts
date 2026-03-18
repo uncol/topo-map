@@ -238,9 +238,7 @@ export class Topology {
     this.events.clearInteractionState();
     const document = input instanceof MapDocument ? input : MapDocument.fromJSON(input);
 
-    if (document.hasPaperConfig()) {
-      this.applyMapPaperConfig(document.paperConfig);
-    }
+    this.applyMapPaperConfig(document.paperConfig);
 
     this.diagramService.fromJSON(document.graph);
     this.mapBoundsState.refreshNow();

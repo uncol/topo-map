@@ -294,7 +294,8 @@ function clearCurrentMap() {
       scale: 1,
       tx: 0,
       ty: 0
-    }
+    },
+    paperConfig: {},
   });
 }
 
