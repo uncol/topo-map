@@ -70,9 +70,9 @@ export class InteractionEvents {
     this.handleBlankContextMenu(event, x, y);
   };
 
-  private readonly onPaperWheelBound = (event: WheelEvent): void => {
-    this.handlePaperWheel(event);
-  };
+  private readonly onPaperWheelBound = (): void => {
+    this.handlePaperWheel();
+  }
 
   public constructor(
     mainContainer: Config['mainContainer'],
@@ -87,23 +87,30 @@ export class InteractionEvents {
   public setup(): void {
     this.paper.on('link:mouseenter', this.onLinkMouseEnterBound);
     this.paper.on('link:mouseleave', this.onLinkMouseLeaveBound);
+
     this.paper.on('cell:pointerdown', this.onCellPointerDownBound);
     this.paper.on('cell:pointerdblclick', this.onCellPointerDblClickBound);
-    this.paper.on('blank:pointerdown', this.onBlankPointerDownBound);
     this.paper.on('cell:contextmenu', this.onCellContextMenuBound);
+    this.paper.on('cell:mousewheel', this.onPaperWheelBound);
+
+    
+    this.paper.on('blank:pointerdown', this.onBlankPointerDownBound);
     this.paper.on('blank:contextmenu', this.onBlankContextMenuBound);
-    this.paper.el.addEventListener('wheel', this.onPaperWheelBound);
+    this.paper.on('blank:mousewheel', this.onPaperWheelBound);
   }
 
   public teardown(): void {
     this.paper.off('link:mouseenter', this.onLinkMouseEnterBound);
     this.paper.off('link:mouseleave', this.onLinkMouseLeaveBound);
+
     this.paper.off('cell:pointerdown', this.onCellPointerDownBound);
     this.paper.off('cell:pointerdblclick', this.onCellPointerDblClickBound);
-    this.paper.off('blank:pointerdown', this.onBlankPointerDownBound);
     this.paper.off('cell:contextmenu', this.onCellContextMenuBound);
+    this.paper.off('cell:mousewheel', this.onPaperWheelBound);
+    
+    this.paper.off('blank:pointerdown', this.onBlankPointerDownBound);
     this.paper.off('blank:contextmenu', this.onBlankContextMenuBound);
-    this.paper.el.removeEventListener('wheel', this.onPaperWheelBound);
+    this.paper.off('blank:mousewheel', this.onPaperWheelBound);
     this.clearPendingContextMenuTimers();
   }
 
@@ -206,7 +213,7 @@ export class InteractionEvents {
     });
   }
 
-  private handlePaperWheel(_: WheelEvent): void {
+  private handlePaperWheel(): void {
     const snapshot = this.getViewportSnapshot();
 
     this.emitBubbledEvent(WHEEL_EVENT, {

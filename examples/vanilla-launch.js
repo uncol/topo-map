@@ -143,6 +143,7 @@ const nodeSearchSubmitBtn = document.getElementById('node-search-submit');
 const nodeSearchStatus = document.getElementById('node-search-status');
 const renderStats = document.getElementById('render-stats');
 const TOPOLOGY_CELL_POINTERDOWN_EVENT = 'topo:cell:pointerdown';
+const TOPOLOGY_WHEEL_EVENT = 'topo:wheel';
 const ZOOM_CUSTOM_OPTION_VALUE = '__custom__';
 const ZOOM_PRESET_TOLERANCE = 0.001;
 const FIT_SETTLE_MAX_PASSES = 4;
@@ -526,7 +527,7 @@ zoomSelect?.addEventListener('change', onZoomSelectChange);
 nodeSearchSubmitBtn?.addEventListener('click', runNodeSearch);
 nodeSearchInput?.addEventListener('keydown', onNodeSearchKeydown);
 nodeSearchModeSelect?.addEventListener('change', updateSearchUi);
-mainContainer.addEventListener('topology:wheel', onTopologyWheel);
+mainContainer.addEventListener(TOPOLOGY_WHEEL_EVENT, onTopologyWheel);
 mainContainer.addEventListener(NODE_SEARCH_RESULT_EVENT, onNodeSearchResult);
 if (mapSelect instanceof HTMLSelectElement) {
   loadSelectedMap(mapSelect.value);
