@@ -271,7 +271,6 @@ function runStableFit(fitAction, maxPasses = FIT_SETTLE_MAX_PASSES) {
     fitRafId = 0;
     fitAction();
     scheduleRenderStatsUpdate();
-    scheduleZoomSelectorSync();
 
     const nextSnapshot = instance.getViewportSnapshot();
     pass += 1;
@@ -356,7 +355,6 @@ function loadSelectedMap(mapKey) {
       links: currentLinkCount
     });
     scheduleRenderStatsUpdate();
-    scheduleZoomSelectorSync();
     updateSearchUi();
     return;
   }
@@ -383,7 +381,6 @@ function loadSelectedMap(mapKey) {
     links: currentLinkCount
   });
   scheduleRenderStatsUpdate();
-  scheduleZoomSelectorSync();
   updateSearchUi();
 }
 
@@ -459,20 +456,16 @@ function applyZoomSelection(value) {
   }
 
   instance.setZoom(scale);
-  scheduleZoomSelectorSync();
 }
 
 const onZoomInClick = () => {
   instance.zoomIn();
-  scheduleZoomSelectorSync();
 };
 const onZoomOutClick = () => {
   instance.zoomOut();
-  scheduleZoomSelectorSync();
 };
 const onResetViewClick = () => {
   instance.resetView();
-  scheduleZoomSelectorSync();
 };
 const onZoomSelectChange = (event) => {
   const target = event.target;
@@ -481,7 +474,7 @@ const onZoomSelectChange = (event) => {
   }
   applyZoomSelection(target.value);
 };
-const onTopologyWheel = () => {
+const onScaleChange = () => {
   scheduleZoomSelectorSync();
 };
 const onMapSelectChange = (event) => {
@@ -527,7 +520,7 @@ zoomSelect?.addEventListener('change', onZoomSelectChange);
 nodeSearchSubmitBtn?.addEventListener('click', runNodeSearch);
 nodeSearchInput?.addEventListener('keydown', onNodeSearchKeydown);
 nodeSearchModeSelect?.addEventListener('change', updateSearchUi);
-mainContainer.addEventListener(SCALE_CHANGE_EVENT, onTopologyWheel);
+mainContainer.addEventListener(SCALE_CHANGE_EVENT, onScaleChange);
 mainContainer.addEventListener(NODE_SEARCH_RESULT_EVENT, onNodeSearchResult);
 if (mapSelect instanceof HTMLSelectElement) {
   loadSelectedMap(mapSelect.value);
@@ -608,7 +601,6 @@ function applyResize() {
   }
 
   scheduleRenderStatsUpdate();
-  scheduleZoomSelectorSync();
 }
 
 function scheduleResize() {
@@ -635,7 +627,7 @@ window.addEventListener('beforeunload', () => {
   resetViewBtn?.removeEventListener('click', onResetViewClick);
   mapSelect?.removeEventListener('change', onMapSelectChange);
   zoomSelect?.removeEventListener('change', onZoomSelectChange);
-  mainContainer.removeEventListener(SCALE_CHANGE_EVENT, onTopologyWheel);
+  mainContainer.removeEventListener(SCALE_CHANGE_EVENT, onScaleChange);
   mainContainer.removeEventListener(TOPOLOGY_CELL_POINTERDOWN_EVENT, onCellPointerDown);
   if (rafResizeId !== 0) {
     window.cancelAnimationFrame(rafResizeId);
