@@ -1,6 +1,9 @@
 export {
   NODE_SEARCH_REQUEST_EVENT,
-  NODE_SEARCH_RESULT_EVENT, normalizeNodeSearchMode, UNHIGHLIGHT_REQUEST_EVENT
+  NODE_SEARCH_RESULT_EVENT,
+  normalizeNodeSearchMode,
+  UNHIGHLIGHT_REQUEST_EVENT,
+  SCALE_CHANGE_EVENT
 } from './core/events';
 export type {
   NodeSearchMode,

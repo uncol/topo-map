@@ -1,7 +1,5 @@
 import type { NodeSearchField, NodeSearchResult } from '../types';
-
-export const NODE_SEARCH_REQUEST_EVENT = 'topo:node-search:request';
-export const NODE_SEARCH_RESULT_EVENT = 'topo:node-search:result';
+export { NODE_SEARCH_REQUEST_EVENT, NODE_SEARCH_RESULT_EVENT } from './constants';
 
 export type NodeSearchMode = 'labelAndMove' | 'idAndMove';
 

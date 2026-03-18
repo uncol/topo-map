@@ -1,5 +1,14 @@
 import * as joint from '@joint/core';
-import type { Config, ViewportSnapshot } from '../types';
+import type { Config } from '../types';
+import {
+  BLANK_CONTEXTMENU_EVENT,
+  BLANK_POINTERDOWN_EVENT,
+  CELL_CONTEXTMENU_EVENT,
+  CELL_HIGHLIGHT_EVENT,
+  CELL_POINTERDBLCLICK_EVENT,
+  CELL_POINTERDOWN_EVENT,
+  CELL_UNHIGHLIGHT_EVENT
+} from './constants';
 import { getEventClientPoint, isPrimaryMouseButton } from './pointer';
 
 const LINK_HOVER_STROKE = '#3498db';
@@ -7,21 +16,11 @@ const LINK_HOVER_STROKE_WIDTH = 3;
 const LINK_HOVER_OPACITY = 0.6;
 const LINK_HOVER_HIGHLIGHT_ID = 'topo:link-hover-highlight';
 const ELEMENT_HIGHLIGHT_ID = 'topo:element-highlight';
-const CELL_POINTERDOWN_EVENT = 'topo:cell:pointerdown';
-const CELL_POINTERDBLCLICK_EVENT = 'topo:cell:pointerdblclick';
-const BLANK_POINTERDOWN_EVENT = 'topo:blank:pointerdown';
-const CELL_HIGHLIGHT_EVENT = 'topo:cell:highlight';
-const CELL_UNHIGHLIGHT_EVENT = 'topo:cell:unhighlight';
-const CELL_CONTEXTMENU_EVENT = 'topo:cell:contextmenu';
-const BLANK_CONTEXTMENU_EVENT = 'topo:blank:contextmenu';
-const WHEEL_EVENT = 'topo:wheel';
 
 export class InteractionEvents {
   private readonly mainContainer: Config['mainContainer'];
 
   private readonly paper: joint.dia.Paper;
-
-  private readonly getViewportSnapshot: () => ViewportSnapshot;
 
   private highlightedElementView: joint.dia.ElementView | null = null;
 
@@ -70,18 +69,9 @@ export class InteractionEvents {
     this.handleBlankContextMenu(event, x, y);
   };
 
-  private readonly onPaperWheelBound = (): void => {
-    this.handlePaperWheel();
-  }
-
-  public constructor(
-    mainContainer: Config['mainContainer'],
-    paper: joint.dia.Paper,
-    getViewportSnapshot: () => ViewportSnapshot
-  ) {
+  public constructor(mainContainer: Config['mainContainer'], paper: joint.dia.Paper) {
     this.mainContainer = mainContainer;
     this.paper = paper;
-    this.getViewportSnapshot = getViewportSnapshot;
   }
 
   public setup(): void {
@@ -91,12 +81,9 @@ export class InteractionEvents {
     this.paper.on('cell:pointerdown', this.onCellPointerDownBound);
     this.paper.on('cell:pointerdblclick', this.onCellPointerDblClickBound);
     this.paper.on('cell:contextmenu', this.onCellContextMenuBound);
-    this.paper.on('cell:mousewheel', this.onPaperWheelBound);
 
-    
     this.paper.on('blank:pointerdown', this.onBlankPointerDownBound);
     this.paper.on('blank:contextmenu', this.onBlankContextMenuBound);
-    this.paper.on('blank:mousewheel', this.onPaperWheelBound);
   }
 
   public teardown(): void {
@@ -106,11 +93,9 @@ export class InteractionEvents {
     this.paper.off('cell:pointerdown', this.onCellPointerDownBound);
     this.paper.off('cell:pointerdblclick', this.onCellPointerDblClickBound);
     this.paper.off('cell:contextmenu', this.onCellContextMenuBound);
-    this.paper.off('cell:mousewheel', this.onPaperWheelBound);
-    
+
     this.paper.off('blank:pointerdown', this.onBlankPointerDownBound);
     this.paper.off('blank:contextmenu', this.onBlankContextMenuBound);
-    this.paper.off('blank:mousewheel', this.onPaperWheelBound);
     this.clearPendingContextMenuTimers();
   }
 
@@ -210,14 +195,6 @@ export class InteractionEvents {
     this.emitBubbledContextMenuEvent(BLANK_CONTEXTMENU_EVENT, {
       clientX: clientPoint?.x ?? 0,
       clientY: clientPoint?.y ?? 0
-    });
-  }
-
-  private handlePaperWheel(): void {
-    const snapshot = this.getViewportSnapshot();
-
-    this.emitBubbledEvent(WHEEL_EVENT, {
-      scale: snapshot.scale
     });
   }
 

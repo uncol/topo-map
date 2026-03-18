@@ -13,6 +13,7 @@ import {
   NODE_SEARCH_RESULT_EVENT,
   normalizeNodeSearchMode,
   UNHIGHLIGHT_REQUEST_EVENT,
+  SCALE_CHANGE_EVENT,
   type NodeSearchResultDetail
 } from './core/events';
 import { fitPaperToContent, type FitMode } from './core/fitBounds';
@@ -105,6 +106,10 @@ export class Topology {
   private lastMinimapHeight = -1;
 
   private viewportAnimationFrameId = 0;
+
+  private previousViewportSnapshot: ViewportStateSnapshot | null = null;
+
+  private readonly unsubscribeViewportEvents: () => void;
 
   private readonly onNodeSearchRequestBound = (event: Event): void => {
     this.handleNodeSearchRequest(event);
@@ -199,13 +204,12 @@ export class Topology {
     this.zoomInCommand = new ZoomInCommand(this.zoomManager);
     this.zoomOutCommand = new ZoomOutCommand(this.zoomManager);
     this.resetViewCommand = new ResetViewCommand(this.zoomManager);
-    this.events = new InteractionEvents(
-      this.config.mainContainer,
-      this.diagramService.getPaper(),
-      () => this.viewportState.getSnapshot()
-    );
+    this.events = new InteractionEvents(this.config.mainContainer, this.diagramService.getPaper());
 
     this.events.setup();
+    this.unsubscribeViewportEvents = this.viewportState.subscribe((snapshot) => {
+      this.handleViewportStateChange(snapshot);
+    });
     this.config.mainContainer.addEventListener(NODE_SEARCH_REQUEST_EVENT, this.onNodeSearchRequestBound as EventListener);
     this.config.mainContainer.addEventListener(UNHIGHLIGHT_REQUEST_EVENT, this.onUnhighlightRequestBound as EventListener);
     this.debug.setup(this.diagramService.getGraph(), this.diagramService.getPaper(), (listener) =>
@@ -464,6 +468,7 @@ export class Topology {
   public destroy(): void {
     this.logDebug('destroy:start');
     this.cancelViewportAnimation();
+    this.unsubscribeViewportEvents();
     this.config.mainContainer.removeEventListener(NODE_SEARCH_REQUEST_EVENT, this.onNodeSearchRequestBound as EventListener);
     this.config.mainContainer.removeEventListener(UNHIGHLIGHT_REQUEST_EVENT, this.onUnhighlightRequestBound as EventListener);
     this.events.teardown();
@@ -482,6 +487,25 @@ export class Topology {
 
   private logDebug(message: string, ...payload: unknown[]): void {
     this.debug.log(message, ...payload);
+  }
+
+  private handleViewportStateChange(snapshot: ViewportStateSnapshot): void {
+    const previousSnapshot = this.previousViewportSnapshot;
+    this.previousViewportSnapshot = snapshot;
+
+    if (!previousSnapshot || previousSnapshot.scale === snapshot.scale) {
+      return;
+    }
+
+    this.config.mainContainer.dispatchEvent(
+      new CustomEvent(SCALE_CHANGE_EVENT, {
+        bubbles: true,
+        composed: true,
+        detail: {
+          scale: snapshot.scale
+        }
+      })
+    );
   }
 
   private handleNodeSearchRequest(event: Event): void {

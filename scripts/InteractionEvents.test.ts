@@ -87,13 +87,7 @@ describe('InteractionEvents', () => {
     const addSpy = mockHighlighterAdd();
     vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
 
-    const topologyEvents = new InteractionEvents(element, paper, () => ({
-      scale: 1,
-      tx: 0,
-      ty: 0,
-      minScale: 0.5,
-      maxScale: 2
-    }));
+    const topologyEvents = new InteractionEvents(element, paper);
 
     topologyEvents.setup();
 
@@ -104,9 +98,9 @@ describe('InteractionEvents', () => {
     expect(pointerDown).toBeTypeOf('function');
     pointerDown?.(elementView, { button: 0 }, 10, 20);
 
-    expect(addSpy).toHaveBeenCalledWith(elementView, 'root', 'topology:element-highlight', expect.any(Object));
+    expect(addSpy).toHaveBeenCalledWith(elementView, 'root', 'topo:element-highlight', expect.any(Object));
 
-    const highlightEvent = events.find((event) => event.type === 'topology:cell:highlight');
+    const highlightEvent = events.find((event) => event.type === 'topo:cell:highlight');
 
     expect(highlightEvent?.detail).toMatchObject({
       id: 'node-1',
@@ -120,13 +114,7 @@ describe('InteractionEvents', () => {
     mockHighlighterAdd();
     const removeSpy = vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
 
-    const topologyEvents = new InteractionEvents(element, paper, () => ({
-      scale: 1,
-      tx: 0,
-      ty: 0,
-      minScale: 0.5,
-      maxScale: 2
-    }));
+    const topologyEvents = new InteractionEvents(element, paper);
 
     topologyEvents.setup();
 
@@ -140,8 +128,8 @@ describe('InteractionEvents', () => {
 
     pointerDown?.(elementView, { button: 0 }, 15, 25);
 
-    expect(removeSpy).toHaveBeenCalledWith(elementView, 'topology:element-highlight');
-    expect(events.map((event) => event.type)).toEqual(['topology:cell:unhighlight', 'topology:cell:pointerdown']);
+    expect(removeSpy).toHaveBeenCalledWith(elementView, 'topo:element-highlight');
+    expect(events.map((event) => event.type)).toEqual(['topo:cell:unhighlight', 'topo:cell:pointerdown']);
     expect(events[0]?.detail).toMatchObject({
       id: 'node-1',
       data
@@ -154,13 +142,7 @@ describe('InteractionEvents', () => {
     mockHighlighterAdd();
     const removeSpy = vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
 
-    const topologyEvents = new InteractionEvents(element, paper, () => ({
-      scale: 1,
-      tx: 0,
-      ty: 0,
-      minScale: 0.5,
-      maxScale: 2
-    }));
+    const topologyEvents = new InteractionEvents(element, paper);
 
     topologyEvents.setup();
 
@@ -176,8 +158,8 @@ describe('InteractionEvents', () => {
 
     pointerDown?.(linkView, { button: 0 }, 15, 25);
 
-    expect(removeSpy).toHaveBeenCalledWith(elementView, 'topology:element-highlight');
-    expect(events.map((event) => event.type)).toEqual(['topology:cell:unhighlight', 'topology:cell:pointerdown']);
+    expect(removeSpy).toHaveBeenCalledWith(elementView, 'topo:element-highlight');
+    expect(events.map((event) => event.type)).toEqual(['topo:cell:unhighlight', 'topo:cell:pointerdown']);
     expect(events[0]?.detail).toMatchObject({
       id: 'node-1',
       data: selectedData
@@ -194,13 +176,7 @@ describe('InteractionEvents', () => {
     mockHighlighterAdd();
     const removeSpy = vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
 
-    const topologyEvents = new InteractionEvents(element, paper, () => ({
-      scale: 1,
-      tx: 0,
-      ty: 0,
-      minScale: 0.5,
-      maxScale: 2
-    }));
+    const topologyEvents = new InteractionEvents(element, paper);
 
     topologyEvents.setup();
 
@@ -215,8 +191,8 @@ describe('InteractionEvents', () => {
 
     blankPointerDown?.({ button: 0 }, 15, 25);
 
-    expect(removeSpy).toHaveBeenCalledWith(elementView, 'topology:element-highlight');
-    expect(events.map((event) => event.type)).toEqual(['topology:cell:unhighlight', 'topology:blank:pointerdown']);
+    expect(removeSpy).toHaveBeenCalledWith(elementView, 'topo:element-highlight');
+    expect(events.map((event) => event.type)).toEqual(['topo:cell:unhighlight', 'topo:blank:pointerdown']);
     expect(events[0]?.detail).toMatchObject({
       id: 'node-1',
       data

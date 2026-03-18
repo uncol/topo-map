@@ -1,4 +1,5 @@
 import * as joint from '@joint/core';
+import { CELL_HIGHLIGHT_EVENT, CELL_UNHIGHLIGHT_EVENT } from '../core/events/constants';
 import { centerOfRect, containsPoint } from '../core/geometry';
 import { MapBoundsState } from '../core/MapBoundsState';
 import type { Point, Rect } from '../core/types';
@@ -6,8 +7,6 @@ import { ViewportState } from '../core/ViewportState';
 import { cellNamespace } from '../shapes/cellNamespace';
 
 const MINIMAP_ELEMENT_HIGHLIGHT_ID = 'topology-minimap-element-highlight';
-const CELL_HIGHLIGHT_EVENT = 'topo:cell:highlight';
-const CELL_UNHIGHLIGHT_EVENT = 'topo:cell:unhighlight';
 
 interface MinimapRect {
   rect: Rect;
