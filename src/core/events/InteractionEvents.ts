@@ -5,9 +5,9 @@ import {
   BLANK_POINTERDOWN_EVENT,
   CELL_CONTEXTMENU_EVENT,
   CELL_HIGHLIGHT_EVENT,
-  CELL_POINTERDBLCLICK_EVENT,
   CELL_POINTERDOWN_EVENT,
-  CELL_UNHIGHLIGHT_EVENT
+  CELL_UNHIGHLIGHT_EVENT,
+  ELEMENT_POINTERDBLCLICK_EVENT
 } from './constants';
 import { getEventClientPoint, isPrimaryMouseButton } from './pointer';
 
@@ -43,13 +43,13 @@ export class InteractionEvents {
     this.handleCellPointerDown(cellView, event, x, y);
   };
 
-  private readonly onCellPointerDblClickBound = (
+  private readonly onElementPointerDblClickBound = (
     cellView: joint.dia.CellView,
     event: joint.dia.Event,
     x: number,
     y: number
   ): void => {
-    this.handleCellPointerDblClick(cellView, event, x, y);
+    this.handleElementPointerDblClick(cellView, event, x, y);
   };
 
   private readonly onBlankPointerDownBound = (event: joint.dia.Event, x: number, y: number): void => {
@@ -78,8 +78,9 @@ export class InteractionEvents {
     this.paper.on('link:mouseenter', this.onLinkMouseEnterBound);
     this.paper.on('link:mouseleave', this.onLinkMouseLeaveBound);
 
+    this.paper.on('element:pointerdblclick', this.onElementPointerDblClickBound);
+
     this.paper.on('cell:pointerdown', this.onCellPointerDownBound);
-    this.paper.on('cell:pointerdblclick', this.onCellPointerDblClickBound);
     this.paper.on('cell:contextmenu', this.onCellContextMenuBound);
 
     this.paper.on('blank:pointerdown', this.onBlankPointerDownBound);
@@ -90,8 +91,9 @@ export class InteractionEvents {
     this.paper.off('link:mouseenter', this.onLinkMouseEnterBound);
     this.paper.off('link:mouseleave', this.onLinkMouseLeaveBound);
 
+    this.paper.off('element:pointerdblclick', this.onElementPointerDblClickBound);
+
     this.paper.off('cell:pointerdown', this.onCellPointerDownBound);
-    this.paper.off('cell:pointerdblclick', this.onCellPointerDblClickBound);
     this.paper.off('cell:contextmenu', this.onCellContextMenuBound);
 
     this.paper.off('blank:pointerdown', this.onBlankPointerDownBound);
@@ -153,12 +155,13 @@ export class InteractionEvents {
     });
   }
 
-  private handleCellPointerDblClick(cellView: joint.dia.CellView, event: joint.dia.Event, x: number, y: number): void {
+  private handleElementPointerDblClick(cellView: joint.dia.CellView, event: joint.dia.Event, x: number, y: number): void {
     if (!isPrimaryMouseButton(event)) {
       return;
     }
 
-    this.emitBubbledEvent(CELL_POINTERDBLCLICK_EVENT, {
+    this.updateElementHighlight(cellView);
+    this.emitBubbledEvent(ELEMENT_POINTERDBLCLICK_EVENT, {
       ...this.getCellEventDetail(cellView),
       x,
       y
