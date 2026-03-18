@@ -2,31 +2,32 @@ import * as joint from '@joint/core';
 import { ResetViewCommand } from './commands/ResetViewCommand';
 import { ZoomInCommand } from './commands/ZoomInCommand';
 import { ZoomOutCommand } from './commands/ZoomOutCommand';
+import { DataFacade } from './core/DataFacade';
+import { Debug } from './core/Debug';
 import { DiagramService } from './core/DiagramService';
-import { fitPaperToContent, type FitMode } from './core/fitBounds';
-import { clamp } from './core/geometry';
-import { MapBoundsState } from './core/MapBoundsState';
-import { createGraphFromData, serializeMap, toGraphEnvelope } from './core/serialization';
+import { MapDocument, type MapDocumentJSON } from './core/MapDocument';
 import {
   InteractionEvents,
   isNodeSearchRequestDetail,
-  normalizeNodeSearchMode,
   NODE_SEARCH_REQUEST_EVENT,
   NODE_SEARCH_RESULT_EVENT,
+  normalizeNodeSearchMode,
   UNHIGHLIGHT_REQUEST_EVENT,
   type NodeSearchResultDetail
 } from './core/events';
-import { DataFacade } from './core/DataFacade';
-import { Debug } from './core/Debug';
+import { fitPaperToContent, type FitMode } from './core/fitBounds';
+import { clamp } from './core/geometry';
+import { createGraphFromData } from './core/graphFromData';
+import { MapBoundsState } from './core/MapBoundsState';
 import type {
   Config,
   DataApi,
   LinkData,
   Mode,
+  NodeData,
   NodeLabelField,
   NodeSearchField,
   NodeSearchResult,
-  NodeData,
   PaperConfig,
   ViewportStateSnapshot
 } from './core/types';
@@ -92,6 +93,8 @@ export class Topology {
   private readonly debug: Debug;
 
   private readonly events: InteractionEvents;
+
+  private currentPaperConfig: PaperConfig = {};
 
   private lastMainWidth = -1;
 
@@ -214,29 +217,32 @@ export class Topology {
 
   public loadData(nodes: NodeData[], links: LinkData[]): void {
     this.logDebug('loadData:start', { nodes: nodes.length, links: links.length });
-    this.events.clearInteractionState();
-    this.diagramService.fromJSON(createGraphFromData(nodes, links));
-    this.mapBoundsState.refreshNow();
-    this.viewportManager.rebuildIndex();
-    this.nodeSearchIndexManager.rebuildIndex();
-    this.viewportState.enforceConstraints();
-    if (this.config.fitToPageOnLoad) {
-      this.fitToPage();
-    }
-    this.minimapManager.refresh();
+    this.loadDocument(MapDocument.fromGraph(createGraphFromData(nodes, links)));
     this.logDebug('loadData:done');
   }
 
-  public toJSON(): object {
-    return serializeMap(this.diagramService.toJSON(), this.viewportState.getSnapshot());
+  public toDocument(): MapDocument {
+    return MapDocument.fromGraph(this.diagramService.toJSON(), this.viewportState.getSnapshot(), this.currentPaperConfig);
   }
 
-  public fromJSON(data: object): void {
-    this.logDebug('fromJSON:start');
-    this.events.clearInteractionState();
-    const envelope = toGraphEnvelope(data);
+  public toJSON(): MapDocumentJSON {
+    return this.toDocument().toJSON();
+  }
 
-    this.diagramService.fromJSON(envelope.graph);
+  public toDocumentJSON(): MapDocumentJSON {
+    return this.toDocument().toJSON();
+  }
+
+  public loadDocument(input: MapDocument | MapDocumentJSON): void {
+    this.logDebug('loadDocument:start');
+    this.events.clearInteractionState();
+    const document = input instanceof MapDocument ? input : MapDocument.fromJSON(input);
+
+    if (document.hasPaperConfig()) {
+      this.applyMapPaperConfig(document.paperConfig);
+    }
+
+    this.diagramService.fromJSON(document.graph);
     this.mapBoundsState.refreshNow();
     this.viewportManager.rebuildIndex();
     this.nodeSearchIndexManager.rebuildIndex();
@@ -247,27 +253,29 @@ export class Topology {
       return;
     }
 
-    if (envelope.viewport) {
-      this.viewportState.setViewport(envelope.viewport.scale, envelope.viewport.tx, envelope.viewport.ty);
-      this.logDebug('fromJSON:applied-viewport', envelope.viewport);
+    if (document.viewport) {
+      this.viewportState.setViewport(document.viewport.scale, document.viewport.tx, document.viewport.ty);
+      this.logDebug('loadDocument:applied-viewport', document.viewport);
       return;
     }
 
     if (this.config.fitToPageOnLoad) {
       this.fitToPage();
-      this.logDebug('fromJSON:fit-to-page');
+      this.logDebug('loadDocument:fit-to-page');
       return;
     }
 
     this.viewportState.setViewport(this.config.initialScale, 0, 0);
-    this.logDebug('fromJSON:reset-viewport');
+    this.logDebug('loadDocument:reset-viewport');
   }
 
-  public fromMapData(data: MapConverterInput): void {
+  public fromJSON(data: object): void {
+    this.loadDocument(MapDocument.fromJSON(data));
+  }
+
+  public convertAndLoad(data: MapConverterInput): void {
     this.logDebug('fromMapData:start');
-    const document = convertMapData(data);
-    this.applyMapPaperConfig(document.paperConfig);
-    this.fromJSON(document.viewport ? { graph: document.graph, viewport: document.viewport } : { graph: document.graph });
+    this.loadDocument(convertMapData(data));
   }
 
   public setMode(mode: Mode): void {
@@ -595,6 +603,7 @@ export class Topology {
   }
 
   private applyMapPaperConfig(paperConfig: PaperConfig): void {
+    this.currentPaperConfig = { ...paperConfig };
     setStencilDir(paperConfig.stencilDir ?? '/stencils');
     this.editMode.setGridSize(paperConfig.gridSize ?? this.config.gridSize);
     this.diagramService.applyPaperConfig(paperConfig);

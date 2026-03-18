@@ -367,7 +367,7 @@ function loadSelectedMap(mapKey) {
     return;
   }
 
-  instance.fromMapData(selected.data);
+  instance.convertAndLoad(selected.data);
   runStableFit(() => {
     instance.fitToPage();
   });

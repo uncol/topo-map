@@ -1,8 +1,8 @@
 import type * as joint from '@joint/core';
+import { MapDocument } from '../core/MapDocument';
 import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from '../core/graphLayers';
 import {
   PAPER_TYPES,
-  type MapDocument,
   type PaperConfig,
   type PaperType,
   type ShapeOverlay,
@@ -254,16 +254,9 @@ class MapConverter {
       defaultLayer: NODE_LAYER_ID
     };
 
-    const document: MapDocument = {
-      graph: graphJson as joint.dia.Graph.JSON,
-      paperConfig: normalizePaperConfig(this.mapData)
-    };
     const viewport = normalizeViewport(this.mapData.viewport);
-    if (viewport) {
-      document.viewport = viewport;
-    }
 
-    return document;
+    return MapDocument.fromGraph(graphJson, viewport, normalizePaperConfig(this.mapData));
   }
 
   private buildPortMap(): Record<string, string> {

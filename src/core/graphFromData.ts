@@ -1,9 +1,8 @@
 import * as joint from '@joint/core';
-import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from './graphLayers';
 import { createIconLinkEnd } from '../shapes/linkEndpoints';
-import type { GraphEnvelope, LinkData, NodeData, SerializedMap, ViewportSnapshot } from './types';
+import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from './graphLayers';
+import type { LinkData, NodeData } from './types';
 
-const DEFAULT_SCHEMA_VERSION = '1.0.0';
 const DEFAULT_FONT_ICON_UNICODE = '\uF20A';
 const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
 const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
@@ -11,36 +10,6 @@ const DEFAULT_NODE_SIZE = 64;
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
-}
-
-export function toGraphEnvelope(input: object): GraphEnvelope {
-  if (!isObject(input)) {
-    return { graph: { cells: [] } };
-  }
-
-  if ('graph' in input) {
-    const graphValue = input.graph;
-    if (isObject(graphValue)) {
-      const viewportValue = 'viewport' in input && isObject(input.viewport) ? input.viewport : undefined;
-      const viewport =
-        viewportValue &&
-        typeof viewportValue.scale === 'number' &&
-        typeof viewportValue.tx === 'number' &&
-        typeof viewportValue.ty === 'number'
-          ? {
-              scale: viewportValue.scale,
-              tx: viewportValue.tx,
-              ty: viewportValue.ty
-            }
-          : undefined;
-      if (viewport) {
-        return { graph: graphValue as joint.dia.Graph.JSON, viewport };
-      }
-      return { graph: graphValue as joint.dia.Graph.JSON };
-    }
-  }
-
-  return { graph: input as joint.dia.Graph.JSON };
 }
 
 export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint.dia.Graph.JSON {
@@ -101,16 +70,4 @@ export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint
     layers: createGraphLayers(),
     defaultLayer: NODE_LAYER_ID
   } as joint.dia.Graph.JSON;
-}
-
-export function serializeMap(graph: joint.dia.Graph.JSON, snapshot: ViewportSnapshot): SerializedMap {
-  return {
-    schemaVersion: DEFAULT_SCHEMA_VERSION,
-    viewport: {
-      scale: snapshot.scale,
-      tx: snapshot.tx,
-      ty: snapshot.ty
-    },
-    graph
-  };
 }

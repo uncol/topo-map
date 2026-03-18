@@ -1,5 +1,3 @@
-import type * as joint from '@joint/core';
-
 export type Mode = 'pan' | 'zoomToArea' | 'edit';
 
 export interface Config {
@@ -134,23 +132,6 @@ export interface TranslateBounds {
 }
 
 export type TranslateBoundsResolver = (snapshot: ViewportStateSnapshot) => TranslateBounds | null;
-
-export interface SerializedMap {
-  graph: joint.dia.Graph.JSON;
-  viewport: ViewportSnapshot;
-  schemaVersion: string;
-}
-
-export interface GraphEnvelope {
-  graph: joint.dia.Graph.JSON;
-  viewport?: ViewportSnapshot;
-}
-
-export interface MapDocument {
-  graph: joint.dia.Graph.JSON;
-  viewport?: ViewportSnapshot;
-  paperConfig: PaperConfig;
-}
 
 export interface Point {
   x: number;

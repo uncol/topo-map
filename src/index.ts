@@ -16,7 +16,6 @@ export type {
   LinkData,
   LinkDataApi,
   LinkRecord,
-  MapDocument,
   Mode, NodeData, NodeLabelField,
   NodeSearchField,
   NodeSearchResult, PaperConfig,
@@ -27,9 +26,10 @@ export type {
   ViewportSnapshot,
   ViewportStateSnapshot
 } from './core/types';
+export type { MapDocumentJSON } from './core/MapDocument';
+export { MapDocument } from './core/MapDocument';
 export { convertMapData } from './decoders/MapConverter';
 export type {
   MapConverterInput
 } from './decoders/MapConverter';
 export { Topology } from './Topology';
-
