@@ -16,6 +16,7 @@ const LINK_HOVER_STROKE_WIDTH = 3;
 const LINK_HOVER_OPACITY = 0.6;
 const LINK_HOVER_HIGHLIGHT_ID = 'topo:link-hover-highlight';
 const ELEMENT_HIGHLIGHT_ID = 'topo:element-highlight';
+const CELL_POINTERCLICK_DELAY_MS = 250;
 
 export class InteractionEvents {
   private readonly mainContainer: Config['mainContainer'];
@@ -23,6 +24,8 @@ export class InteractionEvents {
   private readonly paper: joint.dia.Paper;
 
   private highlightedElementView: joint.dia.ElementView | null = null;
+
+  private pendingCellPointerClickTimer: number | null = null;
 
   private readonly pendingContextMenuTimers = new Set<number>();
 
@@ -98,10 +101,12 @@ export class InteractionEvents {
 
     this.paper.off('blank:pointerdown', this.onBlankPointerDownBound);
     this.paper.off('blank:contextmenu', this.onBlankContextMenuBound);
+    this.cancelPendingCellPointerClick();
     this.clearPendingContextMenuTimers();
   }
 
   public clearInteractionState(): void {
+    this.cancelPendingCellPointerClick();
     this.clearElementHighlight();
     this.clearLinkHoverStyles();
   }
@@ -147,12 +152,7 @@ export class InteractionEvents {
       return;
     }
 
-    this.updateElementHighlight(cellView);
-    this.emitBubbledEvent(CELL_POINTERCLICK_EVENT, {
-      ...this.getCellEventDetail(cellView),
-      x,
-      y
-    });
+    this.scheduleCellPointerClick(cellView, x, y);
   }
 
   private handleElementPointerDblClick(cellView: joint.dia.CellView, event: joint.dia.Event, x: number, y: number): void {
@@ -160,7 +160,7 @@ export class InteractionEvents {
       return;
     }
 
-    this.updateElementHighlight(cellView);
+    this.cancelPendingCellPointerClick();
     this.emitBubbledEvent(ELEMENT_POINTERDBLCLICK_EVENT, {
       ...this.getCellEventDetail(cellView),
       x,
@@ -173,8 +173,24 @@ export class InteractionEvents {
       return;
     }
 
+    this.cancelPendingCellPointerClick();
     this.clearElementHighlight();
     this.emitBubbledEvent(BLANK_POINTERDOWN_EVENT, { x, y });
+  }
+
+  private scheduleCellPointerClick(cellView: joint.dia.CellView, x: number, y: number): void {
+    this.cancelPendingCellPointerClick();
+    const detail = {
+      ...this.getCellEventDetail(cellView),
+      x,
+      y
+    };
+
+    this.pendingCellPointerClickTimer = globalThis.setTimeout(() => {
+      this.pendingCellPointerClickTimer = null;
+      this.updateElementHighlight(cellView);
+      this.emitBubbledEvent(CELL_POINTERCLICK_EVENT, detail);
+    }, CELL_POINTERCLICK_DELAY_MS);
   }
 
   private handleCellContextMenu(
@@ -204,6 +220,7 @@ export class InteractionEvents {
   private updateElementHighlight(cellView: joint.dia.CellView): void {
     if (!cellView.model.isElement()) {
       this.clearElementHighlight();
+      this.emitBubbledEvent(CELL_HIGHLIGHT_EVENT, this.getCellEventDetail(cellView));
       return;
     }
 
@@ -293,6 +310,14 @@ export class InteractionEvents {
       window.clearTimeout(timerId);
     });
     this.pendingContextMenuTimers.clear();
+  }
+
+  private cancelPendingCellPointerClick(): void {
+    if (this.pendingCellPointerClickTimer === null) {
+      return;
+    }
+    globalThis.clearTimeout(this.pendingCellPointerClickTimer);
+    this.pendingCellPointerClickTimer = null;
   }
 
   private emitBubbledEvent(eventName: string, detail: Record<string, unknown>): void {

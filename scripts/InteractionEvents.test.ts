@@ -1,5 +1,5 @@
 import * as joint from '@joint/core';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InteractionEvents } from '../src/core/events';
 
 type PaperHandler = (...args: unknown[]) => void;
@@ -77,8 +77,13 @@ function createCellView(
 }
 
 describe('InteractionEvents', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it('highlights an unselected element and emits its data in the highlight event', () => {
@@ -97,6 +102,7 @@ describe('InteractionEvents', () => {
 
     expect(pointerClick).toBeTypeOf('function');
     pointerClick?.(elementView, { button: 0 }, 10, 20);
+    vi.runAllTimers();
 
     expect(addSpy).toHaveBeenCalledWith(elementView, 'root', 'topo:element-highlight', expect.any(Object));
 
@@ -123,10 +129,12 @@ describe('InteractionEvents', () => {
     const pointerClick = handlers.get('cell:pointerclick');
 
     pointerClick?.(elementView, { button: 0 }, 10, 20);
+    vi.runAllTimers();
     events.length = 0;
     removeSpy.mockClear();
 
     pointerClick?.(elementView, { button: 0 }, 15, 25);
+    vi.runAllTimers();
 
     expect(removeSpy).toHaveBeenCalledWith(elementView, 'topo:element-highlight');
     expect(events.map((event) => event.type)).toEqual(['topo:cell:unhighlight', 'topo:cell:pointerclick']);
@@ -153,18 +161,28 @@ describe('InteractionEvents', () => {
     const pointerClick = handlers.get('cell:pointerclick');
 
     pointerClick?.(elementView, { button: 0 }, 10, 20);
+    vi.runAllTimers();
     events.length = 0;
     removeSpy.mockClear();
 
     pointerClick?.(linkView, { button: 0 }, 15, 25);
+    vi.runAllTimers();
 
     expect(removeSpy).toHaveBeenCalledWith(elementView, 'topo:element-highlight');
-    expect(events.map((event) => event.type)).toEqual(['topo:cell:unhighlight', 'topo:cell:pointerclick']);
+    expect(events.map((event) => event.type)).toEqual([
+      'topo:cell:unhighlight',
+      'topo:cell:highlight',
+      'topo:cell:pointerclick'
+    ]);
     expect(events[0]?.detail).toMatchObject({
       id: 'node-1',
       data: selectedData
     });
     expect(events[1]?.detail).toMatchObject({
+      id: 'link-1',
+      data: linkData
+    });
+    expect(events[2]?.detail).toMatchObject({
       id: 'link-1',
       data: linkData
     });
@@ -186,6 +204,7 @@ describe('InteractionEvents', () => {
     const blankPointerDown = handlers.get('blank:pointerdown');
 
     cellPointerClick?.(elementView, { button: 0 }, 10, 20);
+    vi.runAllTimers();
     events.length = 0;
     removeSpy.mockClear();
 
@@ -197,5 +216,28 @@ describe('InteractionEvents', () => {
       id: 'node-1',
       data
     });
+  });
+
+  it('cancels the delayed cell click when a double click is fired', () => {
+    const { paper, handlers } = createPaperStub();
+    const { element, events } = createContainerStub();
+    const addSpy = mockHighlighterAdd();
+    vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
+
+    const topologyEvents = new InteractionEvents(element, paper);
+
+    topologyEvents.setup();
+
+    const data = { type: 'managedobject', name: 'node-1' };
+    const elementView = createCellView('node-1', true, data) as joint.dia.ElementView;
+    const pointerClick = handlers.get('cell:pointerclick');
+    const elementPointerDblClick = handlers.get('element:pointerdblclick');
+
+    pointerClick?.(elementView, { button: 0 }, 10, 20);
+    elementPointerDblClick?.(elementView, { button: 0 }, 10, 20);
+    vi.runAllTimers();
+
+    expect(events.map((event) => event.type)).toEqual(['topo:cell:highlight', 'topo:element:pointerdblclick']);
+    expect(addSpy).toHaveBeenCalledTimes(1);
   });
 });
