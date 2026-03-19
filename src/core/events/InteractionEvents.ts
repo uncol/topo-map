@@ -5,7 +5,7 @@ import {
   BLANK_POINTERDOWN_EVENT,
   CELL_CONTEXTMENU_EVENT,
   CELL_HIGHLIGHT_EVENT,
-  CELL_POINTERDOWN_EVENT,
+  CELL_POINTERCLICK_EVENT,
   CELL_UNHIGHLIGHT_EVENT,
   ELEMENT_POINTERDBLCLICK_EVENT
 } from './constants';
@@ -34,13 +34,13 @@ export class InteractionEvents {
     this.restoreLinkHoverStyle(linkView);
   };
 
-  private readonly onCellPointerDownBound = (
+  private readonly onCellPointerClickBound = (
     cellView: joint.dia.CellView,
     event: joint.dia.Event,
     x: number,
     y: number
   ): void => {
-    this.handleCellPointerDown(cellView, event, x, y);
+    this.handleCellPointerClick(cellView, event, x, y);
   };
 
   private readonly onElementPointerDblClickBound = (
@@ -80,7 +80,7 @@ export class InteractionEvents {
 
     this.paper.on('element:pointerdblclick', this.onElementPointerDblClickBound);
 
-    this.paper.on('cell:pointerdown', this.onCellPointerDownBound);
+    this.paper.on('cell:pointerclick', this.onCellPointerClickBound);
     this.paper.on('cell:contextmenu', this.onCellContextMenuBound);
 
     this.paper.on('blank:pointerdown', this.onBlankPointerDownBound);
@@ -93,7 +93,7 @@ export class InteractionEvents {
 
     this.paper.off('element:pointerdblclick', this.onElementPointerDblClickBound);
 
-    this.paper.off('cell:pointerdown', this.onCellPointerDownBound);
+    this.paper.off('cell:pointerclick', this.onCellPointerClickBound);
     this.paper.off('cell:contextmenu', this.onCellContextMenuBound);
 
     this.paper.off('blank:pointerdown', this.onBlankPointerDownBound);
@@ -142,13 +142,13 @@ export class InteractionEvents {
     this.paper.el.style.cursor = 'grab';
   }
 
-  private handleCellPointerDown(cellView: joint.dia.CellView, event: joint.dia.Event, x: number, y: number): void {
+  private handleCellPointerClick(cellView: joint.dia.CellView, event: joint.dia.Event, x: number, y: number): void {
     if (!isPrimaryMouseButton(event)) {
       return;
     }
 
     this.updateElementHighlight(cellView);
-    this.emitBubbledEvent(CELL_POINTERDOWN_EVENT, {
+    this.emitBubbledEvent(CELL_POINTERCLICK_EVENT, {
       ...this.getCellEventDetail(cellView),
       x,
       y

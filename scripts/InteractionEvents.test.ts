@@ -93,10 +93,10 @@ describe('InteractionEvents', () => {
 
     const data = { type: 'managedobject', name: 'node-1' };
     const elementView = createCellView('node-1', true, data) as joint.dia.ElementView;
-    const pointerDown = handlers.get('cell:pointerdown');
+    const pointerClick = handlers.get('cell:pointerclick');
 
-    expect(pointerDown).toBeTypeOf('function');
-    pointerDown?.(elementView, { button: 0 }, 10, 20);
+    expect(pointerClick).toBeTypeOf('function');
+    pointerClick?.(elementView, { button: 0 }, 10, 20);
 
     expect(addSpy).toHaveBeenCalledWith(elementView, 'root', 'topo:element-highlight', expect.any(Object));
 
@@ -120,16 +120,16 @@ describe('InteractionEvents', () => {
 
     const data = { type: 'managedobject', name: 'node-1' };
     const elementView = createCellView('node-1', true, data) as joint.dia.ElementView;
-    const pointerDown = handlers.get('cell:pointerdown');
+    const pointerClick = handlers.get('cell:pointerclick');
 
-    pointerDown?.(elementView, { button: 0 }, 10, 20);
+    pointerClick?.(elementView, { button: 0 }, 10, 20);
     events.length = 0;
     removeSpy.mockClear();
 
-    pointerDown?.(elementView, { button: 0 }, 15, 25);
+    pointerClick?.(elementView, { button: 0 }, 15, 25);
 
     expect(removeSpy).toHaveBeenCalledWith(elementView, 'topo:element-highlight');
-    expect(events.map((event) => event.type)).toEqual(['topo:cell:unhighlight', 'topo:cell:pointerdown']);
+    expect(events.map((event) => event.type)).toEqual(['topo:cell:unhighlight', 'topo:cell:pointerclick']);
     expect(events[0]?.detail).toMatchObject({
       id: 'node-1',
       data
@@ -150,16 +150,16 @@ describe('InteractionEvents', () => {
     const elementView = createCellView('node-1', true, selectedData) as joint.dia.ElementView;
     const linkData = { type: 'link', method: 'lldp' };
     const linkView = createCellView('link-1', false, linkData);
-    const pointerDown = handlers.get('cell:pointerdown');
+    const pointerClick = handlers.get('cell:pointerclick');
 
-    pointerDown?.(elementView, { button: 0 }, 10, 20);
+    pointerClick?.(elementView, { button: 0 }, 10, 20);
     events.length = 0;
     removeSpy.mockClear();
 
-    pointerDown?.(linkView, { button: 0 }, 15, 25);
+    pointerClick?.(linkView, { button: 0 }, 15, 25);
 
     expect(removeSpy).toHaveBeenCalledWith(elementView, 'topo:element-highlight');
-    expect(events.map((event) => event.type)).toEqual(['topo:cell:unhighlight', 'topo:cell:pointerdown']);
+    expect(events.map((event) => event.type)).toEqual(['topo:cell:unhighlight', 'topo:cell:pointerclick']);
     expect(events[0]?.detail).toMatchObject({
       id: 'node-1',
       data: selectedData
@@ -182,10 +182,10 @@ describe('InteractionEvents', () => {
 
     const data = { type: 'managedobject', name: 'node-1' };
     const elementView = createCellView('node-1', true, data) as joint.dia.ElementView;
-    const cellPointerDown = handlers.get('cell:pointerdown');
+    const cellPointerClick = handlers.get('cell:pointerclick');
     const blankPointerDown = handlers.get('blank:pointerdown');
 
-    cellPointerDown?.(elementView, { button: 0 }, 10, 20);
+    cellPointerClick?.(elementView, { button: 0 }, 10, 20);
     events.length = 0;
     removeSpy.mockClear();
 

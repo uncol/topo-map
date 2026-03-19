@@ -142,7 +142,7 @@ const nodeSearchModeSelect = document.getElementById('node-search-mode');
 const nodeSearchSubmitBtn = document.getElementById('node-search-submit');
 const nodeSearchStatus = document.getElementById('node-search-status');
 const renderStats = document.getElementById('render-stats');
-const TOPOLOGY_CELL_POINTERDOWN_EVENT = 'topo:cell:pointerdown';
+const TOPOLOGY_CELL_POINTERCLICK_EVENT = 'topo:cell:pointerclick';
 const SCALE_CHANGE_EVENT = 'topo:scale-change';
 const ZOOM_CUSTOM_OPTION_VALUE = '__custom__';
 const ZOOM_PRESET_TOLERANCE = 0.001;
@@ -562,17 +562,17 @@ renderObserver.observe(mainContainer, {
 });
 scheduleRenderStatsUpdate();
 
-function onCellPointerDown(event) {
+function onCellPointerClick(event) {
   if (!(event instanceof CustomEvent)) {
     return;
   }
   const detail = event.detail ?? {};
-  lastInteractionText = `Cell down: ${detail.id ?? 'unknown'} [${detail.kind ?? 'unknown'}]`;
-  console.log('[demo] cell pointerdown', detail);
+  lastInteractionText = `Cell click: ${detail.id ?? 'unknown'} [${detail.kind ?? 'unknown'}]`;
+  console.log('[demo] cell pointerclick', detail);
   scheduleRenderStatsUpdate();
 }
 
-mainContainer.addEventListener(TOPOLOGY_CELL_POINTERDOWN_EVENT, onCellPointerDown);
+mainContainer.addEventListener(TOPOLOGY_CELL_POINTERCLICK_EVENT, onCellPointerClick);
 
 let rafResizeId = 0;
 let prevMainWidth = -1;
@@ -628,7 +628,7 @@ window.addEventListener('beforeunload', () => {
   mapSelect?.removeEventListener('change', onMapSelectChange);
   zoomSelect?.removeEventListener('change', onZoomSelectChange);
   mainContainer.removeEventListener(SCALE_CHANGE_EVENT, onScaleChange);
-  mainContainer.removeEventListener(TOPOLOGY_CELL_POINTERDOWN_EVENT, onCellPointerDown);
+  mainContainer.removeEventListener(TOPOLOGY_CELL_POINTERCLICK_EVENT, onCellPointerClick);
   if (rafResizeId !== 0) {
     window.cancelAnimationFrame(rafResizeId);
   }
