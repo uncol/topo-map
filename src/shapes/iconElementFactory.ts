@@ -77,9 +77,13 @@ function toggleLabel(this: joint.dia.Element): void {
   this.attr('ipaddr/display', newIpaddrDisplay);
 }
 
+export type IconElementConstructor = joint.dia.Cell.Constructor<
+  joint.dia.Element<joint.dia.Element.Attributes, joint.dia.ModelSetOptions>
+>;
+
 export function createIconElement<TMethods extends object>(
   config: IconElementFactoryConfig<TMethods>
-): joint.dia.Cell.Constructor<joint.dia.Element<joint.dia.Element.Attributes, joint.dia.ModelSetOptions>> {
+): IconElementConstructor {
   type Instance = IconElementInstance<TMethods>;
 
   return joint.dia.Element.define(

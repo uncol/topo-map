@@ -1,4 +1,4 @@
-import { createIconElement, getNumber, getString, IconElementInstance } from './iconElementFactory';
+import { createIconElement, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
 import { textLabelBg } from './labeling';
 
 let stencilDir = '/stencils';
@@ -38,7 +38,7 @@ export function getStencilDir(): string {
   return stencilDir;
 }
 
-export const ImageIconElement = createIconElement<ImageIconElementMethods>({
+export const ImageIconElement: IconElementConstructor = createIconElement<ImageIconElementMethods>({
   type: 'noc.ImageIconElement',
   attrs: {
     icon: {

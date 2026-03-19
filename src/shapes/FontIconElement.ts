@@ -1,4 +1,4 @@
-import { createIconElement, getString, IconElementInstance } from './iconElementFactory';
+import { createIconElement, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
 import { textLabelBg } from './labeling';
 
 // const DEFAULT_FONT_ICON_UNICODE = '\uE003'; // brand-gufolabs-s
@@ -13,7 +13,7 @@ interface FontIconElementMethods {
 
 type FontIconElementInstance = IconElementInstance<FontIconElementMethods>;
 
-export const FontIconElement = createIconElement<FontIconElementMethods>({
+export const FontIconElement: IconElementConstructor = createIconElement<FontIconElementMethods>({
   type: 'noc.FontIconElement',
   attrs: {
     icon: {
