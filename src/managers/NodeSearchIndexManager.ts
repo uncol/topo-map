@@ -26,6 +26,10 @@ interface FieldIndex {
 
 const SEARCH_FIELDS: NodeSearchField[] = ['id', 'title', 'ipaddr'];
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 export class NodeSearchIndexManager {
   private readonly graph: joint.dia.Graph;
 
@@ -41,7 +45,7 @@ export class NodeSearchIndexManager {
     this.rebuildIndex();
   };
 
-  private readonly onAttrsChangeBound = (cell: joint.dia.Cell): void => {
+  private readonly onDataChangeBound = (cell: joint.dia.Cell): void => {
     if (!cell.isElement()) {
       return;
     }
@@ -49,8 +53,8 @@ export class NodeSearchIndexManager {
     const id = String(cell.id);
     const current = this.entriesById.get(id);
     const nextNormalizedId = this.normalizeSearchText(id);
-    const nextTitle = this.readLabelText(cell, 'title');
-    const nextIpaddr = this.readLabelText(cell, 'ipaddr');
+    const nextTitle = this.readSearchText(cell, 'title');
+    const nextIpaddr = this.readSearchText(cell, 'ipaddr');
     const nextNormalizedTitle = this.normalizeSearchText(nextTitle);
     const nextNormalizedIpaddr = this.normalizeSearchText(nextIpaddr);
 
@@ -74,7 +78,7 @@ export class NodeSearchIndexManager {
 
     this.graph.on('add', this.onAddOrRemoveBound);
     this.graph.on('remove', this.onAddOrRemoveBound);
-    this.graph.on('change:attrs', this.onAttrsChangeBound);
+    this.graph.on('change:data', this.onDataChangeBound);
   }
 
   public rebuildIndex(): void {
@@ -87,9 +91,9 @@ export class NodeSearchIndexManager {
       const entry: SearchEntry = {
         id: String(element.id),
         normalizedId: '',
-        title: this.readLabelText(element, 'title'),
+        title: this.readSearchText(element, 'title'),
         normalizedTitle: '',
-        ipaddr: this.readLabelText(element, 'ipaddr'),
+        ipaddr: this.readSearchText(element, 'ipaddr'),
         normalizedIpaddr: '',
         order
       };
@@ -154,7 +158,7 @@ export class NodeSearchIndexManager {
   public destroy(): void {
     this.graph.off('add', this.onAddOrRemoveBound);
     this.graph.off('remove', this.onAddOrRemoveBound);
-    this.graph.off('change:attrs', this.onAttrsChangeBound);
+    this.graph.off('change:data', this.onDataChangeBound);
     this.entriesById.clear();
     this.indexes.id = this.createEmptyFieldIndex();
     this.indexes.title = this.createEmptyFieldIndex();
@@ -173,8 +177,14 @@ export class NodeSearchIndexManager {
     return this.indexes[field];
   }
 
-  private readLabelText(element: joint.dia.Element, field: NodeLabelField): string {
-    const value = element.attr(`${field}/text`);
+  private readSearchText(element: joint.dia.Element, field: NodeLabelField): string {
+    const data = element.get('data');
+    if (!isRecord(data)) {
+      return '';
+    }
+
+    const key = field === 'title' ? 'name' : 'address';
+    const value = data[key];
     return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
   }
 

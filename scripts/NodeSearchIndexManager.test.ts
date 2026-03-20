@@ -6,13 +6,23 @@ function createGraph() {
   return new joint.dia.Graph({}, { cellNamespace: {} });
 }
 
-function createElement(id: string, title: string, ipaddr: string): joint.dia.Element {
+function createElement(
+  id: string,
+  dataTitle: string,
+  dataIpaddr: string,
+  attrsTitle = dataTitle,
+  attrsIpaddr = dataIpaddr
+): joint.dia.Element {
   return new joint.dia.Element({
     id,
     type: 'standard.Rectangle',
+    data: {
+      name: dataTitle,
+      address: dataIpaddr
+    },
     attrs: {
-      title: { text: title },
-      ipaddr: { text: ipaddr }
+      title: { text: attrsTitle },
+      ipaddr: { text: attrsIpaddr }
     }
   });
 }
@@ -59,19 +69,75 @@ describe('NodeSearchIndexManager', () => {
     index.destroy();
   });
 
-  it('rebuilds the index when attrs change', () => {
+  it('uses data fields instead of attrs fields for label search', () => {
+    const graph = createGraph();
+    graph.addCell(createElement('node-1', 'Data Name', '10.10.10.1', 'Attrs Name', '10.10.10.2'));
+
+    const index = new NodeSearchIndexManager(graph);
+
+    expect(index.search('title', 'data name')).toEqual({
+      id: 'node-1',
+      text: 'Data Name',
+      field: 'title'
+    });
+    expect(index.search('title', 'attrs name')).toBeNull();
+    expect(index.search('ipaddr', '10.10.10.1')).toEqual({
+      id: 'node-1',
+      text: '10.10.10.1',
+      field: 'ipaddr'
+    });
+    expect(index.search('ipaddr', '10.10.10.2')).toBeNull();
+
+    index.destroy();
+  });
+
+  it('rebuilds the index when data changes', () => {
     const graph = createGraph();
     const element = createElement('node-1', 'Old Name', '192.168.0.1');
     graph.addCell(element);
 
     const index = new NodeSearchIndexManager(graph);
-    element.attr('title/text', 'New Name');
+    element.set('data', {
+      name: 'New Name',
+      address: '192.168.0.2'
+    });
 
     expect(index.search('title', 'new name')).toEqual({
       id: 'node-1',
       text: 'New Name',
       field: 'title'
     });
+    expect(index.search('ipaddr', '192.168.0.2')).toEqual({
+      id: 'node-1',
+      text: '192.168.0.2',
+      field: 'ipaddr'
+    });
+    expect(index.search('title', 'old name')).toBeNull();
+
+    index.destroy();
+  });
+
+  it('does not rebuild the index when only attrs change', () => {
+    const graph = createGraph();
+    const element = createElement('node-1', 'Stable Name', '192.168.0.1');
+    graph.addCell(element);
+
+    const index = new NodeSearchIndexManager(graph);
+    element.attr('title/text', 'Attrs Only Name');
+    element.attr('ipaddr/text', '192.168.0.2');
+
+    expect(index.search('title', 'stable name')).toEqual({
+      id: 'node-1',
+      text: 'Stable Name',
+      field: 'title'
+    });
+    expect(index.search('title', 'attrs only name')).toBeNull();
+    expect(index.search('ipaddr', '192.168.0.1')).toEqual({
+      id: 'node-1',
+      text: '192.168.0.1',
+      field: 'ipaddr'
+    });
+    expect(index.search('ipaddr', '192.168.0.2')).toBeNull();
 
     index.destroy();
   });
