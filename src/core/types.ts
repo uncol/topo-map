@@ -72,6 +72,7 @@ export interface LinkData {
   sourceId: string;
   targetId: string;
   label?: string;
+  data?: CellData;
   attrs?: Record<string, unknown>;
 }
 

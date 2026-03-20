@@ -60,6 +60,7 @@ export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint
         source: createIconLinkEnd(link.sourceId),
         target: createIconLinkEnd(link.targetId),
         labels,
+        data: link.data ?? {},
         attrs: link.attrs ?? {}
       };
     })
