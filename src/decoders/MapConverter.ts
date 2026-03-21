@@ -11,7 +11,7 @@ import {
 import { createIconLinkEnd } from '../shapes/linkEndpoints';
 
 const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
-const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
+const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-unknown';
 
 type ScalarId = string | number;
 

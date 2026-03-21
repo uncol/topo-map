@@ -4,7 +4,7 @@ import { textLabelBg } from './labeling';
 // const DEFAULT_FONT_ICON_UNICODE = '\uE003'; // brand-gufolabs-s
 const DEFAULT_FONT_ICON_UNICODE = '\uF20A';
 const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
-const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
+const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-unknown';
 
 interface FontIconElementMethods {
   setClass: (size?: string, status?: string) => void;

@@ -5,7 +5,7 @@ import type { LinkData, NodeData } from './types';
 
 const DEFAULT_FONT_ICON_UNICODE = '\uF20A';
 const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
-const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-ok';
+const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-unknown';
 const DEFAULT_NODE_SIZE = 64;
 
 function isObject(value: unknown): value is Record<string, unknown> {
