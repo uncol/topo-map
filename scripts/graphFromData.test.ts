@@ -27,6 +27,7 @@ describe('createGraphFromData', () => {
       },
       data: {
         id: 'node-1',
+        isMaintenance: false,
         name: 'Core',
         status_code: 1,
         metrics_label: undefined
@@ -61,6 +62,7 @@ describe('createGraphFromData', () => {
       },
       data: {
         id: 'node-1',
+        isMaintenance: false,
         name: 'Router',
         status_code: 0,
         metrics_label: undefined,

@@ -67,6 +67,7 @@ export function applyElementStatus(element: joint.dia.Element, update: ElementSt
     ...currentData,
     name: currentName,
     address: currentIpaddr,
+    isMaintenance: (rawStatusCode & 0x20) !== 0,
     status_code: rawStatusCode,
     metrics_label: nextMetricsLabel
   };

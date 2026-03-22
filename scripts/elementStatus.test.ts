@@ -40,6 +40,7 @@ describe('elementStatus', () => {
     });
     expect(element.get('data')).toMatchObject({
       name: 'Core',
+      isMaintenance: true,
       status_code: 36,
       metrics_label: 'CPU<br/>85%'
     });
@@ -83,6 +84,7 @@ describe('elementStatus', () => {
     expect(readElementStatus(element)).toEqual({ status_code: 4 });
     expect(element.get('data')).toMatchObject({
       name: 'Router',
+      isMaintenance: false,
       status_code: 4,
       metrics_label: ''
     });
@@ -126,6 +128,9 @@ describe('elementStatus', () => {
       metrics_label: 'MEM<br/>90%'
     })).toBe(true);
 
+    expect(element.get('data')).toMatchObject({
+      isMaintenance: false
+    });
     expect(element.attr('title/text')).toBe('Edge\nMEM\n90%');
     expect(element.attr('ipaddr/text')).toBe('10.0.0.3\nMEM\n90%');
   });

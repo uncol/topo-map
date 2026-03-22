@@ -42,6 +42,10 @@ export function createNodeCell(input: NodeCellInput): joint.dia.Cell.JSON {
   const width = input.width ?? DEFAULT_NODE_SIZE;
   const height = input.height ?? DEFAULT_NODE_SIZE;
   const customAttrs = isRecord(input.attrs) ? input.attrs : {};
+  const data = {
+    ...(input.data ?? {}),
+    isMaintenance: false
+  };
   const presentationModel: NodePresentationModel =
     input.kind === 'image'
       ? {
@@ -72,7 +76,7 @@ export function createNodeCell(input: NodeCellInput): joint.dia.Cell.JSON {
       position: { x: input.x, y: input.y },
       size: { width, height },
       attrs: buildNodePresentationAttrs(presentationModel, customAttrs) as joint.dia.Element.Attributes['attrs'],
-      data: input.data ?? {}
+      data
     } as joint.dia.Cell.JSON;
   }
 
@@ -83,6 +87,6 @@ export function createNodeCell(input: NodeCellInput): joint.dia.Cell.JSON {
     position: { x: input.x, y: input.y },
     size: { width, height },
     attrs: buildNodePresentationAttrs(presentationModel, customAttrs) as joint.dia.Element.Attributes['attrs'],
-    data: input.data ?? {}
+    data
   } as joint.dia.Cell.JSON;
 }
