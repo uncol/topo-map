@@ -1,10 +1,6 @@
 import { createIconElement, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
+import { getDefaultFontIconAttrs } from '../core/nodePresentation';
 import { textLabelBg } from './labeling';
-
-// const DEFAULT_FONT_ICON_UNICODE = '\uE003'; // brand-gufolabs-s
-const DEFAULT_FONT_ICON_UNICODE = '\uF20A';
-const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
-const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-unknown';
 
 interface FontIconElementMethods {
   setClass: (size?: string, status?: string) => void;
@@ -16,11 +12,7 @@ type FontIconElementInstance = IconElementInstance<FontIconElementMethods>;
 export const FontIconElement: IconElementConstructor = createIconElement<FontIconElementMethods>({
   type: 'noc.FontIconElement',
   attrs: {
-    icon: {
-      text: DEFAULT_FONT_ICON_UNICODE,
-      size: DEFAULT_FONT_ICON_SIZE_CLASS,
-      status: DEFAULT_FONT_ICON_STATUS_CLASS
-    },
+    icon: getDefaultFontIconAttrs(),
     title: {
       ref: 'icon',
       refX: '50%',

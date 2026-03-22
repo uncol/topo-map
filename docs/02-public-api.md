@@ -99,6 +99,7 @@ data.links.getAll(): Array<{ id: string; data: Record<string, unknown> }>
 
 Назначение:
 - синхронный read-only доступ к `data` из уже загруженного графа;
+- для элементов, созданных через `loadData()` и `convertAndLoad()`, `data` заполняется на этапе построения cell;
 - `elements` читает только `graph.getElements()`;
 - `links` читает только `graph.getLinks()`;
 - методы возвращают обычные JS-объекты, без утечки `joint.dia.Cell`.

@@ -1,4 +1,5 @@
 import { createIconElement, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
+import { getDefaultImageIconAttrs } from '../core/nodePresentation';
 import { textLabelBg } from './labeling';
 
 let stencilDir = '/stencils';
@@ -42,8 +43,7 @@ export const ImageIconElement: IconElementConstructor = createIconElement<ImageI
   type: 'noc.ImageIconElement',
   attrs: {
     icon: {
-      width: 64,
-      height: 64,
+      ...getDefaultImageIconAttrs(),
       xlinkHref: '',
       preserveAspectRatio: 'xMidYMid meet'
     },

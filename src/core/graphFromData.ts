@@ -1,12 +1,8 @@
 import * as joint from '@joint/core';
 import { createIconLinkEnd } from '../shapes/linkEndpoints';
 import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from './graphLayers';
+import { createNodeCell } from './nodeCellFactory';
 import type { LinkData, NodeData } from './types';
-
-const DEFAULT_FONT_ICON_UNICODE = '\uF20A';
-const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
-const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-unknown';
-const DEFAULT_NODE_SIZE = 64;
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -17,26 +13,61 @@ export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint
     ...nodes.map((node) => {
       const customAttrs = node.attrs ?? {};
       const customIconAttrs = isObject(customAttrs.icon) ? customAttrs.icon : {};
+      const iconHref =
+        typeof node.iconHref === 'string' && node.iconHref.length > 0
+          ? node.iconHref
+          : typeof customIconAttrs.href === 'string' && customIconAttrs.href.length > 0
+            ? customIconAttrs.href
+            : typeof customIconAttrs.xlinkHref === 'string' && customIconAttrs.xlinkHref.length > 0
+              ? customIconAttrs.xlinkHref
+              : undefined;
 
-      return {
-        id: node.id,
-        type: 'noc.FontIconElement',
-        layer: NODE_LAYER_ID,
-        position: { x: node.x, y: node.y },
-        size: {
-          width: node.width ?? DEFAULT_NODE_SIZE,
-          height: node.height ?? DEFAULT_NODE_SIZE
-        },
-        attrs: {
-          ...customAttrs,
-          icon: {
-            text: node.iconUnicode ?? DEFAULT_FONT_ICON_UNICODE,
-            size: node.iconSizeClass ?? DEFAULT_FONT_ICON_SIZE_CLASS,
-            status: node.iconStatusClass ?? DEFAULT_FONT_ICON_STATUS_CLASS,
-            ...customIconAttrs
-          }
-        }
-      };
+      return createNodeCell(
+        iconHref
+          ? {
+              kind: 'image',
+              id: node.id,
+              x: node.x,
+              y: node.y,
+              width: node.width,
+              height: node.height,
+              titleText: node.label,
+              iconHref,
+              iconStatus: node.status,
+              attrs: customAttrs,
+              data: {
+                id: node.id,
+                label: node.label,
+                status: node.status,
+                iconUnicode: node.iconUnicode,
+                iconSizeClass: node.iconSizeClass,
+                iconStatusClass: node.iconStatusClass,
+                iconHref: node.iconHref
+              }
+            }
+          : {
+              kind: 'font',
+              id: node.id,
+              x: node.x,
+              y: node.y,
+              width: node.width,
+              height: node.height,
+              titleText: node.label,
+              iconUnicode: node.iconUnicode,
+              iconSizeClass: node.iconSizeClass,
+              iconStatus: node.iconStatusClass,
+              attrs: customAttrs,
+              data: {
+                id: node.id,
+                label: node.label,
+                status: node.status,
+                iconUnicode: node.iconUnicode,
+                iconSizeClass: node.iconSizeClass,
+                iconStatusClass: node.iconStatusClass,
+                iconHref: node.iconHref
+              }
+            }
+      ) as Record<string, unknown>;
     }),
     ...links.map((link) => {
       const labels =

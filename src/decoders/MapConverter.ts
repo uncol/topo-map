@@ -1,6 +1,7 @@
 import type * as joint from '@joint/core';
 import { MapDocument } from '../core/MapDocument';
 import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from '../core/graphLayers';
+import { createNodeCell } from '../core/nodeCellFactory';
 import {
   PAPER_TYPES,
   type PaperConfig,
@@ -9,9 +10,6 @@ import {
   type ViewportSnapshot
 } from '../core/types';
 import { createIconLinkEnd } from '../shapes/linkEndpoints';
-
-const DEFAULT_FONT_ICON_SIZE_CLASS = 'gf-1x';
-const DEFAULT_FONT_ICON_STATUS_CLASS = 'gf-unknown';
 
 type ScalarId = string | number;
 
@@ -308,63 +306,33 @@ class MapConverter {
         return null;
       }
 
-      return {
-        type: 'noc.FontIconElement',
+      return createNodeCell({
+        kind: 'font',
         id: nodeId,
-        layer: NODE_LAYER_ID,
-        position: {
-          x: toFiniteNumber(node.x, 0),
-          y: toFiniteNumber(node.y, 0)
-        },
-        size: {
-          width: nodeWidth,
-          height: nodeHeight
-        },
-        attrs: {
-          icon: {
-            text: glyphText,
-            size: toText(node.cls, DEFAULT_FONT_ICON_SIZE_CLASS),
-            status: DEFAULT_FONT_ICON_STATUS_CLASS
-          },
-          title: {
-            text: toText(node.name)
-          },
-          ipaddr: {
-            text: toText(node.address)
-          }
-        },
-        data,
-      };
+        x: toFiniteNumber(node.x, 0),
+        y: toFiniteNumber(node.y, 0),
+        width: nodeWidth,
+        height: nodeHeight,
+        titleText: toText(node.name),
+        ipaddrText: toText(node.address),
+        iconUnicode: glyphText,
+        iconSizeClass: toOptionalText(node.cls),
+        data
+      });
     }
 
-    return {
-      type: 'noc.ImageIconElement',
+    return createNodeCell({
+      kind: 'image',
       id: nodeId,
-      layer: NODE_LAYER_ID,
-      position: {
-        x: toFiniteNumber(node.x, 0),
-        y: toFiniteNumber(node.y, 0)
-      },
-      size: {
-        width: nodeWidth,
-        height: nodeHeight
-      },
-      attrs: {
-        icon: {
-          href: `#${getImageId(shape)}`,
-          width: String(nodeWidth),
-          height: String(nodeHeight),
-          status: 'Unknown'
-        },
-        title: {
-          text: toText(node.name)
-        },
-        ipaddr: {
-          text: toText(node.address)
-        }
-      },
-      data,
-    };
+      x: toFiniteNumber(node.x, 0),
+      y: toFiniteNumber(node.y, 0),
+      width: nodeWidth,
+      height: nodeHeight,
+      titleText: toText(node.name),
+      ipaddrText: toText(node.address),
+      iconHref: `#${getImageId(shape)}`,
+      data
+    });
   }
 
   private convertLink(link: MapConverterLink): joint.dia.Cell.JSON | null {

@@ -30,6 +30,11 @@ describe('convertMapData', () => {
     expect((sae as Record<string, any>)?.attrs.icon.size).toBe('gf-1x');
     expect((sae as Record<string, any>)?.attrs.title.text).toBe('SAE');
     expect((sae as Record<string, any>)?.attrs.ipaddr.text).toBe('1.1.1.1');
+    expect((sae as Record<string, any>)?.data).toMatchObject({
+      id: '1',
+      name: 'SAE',
+      address: '1.1.1.1'
+    });
 
     const link = result.graph.cells.find((cell) => cell.id === '69676d2cfa1bc463f16465e2');
     expect(link).toBeDefined();
@@ -91,6 +96,10 @@ describe('convertMapData', () => {
     expect((groupNode as Record<string, any>)?.attrs.icon.width).toBe('47.5');
     expect((groupNode as Record<string, any>)?.attrs.icon.height).toBe('32.5');
     expect((groupNode as Record<string, any>)?.attrs.title.text).toBe('Атмосфера+ZIAX');
+    expect((groupNode as Record<string, any>)?.data).toMatchObject({
+      id: '6973ffeb8ce3e3bca2229017',
+      name: 'Атмосфера+ZIAX'
+    });
 
     const workstationNode = result.graph.cells.find((cell) => cell.id === '31');
     expect(workstationNode).toBeDefined();
