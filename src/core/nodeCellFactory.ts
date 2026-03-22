@@ -12,7 +12,8 @@ interface BaseNodeCellInput {
   y: number;
   width?: number | undefined;
   height?: number | undefined;
-  titleText?: string | undefined;
+  name?: string | undefined;
+  metricsLabel?: string | undefined;
   ipaddrText?: string | undefined;
   data?: AttrMap | undefined;
   attrs?: AttrMap | undefined;
@@ -22,13 +23,13 @@ interface FontNodeCellInput extends BaseNodeCellInput {
   kind: 'font';
   iconUnicode?: string | undefined;
   iconSizeClass?: string | undefined;
-  iconStatus?: string | undefined;
+  statusCode?: number | undefined;
 }
 
 interface ImageNodeCellInput extends BaseNodeCellInput {
   kind: 'image';
   iconHref: string;
-  iconStatus?: string | undefined;
+  statusCode?: number | undefined;
 }
 
 export type NodeCellInput = FontNodeCellInput | ImageNodeCellInput;
@@ -48,16 +49,18 @@ export function createNodeCell(input: NodeCellInput): joint.dia.Cell.JSON {
           width,
           height,
           iconHref: input.iconHref,
-          iconStatus: input.iconStatus,
-          titleText: input.titleText,
+          statusCode: input.statusCode,
+          name: input.name,
+          metricsLabel: input.metricsLabel,
           ipaddrText: input.ipaddrText
         }
       : {
           kind: 'font',
           iconUnicode: input.iconUnicode,
           iconSizeClass: input.iconSizeClass,
-          iconStatus: input.iconStatus,
-          titleText: input.titleText,
+          statusCode: input.statusCode,
+          name: input.name,
+          metricsLabel: input.metricsLabel,
           ipaddrText: input.ipaddrText
         };
 

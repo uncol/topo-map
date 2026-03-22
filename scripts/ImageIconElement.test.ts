@@ -12,13 +12,15 @@ describe('ImageIconElement', () => {
           text: ''
         },
         icon: {
-          href: '#img-Cisco-workstation'
+          href: '#img-Cisco-workstation',
+          status_code: 4
         }
       }
     });
 
     expect(element.attr('icon/href')).toBe('/stencils/Cisco/workstation.svg');
     expect(element.attr('icon/xlinkHref')).toBe('/stencils/Cisco/workstation.svg');
+    expect(element.attr('icon/filter')).toBe('url(#osDown)');
   });
 
   it('keeps href in sync when only xlinkHref is updated', () => {
@@ -31,7 +33,8 @@ describe('ImageIconElement', () => {
           text: ''
         },
         icon: {
-          href: '#img-Cisco-router'
+          href: '#img-Cisco-router',
+          status_code: 2
         }
       }
     });
@@ -40,5 +43,6 @@ describe('ImageIconElement', () => {
 
     expect(element.attr('icon/href')).toBe('/stencils/Cisco/workstation.svg');
     expect(element.attr('icon/xlinkHref')).toBe('/stencils/Cisco/workstation.svg');
+    expect(element.attr('icon/filter')).toBe('url(#osAlarm)');
   });
 });

@@ -1,11 +1,11 @@
 import { createIconElement, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
-import { getDefaultImageIconAttrs } from '../core/nodePresentation';
+import { getDefaultImageIconAttrs, getImageStatusFilter } from '../core/nodePresentation';
 import { textLabelBg } from './labeling';
 
 let stencilDir = '/stencils';
 
 interface ImageIconElementMethods {
-  setStatus: (filter: string) => void;
+  setStatus: (statusCode: number) => void;
   convertImageIdToPath: (href: string) => string;
 }
 
@@ -74,35 +74,20 @@ export const ImageIconElement: IconElementConstructor = createIconElement<ImageI
   getBreakWidth: (_instance, iconAttrs) => getNumber(iconAttrs, 'width', 64) * 2,
   onIconInit: (instance, iconAttrs) => {
     syncImageHref(instance as ImageIconElementInstance, iconAttrs);
-
-    const statusValue = getString(iconAttrs, 'status');
-    if (statusValue.length > 0) {
-      instance.setStatus(statusValue);
-    }
+    instance.setStatus(getNumber(iconAttrs, 'status_code', 0));
   },
   onIconAttrsChange: (instance, iconAttrs) => {
     syncImageHref(instance as ImageIconElementInstance, iconAttrs);
-
-    const nextStatus = getString(iconAttrs, 'status');
-    if (nextStatus.length > 0) {
-      instance.setStatus(nextStatus);
-      return;
-    }
-
-    instance.attr('icon/filter', null);
-    const embeddedCells = instance.getEmbeddedCells();
-    embeddedCells.forEach((badge) => {
-      badge.attr('body/filter', null);
-      badge.attr('text/filter', null);
-    });
+    instance.setStatus(getNumber(iconAttrs, 'status_code', 0));
   },
   methods: {
-    setStatus: function (this: ImageIconElementInstance, filter: string): void {
-      this.attr('icon/filter', `url(#os${filter})`);
+    setStatus: function (this: ImageIconElementInstance, statusCode: number): void {
+      const filter = getImageStatusFilter(statusCode);
+      this.attr('icon/filter', `url(#${filter})`);
       const embeddedCells = this.getEmbeddedCells();
       embeddedCells.forEach((badge) => {
-        badge.attr('body/filter', `url(#os${filter})`);
-        badge.attr('text/filter', `url(#os${filter})`);
+        badge.attr('body/filter', `url(#${filter})`);
+        badge.attr('text/filter', `url(#${filter})`);
       });
     },
 

@@ -2,10 +2,36 @@ import * as joint from '@joint/core';
 import { createIconLinkEnd } from '../shapes/linkEndpoints';
 import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from './graphLayers';
 import { createNodeCell } from './nodeCellFactory';
+import { DEFAULT_STATUS_CODE, FONT_STATUS_CLASS_BY_CODE } from './nodePresentation';
 import type { LinkData, NodeData } from './types';
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function getStatusCodeFromFontClass(value: unknown): number | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const entry = Object.entries(FONT_STATUS_CLASS_BY_CODE).find(([, className]) => className === value);
+  return entry ? Number(entry[0]) : undefined;
+}
+
+function resolveNodeStatusCode(node: NodeData, customIconAttrs: Record<string, unknown>): number {
+  if (typeof node.statusCode === 'number' && Number.isFinite(node.statusCode)) {
+    return Math.trunc(node.statusCode);
+  }
+  if (typeof customIconAttrs.status_code === 'number' && Number.isFinite(customIconAttrs.status_code)) {
+    return Math.trunc(customIconAttrs.status_code);
+  }
+
+  const statusCodeFromClass = getStatusCodeFromFontClass(node.iconStatusClass) ?? getStatusCodeFromFontClass(node.status);
+  if (typeof statusCodeFromClass === 'number') {
+    return statusCodeFromClass;
+  }
+
+  return DEFAULT_STATUS_CODE;
 }
 
 export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint.dia.Graph.JSON {
@@ -13,6 +39,7 @@ export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint
     ...nodes.map((node) => {
       const customAttrs = node.attrs ?? {};
       const customIconAttrs = isObject(customAttrs.icon) ? customAttrs.icon : {};
+      const statusCode = resolveNodeStatusCode(node, customIconAttrs);
       const iconHref =
         typeof node.iconHref === 'string' && node.iconHref.length > 0
           ? node.iconHref
@@ -31,17 +58,18 @@ export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint
               y: node.y,
               width: node.width,
               height: node.height,
-              titleText: node.label,
+              name: node.label,
+              metricsLabel: node.metricsLabel,
               iconHref,
-              iconStatus: node.status,
+              statusCode,
               attrs: customAttrs,
               data: {
                 id: node.id,
-                label: node.label,
-                status: node.status,
+                name: node.label,
+                status_code: statusCode,
+                metrics_label: node.metricsLabel,
                 iconUnicode: node.iconUnicode,
                 iconSizeClass: node.iconSizeClass,
-                iconStatusClass: node.iconStatusClass,
                 iconHref: node.iconHref
               }
             }
@@ -52,18 +80,19 @@ export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint
               y: node.y,
               width: node.width,
               height: node.height,
-              titleText: node.label,
+              name: node.label,
+              metricsLabel: node.metricsLabel,
               iconUnicode: node.iconUnicode,
               iconSizeClass: node.iconSizeClass,
-              iconStatus: node.iconStatusClass,
+              statusCode,
               attrs: customAttrs,
               data: {
                 id: node.id,
-                label: node.label,
-                status: node.status,
+                name: node.label,
+                status_code: statusCode,
+                metrics_label: node.metricsLabel,
                 iconUnicode: node.iconUnicode,
                 iconSizeClass: node.iconSizeClass,
-                iconStatusClass: node.iconStatusClass,
                 iconHref: node.iconHref
               }
             }

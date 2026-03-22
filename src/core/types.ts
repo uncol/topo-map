@@ -59,6 +59,8 @@ export interface NodeData {
   width?: number;
   height?: number;
   label?: string;
+  statusCode?: number;
+  metricsLabel?: string;
   status?: string;
   iconUnicode?: string;
   iconSizeClass?: string;
@@ -85,8 +87,16 @@ export interface ElementRecord<TData extends CellData = CellData> {
 
 export interface ElementStatusRecord {
   id: string;
-  status: string | null;
+  status_code: number | null;
+  metrics_label: string | null;
 }
+
+export interface ElementStatusUpdate {
+  status_code: number;
+  metrics_label?: string;
+}
+
+export type ElementStatusUpdateMap = Record<string, ElementStatusUpdate>;
 
 export interface LinkRecord<TData extends CellData = CellData> {
   id: string;
@@ -97,10 +107,11 @@ export interface ElementDataApi {
   getIdsByDataType(type: string): string[];
   getById<TData extends CellData = CellData>(id: string): ElementRecord<TData> | null;
   getAll<TData extends CellData = CellData>(): ElementRecord<TData>[];
-  getStatus(id: string): string | null;
+  getStatus(id: string): ElementStatusUpdate | null;
   getStatuses(ids: string[]): ElementStatusRecord[];
-  setStatus(id: string, status: string): boolean;
-  setStatuses(ids: string[], status: string): string[];
+  setStatus(id: string, update: ElementStatusUpdate): boolean;
+  setStatuses(updates: ElementStatusUpdateMap): string[];
+  setRandomStatuses(updates: ElementStatusUpdate[]): string[];
 }
 
 export interface LinkDataApi {

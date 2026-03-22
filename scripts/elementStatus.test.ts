@@ -12,7 +12,7 @@ describe('elementStatus', () => {
         icon: {
           text: '\uF20A',
           size: 'gf-1x',
-          status: 'gf-ok'
+          status_code: 1
         },
         title: {
           text: 'Core'
@@ -23,18 +23,27 @@ describe('elementStatus', () => {
       },
       data: {
         id: 'node-1',
-        iconStatusClass: 'gf-ok'
+        name: 'Core',
+        status_code: 1
       }
     });
 
-    expect(readElementStatus(element)).toBe('gf-ok');
-    expect(applyElementStatus(element, 'gf-fail')).toBe(true);
-    expect(readElementStatus(element)).toBe('gf-fail');
-    expect(element.get('data')).toMatchObject({
-      status: 'gf-fail',
-      iconStatusClass: 'gf-fail'
+    expect(readElementStatus(element)).toEqual({ status_code: 1 });
+    expect(applyElementStatus(element, {
+      status_code: 36,
+      metrics_label: 'CPU<br/>85%'
+    })).toBe(true);
+    expect(readElementStatus(element)).toEqual({
+      status_code: 36,
+      metrics_label: 'CPU<br/>85%'
     });
-    expect(element.attr('icon/status')).toBe('gf-fail');
+    expect(element.get('data')).toMatchObject({
+      name: 'Core',
+      status_code: 36,
+      metrics_label: 'CPU<br/>85%'
+    });
+    expect(element.attr('icon/status_code')).toBe(36);
+    expect(element.attr('title/text')).toBe('Core\nCPU\n85%');
   });
 
   it('reads and updates status for image elements', () => {
@@ -47,7 +56,7 @@ describe('elementStatus', () => {
           href: '#img-Cisco-router',
           width: '64',
           height: '64',
-          status: 'Warning'
+          status_code: 2
         },
         title: {
           text: 'Router'
@@ -58,16 +67,23 @@ describe('elementStatus', () => {
       },
       data: {
         id: 'node-2',
-        status: 'Warning'
+        name: 'Router',
+        status_code: 2
       }
     });
 
-    expect(readElementStatus(element)).toBe('Warning');
-    expect(applyElementStatus(element, 'Critical')).toBe(true);
-    expect(readElementStatus(element)).toBe('Critical');
+    expect(readElementStatus(element)).toEqual({ status_code: 2 });
+    expect(applyElementStatus(element, {
+      status_code: 4,
+      metrics_label: ''
+    })).toBe(true);
+    expect(readElementStatus(element)).toEqual({ status_code: 4 });
     expect(element.get('data')).toMatchObject({
-      status: 'Critical'
+      name: 'Router',
+      status_code: 4,
+      metrics_label: ''
     });
-    expect(element.attr('icon/status')).toBe('Critical');
+    expect(element.attr('icon/status_code')).toBe(4);
+    expect(element.attr('title/text')).toBe('Router');
   });
 });

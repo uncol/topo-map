@@ -6,6 +6,8 @@ import type {
   ElementDataApi,
   ElementRecord,
   ElementStatusRecord,
+  ElementStatusUpdate,
+  ElementStatusUpdateMap,
   LinkDataApi,
   LinkRecord
 } from './types';
@@ -79,7 +81,7 @@ class ElementDataFacade implements ElementDataApi {
     });
   }
 
-  public getStatus(id: string): string | null {
+  public getStatus(id: string): ElementStatusUpdate | null {
     const element = this.getStatusTargetElement(id);
     if (!element) {
       return null;
@@ -89,37 +91,67 @@ class ElementDataFacade implements ElementDataApi {
   }
 
   public getStatuses(ids: string[]): ElementStatusRecord[] {
-    return ids.map((id) => ({
-      id,
-      status: this.getStatus(id)
-    }));
+    return ids.map((id) => {
+      const status = this.getStatus(id);
+      return {
+        id,
+        status_code: status?.status_code ?? null,
+        metrics_label: status?.metrics_label ?? null
+      };
+    });
   }
 
-  public setStatus(id: string, status: string): boolean {
+  public setStatus(id: string, update: ElementStatusUpdate): boolean {
     const element = this.getStatusTargetElement(id);
     if (!element) {
       return false;
     }
 
-    return applyElementStatus(element, status);
+    return applyElementStatus(element, update);
   }
 
-  public setStatuses(ids: string[], status: string): string[] {
-    if (status.trim().length === 0 || ids.length === 0) {
+  public setStatuses(updates: ElementStatusUpdateMap): string[] {
+    const entries = Object.entries(updates);
+    if (entries.length === 0) {
       return [];
     }
 
     const updatedIds: string[] = [];
     this.graph.startBatch('element-status');
     try {
-      ids.forEach((id) => {
+      entries.forEach(([id, update]) => {
         const element = this.getStatusTargetElement(id);
         if (!element) {
           return;
         }
 
-        if (applyElementStatus(element, status)) {
+        if (applyElementStatus(element, update)) {
           updatedIds.push(id);
+        }
+      });
+    } finally {
+      this.graph.stopBatch('element-status');
+    }
+
+    return updatedIds;
+  }
+
+  public setRandomStatuses(updates: ElementStatusUpdate[]): string[] {
+    if (updates.length === 0) {
+      return [];
+    }
+
+    const updatedIds: string[] = [];
+    this.graph.startBatch('element-status');
+    try {
+      this.graph.getElements().forEach((element) => {
+        if (!isStatusSupportedElement(element)) {
+          return;
+        }
+
+        const randomUpdate = updates[Math.floor(Math.random() * updates.length)];
+        if (randomUpdate && applyElementStatus(element, randomUpdate)) {
+          updatedIds.push(String(element.id));
         }
       });
     } finally {

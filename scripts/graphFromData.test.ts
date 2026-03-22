@@ -22,13 +22,14 @@ describe('createGraphFromData', () => {
           text: 'Core'
         },
         icon: {
-          status: 'gf-ok'
+          status_code: 1
         }
       },
       data: {
         id: 'node-1',
-        label: 'Core',
-        iconStatusClass: 'gf-ok'
+        name: 'Core',
+        status_code: 1,
+        metrics_label: undefined
       }
     });
   });
@@ -41,7 +42,7 @@ describe('createGraphFromData', () => {
         y: 20,
         label: 'Router',
         iconHref: '#img-Cisco-router',
-        status: 'Warning'
+        statusCode: 0
       }
     ], []);
 
@@ -52,7 +53,7 @@ describe('createGraphFromData', () => {
       attrs: {
         icon: {
           href: '#img-Cisco-router',
-          status: 'Warning'
+          status_code: 0
         },
         title: {
           text: 'Router'
@@ -60,8 +61,9 @@ describe('createGraphFromData', () => {
       },
       data: {
         id: 'node-1',
-        label: 'Router',
-        status: 'Warning',
+        name: 'Router',
+        status_code: 0,
+        metrics_label: undefined,
         iconHref: '#img-Cisco-router'
       }
     });

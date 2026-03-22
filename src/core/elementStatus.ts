@@ -1,9 +1,11 @@
 import type * as joint from '@joint/core';
 import {
   buildNodePresentationAttrs,
+  DEFAULT_STATUS_CODE,
   getNodePresentationOverrides,
   type NodePresentationModel
 } from './nodePresentation';
+import type { ElementStatusUpdate } from './types';
 
 type AttrMap = Record<string, unknown>;
 
@@ -16,6 +18,11 @@ function getString(record: AttrMap, key: string): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
+function getNumber(record: AttrMap, key: string): number | undefined {
+  const value = record[key];
+  return typeof value === 'number' && Number.isFinite(value) ? Math.trunc(value) : undefined;
+}
+
 export function isStatusSupportedElement(cell: joint.dia.Cell | null | undefined): cell is joint.dia.Element {
   if (!cell?.isElement()) {
     return false;
@@ -25,33 +32,45 @@ export function isStatusSupportedElement(cell: joint.dia.Cell | null | undefined
   return type === 'noc.FontIconElement' || type === 'noc.ImageIconElement';
 }
 
-export function readElementStatus(element: joint.dia.Element): string | null {
+export function readElementStatus(element: joint.dia.Element): ElementStatusUpdate | null {
   const data = isRecord(element.get('data')) ? element.get('data') : {};
-  const type = String(element.get('type') ?? '');
-  const attrStatus = String(element.attr('icon/status') ?? '').trim();
-  const fallbackStatus = attrStatus.length > 0 ? attrStatus : null;
-
-  if (type === 'noc.ImageIconElement') {
-    return getString(data, 'status') ?? fallbackStatus;
+  const statusCode = getNumber(data, 'status_code');
+  if (typeof statusCode === 'number') {
+    const metricsLabel = getString(data, 'metrics_label');
+    return metricsLabel ? { status_code: statusCode, metrics_label: metricsLabel } : { status_code: statusCode };
   }
 
-  return getString(data, 'status') ?? getString(data, 'iconStatusClass') ?? fallbackStatus;
+  const fallbackStatusCode = element.attr('icon/status_code');
+  if (typeof fallbackStatusCode === 'number' && Number.isFinite(fallbackStatusCode)) {
+    return { status_code: Math.trunc(fallbackStatusCode) };
+  }
+
+  return null;
 }
 
-export function applyElementStatus(element: joint.dia.Element, status: string): boolean {
-  const normalizedStatus = status.trim();
-  if (normalizedStatus.length === 0 || !isStatusSupportedElement(element)) {
+export function applyElementStatus(element: joint.dia.Element, update: ElementStatusUpdate): boolean {
+  if (!isStatusSupportedElement(element) || !Number.isFinite(update.status_code)) {
     return false;
   }
 
+  const rawStatusCode = Math.trunc(update.status_code);
   const currentData = isRecord(element.get('data')) ? element.get('data') : {};
-  const nextData: AttrMap = { ...currentData, status: normalizedStatus };
-  const type = String(element.get('type') ?? '');
-  if (type === 'noc.FontIconElement') {
-    nextData.iconStatusClass = normalizedStatus;
-  }
+  const currentName = getString(currentData, 'name') ?? getString(currentData, 'label') ?? String(element.attr('title/text') ?? '');
+  const nextMetricsLabel =
+    Object.prototype.hasOwnProperty.call(update, 'metrics_label')
+      ? update.metrics_label
+      : getString(currentData, 'metrics_label');
+  const nextData: AttrMap = {
+    ...currentData,
+    name: currentName,
+    status_code: rawStatusCode,
+    metrics_label: nextMetricsLabel
+  };
+  delete nextData.status;
+  delete nextData.iconStatusClass;
+  delete nextData.label;
 
-  const nextPresentationModel = buildPresentationModelForElement(element, normalizedStatus);
+  const nextPresentationModel = buildPresentationModelForElement(element, currentName, nextMetricsLabel, rawStatusCode);
   const nextAttrs = buildNodePresentationAttrs(
     nextPresentationModel,
     getNodePresentationOverrides(element.get('attrs'))
@@ -62,12 +81,16 @@ export function applyElementStatus(element: joint.dia.Element, status: string): 
   return true;
 }
 
-function buildPresentationModelForElement(element: joint.dia.Element, status: string): NodePresentationModel {
+function buildPresentationModelForElement(
+  element: joint.dia.Element,
+  name: string | undefined,
+  metricsLabel: string | undefined,
+  statusCode: number
+): NodePresentationModel {
   const type = String(element.get('type') ?? '');
   const iconText = String(element.attr('icon/text') ?? '');
   const iconSize = String(element.attr('icon/size') ?? '');
   const iconHref = String(element.attr('icon/href') ?? element.attr('icon/xlinkHref') ?? '');
-  const titleText = String(element.attr('title/text') ?? '');
   const ipaddrText = String(element.attr('ipaddr/text') ?? '');
 
   if (type === 'noc.ImageIconElement') {
@@ -77,8 +100,9 @@ function buildPresentationModelForElement(element: joint.dia.Element, status: st
       width: size.width,
       height: size.height,
       iconHref,
-      iconStatus: status,
-      titleText,
+      statusCode,
+      name,
+      metricsLabel,
       ipaddrText
     };
   }
@@ -87,8 +111,9 @@ function buildPresentationModelForElement(element: joint.dia.Element, status: st
     kind: 'font',
     iconUnicode: iconText,
     iconSizeClass: iconSize,
-    iconStatus: status,
-    titleText,
+    statusCode,
+    name,
+    metricsLabel,
     ipaddrText
   };
 }

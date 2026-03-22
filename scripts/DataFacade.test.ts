@@ -1,5 +1,5 @@
 import * as joint from '@joint/core';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { DataFacade } from '../src/core/DataFacade';
 
 function createGraph() {
@@ -86,7 +86,7 @@ describe('DataFacade', () => {
           icon: {
             text: '\uF20A',
             size: 'gf-1x',
-            status: 'gf-ok'
+            status_code: 1
           },
           title: {
             text: 'alpha'
@@ -94,8 +94,8 @@ describe('DataFacade', () => {
         },
         data: {
           id: 'node-1',
-          status: 'gf-ok',
-          iconStatusClass: 'gf-ok'
+          name: 'alpha',
+          status_code: 1
         }
       }),
       new joint.dia.Element({
@@ -107,7 +107,7 @@ describe('DataFacade', () => {
             href: '#img-Cisco-router',
             width: '64',
             height: '64',
-            status: 'Warning'
+            status_code: 2
           },
           title: {
             text: 'beta'
@@ -115,26 +115,111 @@ describe('DataFacade', () => {
         },
         data: {
           id: 'node-2',
-          status: 'Warning'
+          name: 'beta',
+          status_code: 2
         }
       })
     ]);
 
     const api = new DataFacade(graph);
 
-    expect(api.elements.getStatus('node-1')).toBe('gf-ok');
+    expect(api.elements.getStatus('node-1')).toEqual({ status_code: 1 });
     expect(api.elements.getStatuses(['node-1', 'node-2', 'missing'])).toEqual([
-      { id: 'node-1', status: 'gf-ok' },
-      { id: 'node-2', status: 'Warning' },
-      { id: 'missing', status: null }
+      { id: 'node-1', status_code: 1, metrics_label: null },
+      { id: 'node-2', status_code: 2, metrics_label: null },
+      { id: 'missing', status_code: null, metrics_label: null }
     ]);
 
-    expect(api.elements.setStatus('node-1', 'gf-fail')).toBe(true);
-    expect(api.elements.getStatus('node-1')).toBe('gf-fail');
-    expect(api.elements.setStatuses(['node-1', 'missing', 'node-2'], 'Critical')).toEqual(['node-1', 'node-2']);
+    expect(api.elements.setStatus('node-1', {
+      status_code: 4,
+      metrics_label: 'single<br/>metric'
+    })).toBe(true);
+    expect(api.elements.getStatus('node-1')).toEqual({
+      status_code: 4,
+      metrics_label: 'single<br/>metric'
+    });
+    expect(api.elements.setStatuses({
+      'node-1': {
+        status_code: 2,
+        metrics_label: 'ignored-1'
+      },
+      missing: {
+        status_code: 4,
+        metrics_label: 'ignored-2'
+      },
+      'node-2': {
+        status_code: 4,
+        metrics_label: 'ignored-3'
+      }
+    })).toEqual(['node-1', 'node-2']);
     expect(api.elements.getStatuses(['node-1', 'node-2'])).toEqual([
-      { id: 'node-1', status: 'Critical' },
-      { id: 'node-2', status: 'Critical' }
+      { id: 'node-1', status_code: 2, metrics_label: 'ignored-1' },
+      { id: 'node-2', status_code: 4, metrics_label: 'ignored-3' }
     ]);
+  });
+
+  it('sets random statuses for all supported elements from the provided pool', () => {
+    const randomSpy = vi.spyOn(Math, 'random');
+    randomSpy.mockReturnValueOnce(0.1).mockReturnValueOnce(0.9);
+
+    const graph = createGraph();
+    graph.addCells([
+      new joint.dia.Element({
+        id: 'node-1',
+        type: 'noc.FontIconElement',
+        size: { width: 64, height: 64 },
+        attrs: {
+          icon: {
+            text: '\uF20A',
+            size: 'gf-1x',
+            status_code: 1
+          }
+        },
+        data: {
+          id: 'node-1',
+          name: 'node-1',
+          status_code: 1
+        }
+      }),
+      new joint.dia.Element({
+        id: 'node-2',
+        type: 'noc.ImageIconElement',
+        size: { width: 64, height: 64 },
+        attrs: {
+          icon: {
+            href: '#img-Cisco-router',
+            width: '64',
+            height: '64',
+            status_code: 2
+          }
+        },
+        data: {
+          id: 'node-2',
+          name: 'node-2',
+          status_code: 2
+        }
+      }),
+      new joint.dia.Element({
+        id: 'node-3',
+        type: 'standard.Rectangle',
+        data: {
+          id: 'node-3'
+        }
+      })
+    ]);
+
+    const api = new DataFacade(graph);
+
+    expect(api.elements.setRandomStatuses([
+      { status_code: 2, metrics_label: 'm1' },
+      { status_code: 4, metrics_label: 'm2' }
+    ])).toEqual(['node-1', 'node-2']);
+    expect(api.elements.getStatuses(['node-1', 'node-2', 'node-3'])).toEqual([
+      { id: 'node-1', status_code: 2, metrics_label: 'm1' },
+      { id: 'node-2', status_code: 4, metrics_label: 'm2' },
+      { id: 'node-3', status_code: null, metrics_label: null }
+    ]);
+
+    randomSpy.mockRestore();
   });
 });

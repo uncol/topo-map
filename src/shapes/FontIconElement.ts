@@ -1,9 +1,9 @@
-import { createIconElement, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
-import { getDefaultFontIconAttrs } from '../core/nodePresentation';
+import { createIconElement, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
+import { getDefaultFontIconAttrs, getFontStatusClass } from '../core/nodePresentation';
 import { textLabelBg } from './labeling';
 
 interface FontIconElementMethods {
-  setClass: (size?: string, status?: string) => void;
+  setClass: (size?: string, statusCode?: number) => void;
   getSizeFromClass: (sizeClass: string) => number;
 }
 
@@ -35,10 +35,10 @@ export const FontIconElement: IconElementConstructor = createIconElement<FontIco
   iconMarkup: { tagName: 'text', selector: 'icon', className: 'scalable' },
   getBreakWidth: (instance, iconAttrs) => instance.getSizeFromClass(getString(iconAttrs, 'size')) * 2,
   onIconInit: (instance, iconAttrs) => {
-    instance.setClass(getString(iconAttrs, 'size'), getString(iconAttrs, 'status'));
+    instance.setClass(getString(iconAttrs, 'size'), getNumber(iconAttrs, 'status_code', 0));
   },
   onIconAttrsChange: (instance, iconAttrs) => {
-    instance.setClass(getString(iconAttrs, 'size'), getString(iconAttrs, 'status'));
+    instance.setClass(getString(iconAttrs, 'size'), getNumber(iconAttrs, 'status_code', 0));
   },
   methods: {
     getSizeFromClass: function (this: FontIconElementInstance, sizeClass: string): number {
@@ -52,8 +52,8 @@ export const FontIconElement: IconElementConstructor = createIconElement<FontIco
       return fontSize;
     },
 
-    setClass: function (this: FontIconElementInstance, size?: string, status?: string): void {
-      const className = ['gf', size, status].filter(Boolean).join(' ');
+    setClass: function (this: FontIconElementInstance, size?: string, statusCode?: number): void {
+      const className = ['gf', size, getFontStatusClass(statusCode)].filter(Boolean).join(' ');
       this.attr('icon/class', className);
 
       const embeddedCells = this.getEmbeddedCells();

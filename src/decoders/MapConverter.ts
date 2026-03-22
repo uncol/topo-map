@@ -2,6 +2,7 @@ import type * as joint from '@joint/core';
 import { MapDocument } from '../core/MapDocument';
 import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from '../core/graphLayers';
 import { createNodeCell } from '../core/nodeCellFactory';
+import { DEFAULT_STATUS_CODE } from '../core/nodePresentation';
 import {
   PAPER_TYPES,
   type PaperConfig,
@@ -313,10 +314,12 @@ class MapConverter {
         y: toFiniteNumber(node.y, 0),
         width: nodeWidth,
         height: nodeHeight,
-        titleText: toText(node.name),
+        name: toText(node.name),
+        metricsLabel: toText(node.metrics_label),
         ipaddrText: toText(node.address),
         iconUnicode: glyphText,
         iconSizeClass: toOptionalText(node.cls),
+        statusCode: DEFAULT_STATUS_CODE,
         data
       });
     }
@@ -328,9 +331,11 @@ class MapConverter {
       y: toFiniteNumber(node.y, 0),
       width: nodeWidth,
       height: nodeHeight,
-      titleText: toText(node.name),
+      name: toText(node.name),
+      metricsLabel: toText(node.metrics_label),
       ipaddrText: toText(node.address),
       iconHref: `#${getImageId(shape)}`,
+      statusCode: DEFAULT_STATUS_CODE,
       data
     });
   }

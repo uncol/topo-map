@@ -31,7 +31,8 @@ export interface NodeData {
   width?: number;
   height?: number;
   label: string;
-  status?: string;
+  statusCode?: number;
+  metricsLabel?: string;
   iconUnicode?: string;
   iconSizeClass?: string;
   iconStatusClass?: string;
@@ -93,10 +94,11 @@ fromJSON(data: object): void
 data.elements.getIdsByDataType(type: string): string[]
 data.elements.getById(id: string): { id: string; data: Record<string, unknown> } | null
 data.elements.getAll(): Array<{ id: string; data: Record<string, unknown> }>
-data.elements.getStatus(id: string): string | null
-data.elements.getStatuses(ids: string[]): Array<{ id: string; status: string | null }>
-data.elements.setStatus(id: string, status: string): boolean
-data.elements.setStatuses(ids: string[], status: string): string[]
+data.elements.getStatus(id: string): { status_code: number; metrics_label?: string } | null
+data.elements.getStatuses(ids: string[]): Array<{ id: string; status_code: number | null; metrics_label: string | null }>
+data.elements.setStatus(id: string, update: { status_code: number; metrics_label?: string }): boolean
+data.elements.setStatuses(updates: Record<string, { status_code: number; metrics_label?: string }>): string[]
+data.elements.setRandomStatuses(updates: Array<{ status_code: number; metrics_label?: string }>): string[]
 data.links.getById(id: string): { id: string; data: Record<string, unknown> } | null
 data.links.getAll(): Array<{ id: string; data: Record<string, unknown> }>
 ```
@@ -104,8 +106,12 @@ data.links.getAll(): Array<{ id: string; data: Record<string, unknown> }>
 Назначение:
 - синхронный read-only доступ к `data` из уже загруженного графа;
 - для элементов, созданных через `loadData()` и `convertAndLoad()`, `data` заполняется на этапе построения cell;
-- `getStatus`/`getStatuses` возвращают текущий статус элемента;
-- `setStatus`/`setStatuses` обновляют `data` и синхронизируют presentation только для изменяемых элементов;
+- `getStatus`/`getStatuses` возвращают данные статуса из `data` (`status_code`, `metrics_label`);
+- `setStatus`/`setStatuses` сохраняют raw `status_code` в `data`; effective status для rendering вычисляется как `status_code & 0x1f`;
+- `FontIconElement` маппит effective status code в CSS-класс: `0 -> gf-unknown`, `1 -> gf-ok`, `2 -> gf-warn`, `3 -> gf-unknown`, `4 -> gf-fail`;
+- `ImageIconElement` маппит effective status code в filter id: `0 -> osUnknown`, `1 -> osOk`, `2 -> osAlarm`, `3 -> osUnreach`, `4 -> osDown`;
+- `metrics_label` сохраняется в `data` и, если не пустой, добавляется к `name` в заголовке элемента с заменой `<br/>` на перевод строки;
+- `setRandomStatuses` выбирает случайный `ElementStatusUpdate` из переданного массива и возвращает обновленные `id`;
 - `elements` читает только `graph.getElements()`;
 - `links` читает только `graph.getLinks()`;
 - методы возвращают обычные JS-объекты, без утечки `joint.dia.Cell`.
