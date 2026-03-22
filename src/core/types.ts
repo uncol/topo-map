@@ -164,6 +164,11 @@ export interface Size {
   height: number;
 }
 
+export interface ResizePayload {
+  main?: Size;
+  minimap?: Size;
+}
+
 export interface Rect {
   x: number;
   y: number;

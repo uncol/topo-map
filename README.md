@@ -61,6 +61,7 @@ Open: `http://localhost:8080`
 - `getMode()`
 - `setSnapToGrid(enabled)`
 - `setGuidesEnabled(enabled)`
+- `notifyResize({ main?, minimap? })`
 - `resizeMain(width, height)`
 - `resizeMinimap(width, height)`
 - `destroy()`
@@ -74,6 +75,17 @@ Set `fitToPageOnLoad: true` to auto-fit the graph on `loadData()` and on `fromJS
 
 ```ts
 const managedObjectIds = map.data.elements.getIdsByDataType('managedobject');
+```
+
+### Resize integration
+
+Recommended host integration:
+
+```ts
+map.notifyResize({
+  main: { width: mainWidth, height: mainHeight },
+  minimap: { width: minimapWidth, height: minimapHeight }
+});
 ```
 
 ## Launch examples

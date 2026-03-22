@@ -30,6 +30,8 @@ import type {
   NodeSearchField,
   NodeSearchResult,
   PaperConfig,
+  ResizePayload,
+  Size,
   ViewportStateSnapshot
 } from './core/types';
 import { ViewportState } from './core/ViewportState';
@@ -433,36 +435,21 @@ export class Topology {
     this.resetViewCommand.execute();
   }
 
+  public notifyResize(payload: ResizePayload): void {
+    if (payload.main) {
+      this.applyResize('main', payload.main);
+    }
+    if (payload.minimap) {
+      this.applyResize('minimap', payload.minimap);
+    }
+  }
+
   public resizeMain(width: number, height: number): void {
-    if (width <= 1 || height <= 1) {
-      this.logDebug('resizeMain:skip-invalid', { width, height });
-      return;
-    }
-    if (width === this.lastMainWidth && height === this.lastMainHeight) {
-      this.logDebug('resizeMain:skip', { width, height });
-      return;
-    }
-    this.lastMainWidth = width;
-    this.lastMainHeight = height;
-    this.logDebug('resizeMain:apply', { width, height });
-    this.diagramService.resize(width, height);
-    this.mapBoundsState.refreshNow();
-    this.viewportState.enforceConstraints();
+    this.applyResize('main', { width, height });
   }
 
   public resizeMinimap(width: number, height: number): void {
-    if (width <= 1 || height <= 1) {
-      this.logDebug('resizeMinimap:skip-invalid', { width, height });
-      return;
-    }
-    if (width === this.lastMinimapWidth && height === this.lastMinimapHeight) {
-      this.logDebug('resizeMinimap:skip', { width, height });
-      return;
-    }
-    this.lastMinimapWidth = width;
-    this.lastMinimapHeight = height;
-    this.logDebug('resizeMinimap:apply', { width, height });
-    this.minimapManager.resize(width, height);
+    this.applyResize('minimap', { width, height });
   }
 
   public destroy(): void {
@@ -487,6 +474,56 @@ export class Topology {
 
   private logDebug(message: string, ...payload: unknown[]): void {
     this.debug.log(message, ...payload);
+  }
+
+  private applyResize(target: 'main' | 'minimap', newSize: Size): void {
+    if (newSize.width <= 1 || newSize.height <= 1) {
+      this.logDebug(`${target}:resize:skip-invalid`, newSize);
+      return;
+    }
+
+    const oldSize = this.getLastResizeSize(target);
+    if (oldSize && oldSize.width === newSize.width && oldSize.height === newSize.height) {
+      this.logDebug(`${target}:resize:skip`, newSize);
+      return;
+    }
+
+    this.setLastResizeSize(target, newSize);
+    this.logDebug(`${target}:resize:apply`, { newSize, oldSize });
+
+    if (target === 'main') {
+      this.diagramService.resize(newSize.width, newSize.height);
+      this.mapBoundsState.refreshNow();
+      this.viewportState.enforceConstraints();
+    } else {
+      this.minimapManager.resize(newSize.width, newSize.height);
+    }
+  }
+
+  private getLastResizeSize(target: 'main' | 'minimap'): Size | undefined {
+    if (target === 'main') {
+      if (this.lastMainWidth > 1 && this.lastMainHeight > 1) {
+        return { width: this.lastMainWidth, height: this.lastMainHeight };
+      }
+      return undefined;
+    }
+
+    if (this.lastMinimapWidth > 1 && this.lastMinimapHeight > 1) {
+      return { width: this.lastMinimapWidth, height: this.lastMinimapHeight };
+    }
+
+    return undefined;
+  }
+
+  private setLastResizeSize(target: 'main' | 'minimap', size: Size): void {
+    if (target === 'main') {
+      this.lastMainWidth = size.width;
+      this.lastMainHeight = size.height;
+      return;
+    }
+
+    this.lastMinimapWidth = size.width;
+    this.lastMinimapHeight = size.height;
   }
 
   private handleViewportStateChange(snapshot: ViewportStateSnapshot): void {

@@ -143,12 +143,17 @@ resetView(): void
 ### Resize API
 
 ```ts
+notifyResize(payload: {
+  main?: { width: number; height: number };
+  minimap?: { width: number; height: number };
+}): void
 resizeMain(width: number, height: number): void
 resizeMinimap(width: number, height: number): void
 ```
 
 Важно:
-- вызывать из resize обработчиков контейнеров;
+- рекомендуемый путь: хост вычисляет размеры и вызывает `notifyResize(...)`;
+- `resizeMain(...)` и `resizeMinimap(...)` остаются для точечных обновлений;
 - значения `<= 1` игнорируются защитой.
 
 ### Освобождение ресурсов
