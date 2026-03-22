@@ -16,6 +16,7 @@ export type {
   DataApi,
   ElementDataApi,
   ElementRecord,
+  ElementStatusRecord,
   LinkData,
   LinkDataApi,
   LinkRecord,

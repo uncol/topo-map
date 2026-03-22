@@ -74,4 +74,67 @@ describe('DataFacade', () => {
     expect(api.elements.getById<{ type: string; nested: { name: string } }>('node-1')?.data.nested.name).toBe('alpha');
     expect(api.links.getById<{ type: string; nested: { weight: number } }>('link-1')?.data.nested.weight).toBe(10);
   });
+
+  it('gets and sets status for one or many supported elements', () => {
+    const graph = createGraph();
+    graph.addCells([
+      new joint.dia.Element({
+        id: 'node-1',
+        type: 'noc.FontIconElement',
+        size: { width: 64, height: 64 },
+        attrs: {
+          icon: {
+            text: '\uF20A',
+            size: 'gf-1x',
+            status: 'gf-ok'
+          },
+          title: {
+            text: 'alpha'
+          }
+        },
+        data: {
+          id: 'node-1',
+          status: 'gf-ok',
+          iconStatusClass: 'gf-ok'
+        }
+      }),
+      new joint.dia.Element({
+        id: 'node-2',
+        type: 'noc.ImageIconElement',
+        size: { width: 64, height: 64 },
+        attrs: {
+          icon: {
+            href: '#img-Cisco-router',
+            width: '64',
+            height: '64',
+            status: 'Warning'
+          },
+          title: {
+            text: 'beta'
+          }
+        },
+        data: {
+          id: 'node-2',
+          status: 'Warning'
+        }
+      })
+    ]);
+
+    const api = new DataFacade(graph);
+
+    expect(api.elements.getStatus('node-1')).toBe('gf-ok');
+    expect(api.elements.getStatuses(['node-1', 'node-2', 'missing'])).toEqual([
+      { id: 'node-1', status: 'gf-ok' },
+      { id: 'node-2', status: 'Warning' },
+      { id: 'missing', status: null }
+    ]);
+
+    expect(api.elements.setStatus('node-1', 'gf-fail')).toBe(true);
+    expect(api.elements.getStatus('node-1')).toBe('gf-fail');
+    expect(api.elements.setStatuses(['node-1', 'missing', 'node-2'], 'Critical')).toEqual(['node-1', 'node-2']);
+    expect(api.elements.getStatuses(['node-1', 'node-2'])).toEqual([
+      { id: 'node-1', status: 'Critical' },
+      { id: 'node-2', status: 'Critical' }
+    ]);
+  });
 });

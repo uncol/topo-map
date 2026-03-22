@@ -83,6 +83,11 @@ export interface ElementRecord<TData extends CellData = CellData> {
   data: TData;
 }
 
+export interface ElementStatusRecord {
+  id: string;
+  status: string | null;
+}
+
 export interface LinkRecord<TData extends CellData = CellData> {
   id: string;
   data: TData;
@@ -92,6 +97,10 @@ export interface ElementDataApi {
   getIdsByDataType(type: string): string[];
   getById<TData extends CellData = CellData>(id: string): ElementRecord<TData> | null;
   getAll<TData extends CellData = CellData>(): ElementRecord<TData>[];
+  getStatus(id: string): string | null;
+  getStatuses(ids: string[]): ElementStatusRecord[];
+  setStatus(id: string, status: string): boolean;
+  setStatuses(ids: string[], status: string): string[];
 }
 
 export interface LinkDataApi {

@@ -93,6 +93,10 @@ fromJSON(data: object): void
 data.elements.getIdsByDataType(type: string): string[]
 data.elements.getById(id: string): { id: string; data: Record<string, unknown> } | null
 data.elements.getAll(): Array<{ id: string; data: Record<string, unknown> }>
+data.elements.getStatus(id: string): string | null
+data.elements.getStatuses(ids: string[]): Array<{ id: string; status: string | null }>
+data.elements.setStatus(id: string, status: string): boolean
+data.elements.setStatuses(ids: string[], status: string): string[]
 data.links.getById(id: string): { id: string; data: Record<string, unknown> } | null
 data.links.getAll(): Array<{ id: string; data: Record<string, unknown> }>
 ```
@@ -100,6 +104,8 @@ data.links.getAll(): Array<{ id: string; data: Record<string, unknown> }>
 Назначение:
 - синхронный read-only доступ к `data` из уже загруженного графа;
 - для элементов, созданных через `loadData()` и `convertAndLoad()`, `data` заполняется на этапе построения cell;
+- `getStatus`/`getStatuses` возвращают текущий статус элемента;
+- `setStatus`/`setStatuses` обновляют `data` и синхронизируют presentation только для изменяемых элементов;
 - `elements` читает только `graph.getElements()`;
 - `links` читает только `graph.getLinks()`;
 - методы возвращают обычные JS-объекты, без утечки `joint.dia.Cell`.

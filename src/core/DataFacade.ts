@@ -1,9 +1,11 @@
 import type * as joint from '@joint/core';
+import { applyElementStatus, isStatusSupportedElement, readElementStatus } from './elementStatus';
 import type {
   CellData,
   DataApi,
   ElementDataApi,
   ElementRecord,
+  ElementStatusRecord,
   LinkDataApi,
   LinkRecord
 } from './types';
@@ -75,6 +77,65 @@ class ElementDataFacade implements ElementDataApi {
       const record = toRecord<TData>(element);
       return record ? [record] : [];
     });
+  }
+
+  public getStatus(id: string): string | null {
+    const element = this.getStatusTargetElement(id);
+    if (!element) {
+      return null;
+    }
+
+    return readElementStatus(element);
+  }
+
+  public getStatuses(ids: string[]): ElementStatusRecord[] {
+    return ids.map((id) => ({
+      id,
+      status: this.getStatus(id)
+    }));
+  }
+
+  public setStatus(id: string, status: string): boolean {
+    const element = this.getStatusTargetElement(id);
+    if (!element) {
+      return false;
+    }
+
+    return applyElementStatus(element, status);
+  }
+
+  public setStatuses(ids: string[], status: string): string[] {
+    if (status.trim().length === 0 || ids.length === 0) {
+      return [];
+    }
+
+    const updatedIds: string[] = [];
+    this.graph.startBatch('element-status');
+    try {
+      ids.forEach((id) => {
+        const element = this.getStatusTargetElement(id);
+        if (!element) {
+          return;
+        }
+
+        if (applyElementStatus(element, status)) {
+          updatedIds.push(id);
+        }
+      });
+    } finally {
+      this.graph.stopBatch('element-status');
+    }
+
+    return updatedIds;
+  }
+
+  private getStatusTargetElement(id: string): joint.dia.Element | null {
+    const cell = this.graph.getCell(id);
+    if (!isStatusSupportedElement(cell)) {
+      return null;
+    }
+
+    return cell;
   }
 }
 

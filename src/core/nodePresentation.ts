@@ -43,6 +43,14 @@ function getNestedRecord(parent: AttrMap, key: string): AttrMap {
   return isRecord(value) ? value : {};
 }
 
+function omitKeys(record: AttrMap, keys: string[]): AttrMap {
+  const nextRecord = { ...record };
+  keys.forEach((key) => {
+    delete nextRecord[key];
+  });
+  return nextRecord;
+}
+
 function buildLabelAttrs(text: string | undefined, customAttrs: AttrMap): AttrMap | undefined {
   if (text === undefined && Object.keys(customAttrs).length === 0) {
     return undefined;
@@ -132,4 +140,44 @@ export function buildNodePresentationAttrs(model: NodePresentationModel, customA
     model.titleText,
     model.ipaddrText
   );
+}
+
+export function getNodePresentationOverrides(attrs: unknown): AttrMap {
+  if (!isRecord(attrs)) {
+    return {};
+  }
+
+  const nextAttrs: AttrMap = { ...attrs };
+  const iconOverrides = omitKeys(getNestedRecord(nextAttrs, 'icon'), [
+    'text',
+    'size',
+    'status',
+    'href',
+    'width',
+    'height',
+    'class',
+    'filter'
+  ]);
+  const titleOverrides = omitKeys(getNestedRecord(nextAttrs, 'title'), ['text']);
+  const ipaddrOverrides = omitKeys(getNestedRecord(nextAttrs, 'ipaddr'), ['text']);
+
+  if (Object.keys(iconOverrides).length > 0) {
+    nextAttrs.icon = iconOverrides;
+  } else {
+    delete nextAttrs.icon;
+  }
+
+  if (Object.keys(titleOverrides).length > 0) {
+    nextAttrs.title = titleOverrides;
+  } else {
+    delete nextAttrs.title;
+  }
+
+  if (Object.keys(ipaddrOverrides).length > 0) {
+    nextAttrs.ipaddr = ipaddrOverrides;
+  } else {
+    delete nextAttrs.ipaddr;
+  }
+
+  return nextAttrs;
 }
