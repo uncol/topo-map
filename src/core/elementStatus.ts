@@ -2,7 +2,6 @@ import type * as joint from '@joint/core';
 import {
   buildNodeLabelText,
   buildNodePresentationAttrs,
-  DEFAULT_STATUS_CODE,
   getNodePresentationOverrides,
   normalizeMetricsLabel,
   type NodePresentationModel
@@ -67,7 +66,7 @@ export function applyElementStatus(element: joint.dia.Element, update: ElementSt
     ...currentData,
     name: currentName,
     address: currentIpaddr,
-    isMaintenance: (rawStatusCode & 0x20) !== 0,
+    isMaintenance: (update.status_code & 0x20) !== 0,
     status_code: rawStatusCode,
     metrics_label: nextMetricsLabel
   };
