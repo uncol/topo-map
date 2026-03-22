@@ -143,17 +143,21 @@ export function normalizeMetricsLabel(metricsLabel: string | undefined): string 
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
 
-export function buildNodeTitleText(name: string | undefined, metricsLabel: string | undefined): string | undefined {
-  const normalizedName = getNonEmptyText(name);
+export function buildNodeLabelText(text: string | undefined, metricsLabel: string | undefined): string | undefined {
+  const normalizedText = getNonEmptyText(text);
   const normalizedMetricsLabel = normalizeMetricsLabel(metricsLabel);
 
-  if (!normalizedName) {
+  if (!normalizedText) {
     return normalizedMetricsLabel;
   }
   if (!normalizedMetricsLabel) {
-    return normalizedName;
+    return normalizedText;
   }
-  return `${normalizedName}\n${normalizedMetricsLabel}`;
+  return `${normalizedText}\n${normalizedMetricsLabel}`;
+}
+
+export function buildNodeTitleText(name: string | undefined, metricsLabel: string | undefined): string | undefined {
+  return buildNodeLabelText(name, metricsLabel);
 }
 
 export function buildNodePresentationAttrs(model: NodePresentationModel, customAttrs: AttrMap = {}): AttrMap {

@@ -1,8 +1,10 @@
 import type * as joint from '@joint/core';
 import {
+  buildNodeLabelText,
   buildNodePresentationAttrs,
   DEFAULT_STATUS_CODE,
   getNodePresentationOverrides,
+  normalizeMetricsLabel,
   type NodePresentationModel
 } from './nodePresentation';
 import type { ElementStatusUpdate } from './types';
@@ -56,6 +58,7 @@ export function applyElementStatus(element: joint.dia.Element, update: ElementSt
   const rawStatusCode = Math.trunc(update.status_code);
   const currentData = isRecord(element.get('data')) ? element.get('data') : {};
   const currentName = getString(currentData, 'name') ?? getString(currentData, 'label') ?? String(element.attr('title/text') ?? '');
+  const currentIpaddr = getBaseIpaddrText(element, currentData);
   const nextMetricsLabel =
     Object.prototype.hasOwnProperty.call(update, 'metrics_label')
       ? update.metrics_label
@@ -63,6 +66,7 @@ export function applyElementStatus(element: joint.dia.Element, update: ElementSt
   const nextData: AttrMap = {
     ...currentData,
     name: currentName,
+    address: currentIpaddr,
     status_code: rawStatusCode,
     metrics_label: nextMetricsLabel
   };
@@ -70,7 +74,13 @@ export function applyElementStatus(element: joint.dia.Element, update: ElementSt
   delete nextData.iconStatusClass;
   delete nextData.label;
 
-  const nextPresentationModel = buildPresentationModelForElement(element, currentName, nextMetricsLabel, rawStatusCode);
+  const nextPresentationModel = buildPresentationModelForElement(
+    element,
+    currentName,
+    currentIpaddr,
+    nextMetricsLabel,
+    rawStatusCode
+  );
   const nextAttrs = buildNodePresentationAttrs(
     nextPresentationModel,
     getNodePresentationOverrides(element.get('attrs'))
@@ -84,6 +94,7 @@ export function applyElementStatus(element: joint.dia.Element, update: ElementSt
 function buildPresentationModelForElement(
   element: joint.dia.Element,
   name: string | undefined,
+  ipaddrText: string | undefined,
   metricsLabel: string | undefined,
   statusCode: number
 ): NodePresentationModel {
@@ -91,7 +102,7 @@ function buildPresentationModelForElement(
   const iconText = String(element.attr('icon/text') ?? '');
   const iconSize = String(element.attr('icon/size') ?? '');
   const iconHref = String(element.attr('icon/href') ?? element.attr('icon/xlinkHref') ?? '');
-  const ipaddrText = String(element.attr('ipaddr/text') ?? '');
+  const nextIpaddrText = buildNodeLabelText(ipaddrText, metricsLabel);
 
   if (type === 'noc.ImageIconElement') {
     const size = element.size();
@@ -103,7 +114,7 @@ function buildPresentationModelForElement(
       statusCode,
       name,
       metricsLabel,
-      ipaddrText
+      ipaddrText: nextIpaddrText
     };
   }
 
@@ -114,6 +125,35 @@ function buildPresentationModelForElement(
     statusCode,
     name,
     metricsLabel,
-    ipaddrText
+    ipaddrText: nextIpaddrText
   };
+}
+
+function getBaseIpaddrText(element: joint.dia.Element, currentData: AttrMap): string | undefined {
+  const storedAddress = getString(currentData, 'address') ?? getString(currentData, 'ipaddr');
+  if (storedAddress !== undefined) {
+    return storedAddress;
+  }
+
+  const currentIpaddrText = getString({ value: element.attr('ipaddr/text') }, 'value');
+  if (currentIpaddrText === undefined) {
+    return undefined;
+  }
+
+  const currentMetricsLabel = getString(currentData, 'metrics_label');
+  const normalizedMetricsLabel = normalizeMetricsLabel(currentMetricsLabel);
+  if (!normalizedMetricsLabel) {
+    return currentIpaddrText;
+  }
+  if (currentIpaddrText === normalizedMetricsLabel) {
+    return undefined;
+  }
+
+  const suffix = `\n${normalizedMetricsLabel}`;
+  if (currentIpaddrText.endsWith(suffix)) {
+    const nextText = currentIpaddrText.slice(0, -suffix.length);
+    return nextText.length > 0 ? nextText : undefined;
+  }
+
+  return currentIpaddrText;
 }
