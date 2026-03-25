@@ -8,20 +8,20 @@ function createGraph() {
 
 function createElement(
   id: string,
-  dataTitle: string,
+  dataNodeName: string,
   dataIpaddr: string,
-  attrsTitle = dataTitle,
+  attrsNodeName = dataNodeName,
   attrsIpaddr = dataIpaddr
 ): joint.dia.Element {
   return new joint.dia.Element({
     id,
     type: 'standard.Rectangle',
     data: {
-      name: dataTitle,
+      name: dataNodeName,
       address: dataIpaddr
     },
     attrs: {
-      title: { text: attrsTitle },
+      nodeName: { text: attrsNodeName },
       ipaddr: { text: attrsIpaddr }
     }
   });
@@ -37,15 +37,15 @@ describe('NodeSearchIndexManager', () => {
 
     const index = new NodeSearchIndexManager(graph);
 
-    expect(index.search('title', 'core router')).toEqual({
+    expect(index.search('nodeName', 'core router')).toEqual({
       id: 'node-2',
       text: 'Core Router',
-      field: 'title'
+      field: 'nodeName'
     });
-    expect(index.search('title', 'access')).toEqual({
+    expect(index.search('nodeName', 'access')).toEqual({
       id: 'node-1',
       text: 'Access Switch Alpha',
-      field: 'title'
+      field: 'nodeName'
     });
 
     index.destroy();
@@ -60,10 +60,10 @@ describe('NodeSearchIndexManager', () => {
 
     const index = new NodeSearchIndexManager(graph);
 
-    expect(index.search('title', 'gation')).toEqual({
+    expect(index.search('nodeName', 'gation')).toEqual({
       id: 'node-2',
       text: 'Metro Aggregation Edge',
-      field: 'title'
+      field: 'nodeName'
     });
 
     index.destroy();
@@ -75,12 +75,12 @@ describe('NodeSearchIndexManager', () => {
 
     const index = new NodeSearchIndexManager(graph);
 
-    expect(index.search('title', 'data name')).toEqual({
+    expect(index.search('nodeName', 'data name')).toEqual({
       id: 'node-1',
       text: 'Data Name',
-      field: 'title'
+      field: 'nodeName'
     });
-    expect(index.search('title', 'attrs name')).toBeNull();
+    expect(index.search('nodeName', 'attrs name')).toBeNull();
     expect(index.search('ipaddr', '10.10.10.1')).toEqual({
       id: 'node-1',
       text: '10.10.10.1',
@@ -102,17 +102,17 @@ describe('NodeSearchIndexManager', () => {
       address: '192.168.0.2'
     });
 
-    expect(index.search('title', 'new name')).toEqual({
+    expect(index.search('nodeName', 'new name')).toEqual({
       id: 'node-1',
       text: 'New Name',
-      field: 'title'
+      field: 'nodeName'
     });
     expect(index.search('ipaddr', '192.168.0.2')).toEqual({
       id: 'node-1',
       text: '192.168.0.2',
       field: 'ipaddr'
     });
-    expect(index.search('title', 'old name')).toBeNull();
+    expect(index.search('nodeName', 'old name')).toBeNull();
 
     index.destroy();
   });
@@ -123,15 +123,15 @@ describe('NodeSearchIndexManager', () => {
     graph.addCell(element);
 
     const index = new NodeSearchIndexManager(graph);
-    element.attr('title/text', 'Attrs Only Name');
+    element.attr('nodeName/text', 'Attrs Only Name');
     element.attr('ipaddr/text', '192.168.0.2');
 
-    expect(index.search('title', 'stable name')).toEqual({
+    expect(index.search('nodeName', 'stable name')).toEqual({
       id: 'node-1',
       text: 'Stable Name',
-      field: 'title'
+      field: 'nodeName'
     });
-    expect(index.search('title', 'attrs only name')).toBeNull();
+    expect(index.search('nodeName', 'attrs only name')).toBeNull();
     expect(index.search('ipaddr', '192.168.0.1')).toEqual({
       id: 'node-1',
       text: '192.168.0.1',

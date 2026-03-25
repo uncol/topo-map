@@ -1,7 +1,7 @@
 import * as joint from '@joint/core';
 import { elementMarkup } from './labeling';
 
-type LabelKey = 'title' | 'ipaddr';
+type LabelKey = 'nodeName' | 'ipaddr';
 
 export type IconElementInstance<TMethods extends object> = joint.dia.Element &
   TMethods & {
@@ -69,11 +69,11 @@ function applyLabelText(thisElement: joint.dia.Element, key: LabelKey, breakWidt
 }
 
 function toggleLabel(this: joint.dia.Element): void {
-  const titleDisplay = this.attr('title/display');
+  const nodeNameDisplay = this.attr('nodeName/display');
   const ipaddrDisplay = this.attr('ipaddr/display');
-  const newTitleDisplay = titleDisplay === 'none' ? 'block' : 'none';
+  const newNodeNameDisplay = nodeNameDisplay === 'none' ? 'block' : 'none';
   const newIpaddrDisplay = ipaddrDisplay === 'none' ? 'block' : 'none';
-  this.attr('title/display', newTitleDisplay);
+  this.attr('nodeName/display', newNodeNameDisplay);
   this.attr('ipaddr/display', newIpaddrDisplay);
 }
 
@@ -105,7 +105,7 @@ export function createIconElement<TMethods extends object>(
         config.onIconInit?.(this as joint.dia.Element & TMethods, iconAttrs);
 
         const breakWidth = config.getBreakWidth(this as joint.dia.Element & TMethods, iconAttrs);
-        applyLabelText(this, 'title', breakWidth);
+        applyLabelText(this, 'nodeName', breakWidth);
         applyLabelText(this, 'ipaddr', breakWidth);
 
         this.on('change:attrs', () => {

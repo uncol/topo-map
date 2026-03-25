@@ -5,6 +5,6 @@ export const textLabelBg = {
 } as const;
 
 export const elementMarkup = [
-  { tagName: 'text', selector: 'title', className: 'rotatable' },
+  { tagName: 'text', selector: 'nodeName', className: 'rotatable' },
   { tagName: 'text', selector: 'ipaddr', className: 'rotatable' }
 ] as const;

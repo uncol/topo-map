@@ -56,7 +56,7 @@ export function applyElementStatus(element: joint.dia.Element, update: ElementSt
 
   const rawStatusCode = Math.trunc(update.status_code);
   const currentData = isRecord(element.get('data')) ? element.get('data') : {};
-  const currentName = getString(currentData, 'name') ?? getString(currentData, 'label') ?? String(element.attr('title/text') ?? '');
+  const currentName = getString(currentData, 'name') ?? getString(currentData, 'label') ?? String(element.attr('nodeName/text') ?? '');
   const currentIpaddr = getBaseIpaddrText(element, currentData);
   const nextMetricsLabel =
     Object.prototype.hasOwnProperty.call(update, 'metrics_label')

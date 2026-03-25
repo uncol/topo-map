@@ -1,5 +1,5 @@
-import { createIconElement, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
 import { getDefaultImageIconAttrs, getImageStatusFilter } from '../core/nodePresentation';
+import { createIconElement, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
 import { textLabelBg } from './labeling';
 
 let stencilDir = '/stencils';
@@ -47,7 +47,7 @@ export const ImageIconElement: IconElementConstructor = createIconElement<ImageI
       xlinkHref: '',
       preserveAspectRatio: 'xMidYMid meet'
     },
-    title: {
+    nodeName: {
       text: 'New Object',
       fill: '#000000',
       ...textLabelBg,

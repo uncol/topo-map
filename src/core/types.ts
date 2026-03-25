@@ -135,7 +135,7 @@ export interface ViewportStateSnapshot extends ViewportSnapshot {
   maxScale: number;
 }
 
-export type NodeLabelField = 'title' | 'ipaddr';
+export type NodeLabelField = 'nodeName' | 'ipaddr';
 
 export type NodeSearchField = NodeLabelField | 'id';
 

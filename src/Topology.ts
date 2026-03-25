@@ -5,21 +5,21 @@ import { ZoomOutCommand } from './commands/ZoomOutCommand';
 import { DataFacade } from './core/DataFacade';
 import { Debug } from './core/Debug';
 import { DiagramService } from './core/DiagramService';
-import { MapDocument, type MapDocumentJSON } from './core/MapDocument';
 import {
   InteractionEvents,
   isNodeSearchRequestDetail,
   NODE_SEARCH_REQUEST_EVENT,
   NODE_SEARCH_RESULT_EVENT,
   normalizeNodeSearchMode,
-  UNHIGHLIGHT_REQUEST_EVENT,
   SCALE_CHANGE_EVENT,
+  UNHIGHLIGHT_REQUEST_EVENT,
   type NodeSearchResultDetail
 } from './core/events';
 import { fitPaperToContent, type FitMode } from './core/fitBounds';
 import { clamp } from './core/geometry';
 import { createGraphFromData } from './core/graphFromData';
 import { MapBoundsState } from './core/MapBoundsState';
+import { MapDocument, type MapDocumentJSON } from './core/MapDocument';
 import type {
   Config,
   DataApi,
@@ -315,22 +315,22 @@ export class Topology {
   public getVisibleNodeLabelField(): NodeLabelField {
     const elements = this.diagramService.getGraph().getElements();
     const active = elements.find((element) => {
-      const titleDisplay = String(element.attr('title/display') ?? '');
+      const nodeNameDisplay = String(element.attr('nodeName/display') ?? '');
       const ipaddrDisplay = String(element.attr('ipaddr/display') ?? '');
-      return titleDisplay.length > 0 || ipaddrDisplay.length > 0;
+      return nodeNameDisplay.length > 0 || ipaddrDisplay.length > 0;
     });
 
     if (!active) {
-      return 'title';
+      return 'nodeName';
     }
 
-    const titleVisible = active.attr('title/display') !== 'none';
+    const nodeNameVisible = active.attr('nodeName/display') !== 'none';
     const ipaddrVisible = active.attr('ipaddr/display') !== 'none';
-    if (!titleVisible && ipaddrVisible) {
+    if (!nodeNameVisible && ipaddrVisible) {
       return 'ipaddr';
     }
 
-    return 'title';
+    return 'nodeName';
   }
 
   public findNodeByVisibleLabel(query: string): NodeSearchResult | null {

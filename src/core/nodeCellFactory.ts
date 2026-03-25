@@ -12,7 +12,7 @@ interface BaseNodeCellInput {
   y: number;
   width?: number | undefined;
   height?: number | undefined;
-  name?: string | undefined;
+  nodeName?: string | undefined;
   metricsLabel?: string | undefined;
   ipaddrText?: string | undefined;
   data?: AttrMap | undefined;
@@ -54,7 +54,7 @@ export function createNodeCell(input: NodeCellInput): joint.dia.Cell.JSON {
           height,
           iconHref: input.iconHref,
           statusCode: input.statusCode,
-          name: input.name,
+          name: input.nodeName,
           metricsLabel: input.metricsLabel,
           ipaddrText: input.ipaddrText
         }
@@ -63,7 +63,7 @@ export function createNodeCell(input: NodeCellInput): joint.dia.Cell.JSON {
           iconUnicode: input.iconUnicode,
           iconSizeClass: input.iconSizeClass,
           statusCode: input.statusCode,
-          name: input.name,
+          name: input.nodeName,
           metricsLabel: input.metricsLabel,
           ipaddrText: input.ipaddrText
         };

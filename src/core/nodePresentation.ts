@@ -95,7 +95,7 @@ function buildLabelAttrs(text: string | undefined, customAttrs: AttrMap): AttrMa
 function mergeNodeAttrs(
   customAttrs: AttrMap,
   iconAttrs: AttrMap,
-  titleText: string | undefined,
+  nodeNameText: string | undefined,
   ipaddrText: string | undefined
 ): AttrMap {
   const nextAttrs: AttrMap = {
@@ -106,9 +106,9 @@ function mergeNodeAttrs(
     }
   };
 
-  const titleAttrs = buildLabelAttrs(titleText, getNestedRecord(customAttrs, 'title'));
-  if (titleAttrs) {
-    nextAttrs.title = titleAttrs;
+  const nodeNameAttrs = buildLabelAttrs(nodeNameText, getNestedRecord(customAttrs, 'nodeName'));
+  if (nodeNameAttrs) {
+    nextAttrs.nodeName = nodeNameAttrs;
   }
 
   const ipaddrAttrs = buildLabelAttrs(ipaddrText, getNestedRecord(customAttrs, 'ipaddr'));
@@ -156,7 +156,7 @@ export function buildNodeLabelText(text: string | undefined, metricsLabel: strin
   return `${normalizedText}\n${normalizedMetricsLabel}`;
 }
 
-export function buildNodeTitleText(name: string | undefined, metricsLabel: string | undefined): string | undefined {
+export function buildNodeNameText(name: string | undefined, metricsLabel: string | undefined): string | undefined {
   return buildNodeLabelText(name, metricsLabel);
 }
 
@@ -169,7 +169,7 @@ export function buildNodePresentationAttrs(model: NodePresentationModel, customA
         ...getDefaultImageIconAttrs(model.width, model.height),
         status_code: typeof model.statusCode === 'number' ? Math.trunc(model.statusCode) : DEFAULT_STATUS_CODE
       },
-      buildNodeTitleText(model.name, model.metricsLabel),
+      buildNodeNameText(model.name, model.metricsLabel),
       model.ipaddrText
     );
   }
@@ -185,7 +185,7 @@ export function buildNodePresentationAttrs(model: NodePresentationModel, customA
       size: iconSizeClass,
       status_code: typeof model.statusCode === 'number' ? Math.trunc(model.statusCode) : DEFAULT_STATUS_CODE
     },
-    buildNodeTitleText(model.name, model.metricsLabel),
+    buildNodeNameText(model.name, model.metricsLabel),
     model.ipaddrText
   );
 }
@@ -207,7 +207,7 @@ export function getNodePresentationOverrides(attrs: unknown): AttrMap {
     'class',
     'filter'
   ]);
-  const titleOverrides = omitKeys(getNestedRecord(nextAttrs, 'title'), ['text']);
+  const nodeNameOverrides = omitKeys(getNestedRecord(nextAttrs, 'nodeName'), ['text']);
   const ipaddrOverrides = omitKeys(getNestedRecord(nextAttrs, 'ipaddr'), ['text']);
 
   if (Object.keys(iconOverrides).length > 0) {
@@ -216,10 +216,10 @@ export function getNodePresentationOverrides(attrs: unknown): AttrMap {
     delete nextAttrs.icon;
   }
 
-  if (Object.keys(titleOverrides).length > 0) {
-    nextAttrs.title = titleOverrides;
+  if (Object.keys(nodeNameOverrides).length > 0) {
+    nextAttrs.nodeName = nodeNameOverrides;
   } else {
-    delete nextAttrs.title;
+    delete nextAttrs.nodeName;
   }
 
   if (Object.keys(ipaddrOverrides).length > 0) {

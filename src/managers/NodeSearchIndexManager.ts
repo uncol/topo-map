@@ -4,8 +4,8 @@ import type { NodeLabelField, NodeSearchField, NodeSearchResult } from '../core/
 interface SearchEntry {
   id: string;
   normalizedId: string;
-  title: string;
-  normalizedTitle: string;
+  nodeName: string;
+  normalizedNodeName: string;
   ipaddr: string;
   normalizedIpaddr: string;
   order: number;
@@ -24,7 +24,7 @@ interface FieldIndex {
   trigrams: Map<string, Set<string>>;
 }
 
-const SEARCH_FIELDS: NodeSearchField[] = ['id', 'title', 'ipaddr'];
+const SEARCH_FIELDS: NodeSearchField[] = ['id', 'nodeName', 'ipaddr'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -37,7 +37,7 @@ export class NodeSearchIndexManager {
 
   private indexes: Record<NodeSearchField, FieldIndex> = {
     id: this.createEmptyFieldIndex(),
-    title: this.createEmptyFieldIndex(),
+    nodeName: this.createEmptyFieldIndex(),
     ipaddr: this.createEmptyFieldIndex()
   };
 
@@ -53,9 +53,9 @@ export class NodeSearchIndexManager {
     const id = String(cell.id);
     const current = this.entriesById.get(id);
     const nextNormalizedId = this.normalizeSearchText(id);
-    const nextTitle = this.readSearchText(cell, 'title');
+    const nextNodeName = this.readSearchText(cell, 'nodeName');
     const nextIpaddr = this.readSearchText(cell, 'ipaddr');
-    const nextNormalizedTitle = this.normalizeSearchText(nextTitle);
+    const nextNormalizedNodeName = this.normalizeSearchText(nextNodeName);
     const nextNormalizedIpaddr = this.normalizeSearchText(nextIpaddr);
 
     if (!current) {
@@ -65,7 +65,7 @@ export class NodeSearchIndexManager {
 
     if (
       current.normalizedId !== nextNormalizedId ||
-      current.normalizedTitle !== nextNormalizedTitle ||
+      current.normalizedNodeName !== nextNormalizedNodeName ||
       current.normalizedIpaddr !== nextNormalizedIpaddr
     ) {
       this.rebuildIndex();
@@ -84,21 +84,21 @@ export class NodeSearchIndexManager {
   public rebuildIndex(): void {
     this.entriesById = new Map();
     this.indexes.id = this.createEmptyFieldIndex();
-    this.indexes.title = this.createEmptyFieldIndex();
+    this.indexes.nodeName = this.createEmptyFieldIndex();
     this.indexes.ipaddr = this.createEmptyFieldIndex();
 
     this.graph.getElements().forEach((element, order) => {
       const entry: SearchEntry = {
         id: String(element.id),
         normalizedId: '',
-        title: this.readSearchText(element, 'title'),
-        normalizedTitle: '',
+        nodeName: this.readSearchText(element, 'nodeName'),
+        normalizedNodeName: '',
         ipaddr: this.readSearchText(element, 'ipaddr'),
         normalizedIpaddr: '',
         order
       };
       entry.normalizedId = this.normalizeSearchText(entry.id);
-      entry.normalizedTitle = this.normalizeSearchText(entry.title);
+      entry.normalizedNodeName = this.normalizeSearchText(entry.nodeName);
       entry.normalizedIpaddr = this.normalizeSearchText(entry.ipaddr);
       this.entriesById.set(entry.id, entry);
 
@@ -161,7 +161,7 @@ export class NodeSearchIndexManager {
     this.graph.off('change:data', this.onDataChangeBound);
     this.entriesById.clear();
     this.indexes.id = this.createEmptyFieldIndex();
-    this.indexes.title = this.createEmptyFieldIndex();
+    this.indexes.nodeName = this.createEmptyFieldIndex();
     this.indexes.ipaddr = this.createEmptyFieldIndex();
   }
 
@@ -183,7 +183,7 @@ export class NodeSearchIndexManager {
       return '';
     }
 
-    const key = field === 'title' ? 'name' : 'address';
+    const key = field === 'nodeName' ? 'name' : 'address';
     const value = data[key];
     return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
   }
@@ -321,7 +321,7 @@ export class NodeSearchIndexManager {
     if (field === 'id') {
       return entry.normalizedId;
     }
-    return field === 'title' ? entry.normalizedTitle : entry.normalizedIpaddr;
+    return field === 'nodeName' ? entry.normalizedNodeName : entry.normalizedIpaddr;
   }
 
   private buildTrigrams(value: string): string[] {

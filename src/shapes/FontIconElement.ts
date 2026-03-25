@@ -1,5 +1,5 @@
-import { createIconElement, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
 import { getDefaultFontIconAttrs, getFontStatusClass } from '../core/nodePresentation';
+import { createIconElement, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
 import { textLabelBg } from './labeling';
 
 interface FontIconElementMethods {
@@ -13,7 +13,7 @@ export const FontIconElement: IconElementConstructor = createIconElement<FontIco
   type: 'noc.FontIconElement',
   attrs: {
     icon: getDefaultFontIconAttrs(),
-    title: {
+    nodeName: {
       ref: 'icon',
       refX: '50%',
       refY: '100%',
