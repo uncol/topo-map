@@ -8,7 +8,7 @@ type AttrMap = Record<string, unknown>;
 
 const DEFAULT_ICON_SIZE = 64;
 
-const BADGE_SCALE = 0.2; // change to resize badges: size, font, spacing, label width
+const BADGE_SCALE = 0.15; // change to resize badges: size, font, spacing, label width
 
 const GF_SIZE_MAP: Record<string, number> = {
   'gf-1x': 64,
@@ -123,7 +123,6 @@ function makeLabelAttrs(display: 'block' | 'none'): AttrMap {
     display,
     textAnchor: 'middle',
     fill: '#000000',
-    fontFamily: 'monospace',
     textWrap: { width: 'calc(2*w)', ellipsis: false },
     ...textLabelBg
   };
