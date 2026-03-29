@@ -1,117 +1,318 @@
+import type * as joint from '@joint/core';
 import { getDefaultFontIconAttrs, getFontStatusClass } from '../core/nodePresentation';
-import { createIconElement, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
-import { buildBadgeMarkup, getBadgeGeometry, getBadgeSelectors, getShapeOverlays } from './iconBadges';
-import { textLabelBg } from './labeling';
+import type { ShapeOverlay, ShapeOverlayPosition } from '../core/types';
+import { createIconElement, getNestedRecord, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
+import { elementMarkup, textLabelBg } from './labeling';
+
+type AttrMap = Record<string, unknown>;
+
+const DEFAULT_ICON_SIZE = 64;
+
+const BADGE_SCALE = 0.2; // change to resize badges: size, font, spacing, label width
+
+const GF_SIZE_MAP: Record<string, number> = {
+  'gf-1x': 64,
+  'gf-2x': 128,
+  'gf-3x': 192,
+  'gf-16px': 16,
+  'gf-24px': 24,
+  'gf-32px': 32,
+  'gf-48px': 48
+};
+
+const VALID_POSITIONS: ShapeOverlayPosition[] = ['NW', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W'];
+
+const POSITION_TO_SELECTOR: Record<ShapeOverlayPosition, string> = {
+  NW: 'badgeNw',
+  NE: 'badgeNe',
+  SW: 'badgeSw',
+  SE: 'badgeSe',
+  N: 'badgeN',
+  E: 'badgeE',
+  S: 'badgeS',
+  W: 'badgeW'
+};
+
+const FONT_ICON_MARKUP = { tagName: 'text', selector: 'icon', className: 'scalable' } as const;
+const ICON_AREA_MARKUP = { tagName: 'rect', selector: 'iconArea' } as const;
 
 interface FontIconElementMethods {
   setClass: (size?: string, statusCode?: number) => void;
-  getSizeFromClass: (sizeClass: string) => number;
 }
 
 type FontIconElementInstance = IconElementInstance<FontIconElementMethods>;
 
-function buildFontBadgeMarkup(instance: FontIconElementInstance) {
-  return buildBadgeMarkup(getShapeOverlays(instance.get('data')));
+interface FontIconState {
+  expectedSize: joint.dia.Size;
+  glyph: string;
+  iconAttrs: AttrMap;
+  iconSize: number;
+  overlays: ShapeOverlay[];
+  sizeClass: string;
+  statusCode: number;
 }
 
-function buildFontBadgeAttrs(instance: FontIconElementInstance): Record<string, unknown> {
-  const overlays = getShapeOverlays(instance.get('data'));
-  const className = ['gf', instance.attr('icon/size'), getFontStatusClass(instance.attr('icon/status_code'))]
-    .filter((value): value is string => typeof value === 'string' && value.length > 0)
-    .join(' ');
+function isRecord(value: unknown): value is AttrMap {
+  return typeof value === 'object' && value !== null;
+}
 
-  return overlays.reduce<Record<string, unknown>>((attrs, overlay) => {
-    const selectors = getBadgeSelectors(overlay.position);
-    const geometry = getBadgeGeometry(instance.size(), overlay.position);
-    const centerX = geometry.x + geometry.size / 2;
-    const centerY = geometry.y + geometry.size / 2;
+function isShapeOverlayPosition(value: unknown): value is ShapeOverlayPosition {
+  return typeof value === 'string' && VALID_POSITIONS.includes(value as ShapeOverlayPosition);
+}
 
-    attrs[selectors.body] = overlay.form === 'c'
-      ? {
-          cx: centerX,
-          cy: centerY,
-          r: geometry.size / 2,
-          strokeWidth: 0.5
-        }
-      : {
-          x: geometry.x,
-          y: geometry.y,
-          width: geometry.size,
-          height: geometry.size,
-          strokeWidth: 0.5
-        };
+function getShapeOverlays(data: unknown): ShapeOverlay[] {
+  if (!isRecord(data) || !Array.isArray(data.shapeOverlay)) {
+    return [];
+  }
 
-    attrs[selectors.text] = {
-      text: String.fromCodePoint(overlay.code),
-      x: centerX,
-      y: centerY,
-      xAlignment: 'middle',
-      yAlignment: 'middle',
-      textAnchor: 'middle',
-      textVerticalAnchor: 'middle',
-      class: className
+  const seenPositions = new Set<ShapeOverlayPosition>();
+
+  return data.shapeOverlay.flatMap((item): ShapeOverlay[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const { code, position, form } = item;
+    if (
+      typeof code !== 'number' ||
+      !Number.isFinite(code) ||
+      !isShapeOverlayPosition(position) ||
+      (form !== 'c' && form !== 's') ||
+      seenPositions.has(position)
+    ) {
+      return [];
+    }
+
+    seenPositions.add(position);
+    return [{
+      code,
+      position,
+      form
+    }];
+  });
+}
+
+function computeSize(iconSize: number): joint.dia.Size {
+  const iconPadding = iconSize / 2;
+  const labelHeight = Math.ceil(iconSize * 1.85 / 4);
+  const labelGap = iconSize * 0.25;
+  return {
+    width: iconSize * 4,
+    height: iconPadding + iconSize + labelHeight * 2 + labelGap / 2
+  };
+}
+
+function makeBadgeMarkup(selector: string, form: ShapeOverlay['form']): joint.dia.MarkupJSON[number] {
+  const shape = form === 'c' ? 'circle' : 'rect';
+  return {
+    tagName: 'g',
+    selector,
+    children: [
+      { tagName: shape, selector: `${selector}Bg` },
+      { tagName: 'text', selector: `${selector}Text` }
+    ]
+  };
+}
+
+function makeLabelAttrs(display: 'block' | 'none'): AttrMap {
+  return {
+    ref: 'iconArea',
+    refX: '50%',
+    y: 'calc(1.7*w)',
+    fontSize: 'calc(w / 4)',
+    display,
+    textAnchor: 'middle',
+    fill: '#000000',
+    fontFamily: 'monospace',
+    textWrap: { width: 'calc(2*w)', ellipsis: false },
+    ...textLabelBg
+  };
+}
+
+function buildIconClassName(size: string, statusCode: number): string {
+  return ['gf', size, getFontStatusClass(statusCode)].filter(Boolean).join(' ');
+}
+
+function buildBadgeClassName(statusCode: number): string {
+  return [getFontStatusClass(statusCode)].filter(Boolean).join(' ');
+}
+
+function getDataString(data: unknown, key: string): string {
+  if (!isRecord(data)) {
+    return '';
+  }
+  const value = data[key];
+  return typeof value === 'string' ? value : '';
+}
+
+function getFontSizeClass(data: unknown, iconAttrs: AttrMap): string {
+  return getString(iconAttrs, 'size')
+    || getDataString(data, 'cls')
+    || getDataString(data, 'iconSizeClass')
+    || 'gf-1x';
+}
+
+function getFontGlyph(data: unknown, iconAttrs: AttrMap): string {
+  return getString(iconAttrs, 'text')
+    || getDataString(data, 'glyph')
+    || getDataString(data, 'iconUnicode')
+    || '';
+}
+
+function deriveFontIconState(instance: FontIconElementInstance): FontIconState {
+  const data = instance.get('data');
+  const iconAttrs = getNestedRecord(instance.get('attrs'), 'icon');
+  const sizeClass = getFontSizeClass(data, iconAttrs);
+  const iconSize = GF_SIZE_MAP[sizeClass] ?? DEFAULT_ICON_SIZE;
+
+  return {
+    expectedSize: computeSize(iconSize),
+    glyph: getFontGlyph(data, iconAttrs),
+    iconAttrs,
+    iconSize,
+    overlays: getShapeOverlays(data),
+    sizeClass,
+    statusCode: getNumber(iconAttrs, 'status_code', 0)
+  };
+}
+
+function buildFontMarkup(state: FontIconState): joint.dia.MarkupJSON {
+  const badgeMarkup = state.overlays.map((overlay) =>
+    makeBadgeMarkup(POSITION_TO_SELECTOR[overlay.position], overlay.form)
+  );
+  return [...elementMarkup, FONT_ICON_MARKUP, ICON_AREA_MARKUP, ...badgeMarkup];
+}
+
+function computeBadgeAttrs(state: FontIconState): AttrMap {
+  const badgeSize = state.iconSize * BADGE_SCALE;
+  const badgeFontSize = state.iconSize * BADGE_SCALE;
+  const badgeClassName = buildBadgeClassName(state.statusCode);
+  const iconXY = 1.5 * state.iconSize;
+
+  const transforms: Record<ShapeOverlayPosition, string> = {
+    NW: `translate(${state.iconSize - badgeSize}, ${badgeSize})`,
+    NE: `translate(calc(w-${state.iconSize - badgeSize}), ${badgeSize})`,
+    SW: `translate(${state.iconSize - badgeSize}, calc(h-${badgeSize}))`,
+    SE: `translate(calc(w-${state.iconSize - badgeSize}), calc(h-${badgeSize}))`,
+    N: `translate(calc(w/2), ${badgeSize})`,
+    E: `translate(calc(w-${state.iconSize - badgeSize}), calc(h/2))`,
+    S: `translate(calc(w/2), calc(h-${badgeSize}))`,
+    W: `translate(${state.iconSize - badgeSize}, calc(h/2))`,
+  };
+  
+  const attrs: AttrMap = {
+    iconArea: {
+      x: iconXY,
+      y: iconXY,
+      width: state.iconSize,
+      height: state.iconSize,
+      fill: 'none',
+      stroke: 'none'
+    }
+  };
+
+  state.overlays.forEach(({ position, code, form }) => {
+    const selector = POSITION_TO_SELECTOR[position];
+    const shapeGeom = form === 'c'
+      ? { cx: 0, cy: 0, r: badgeSize }
+      : { x: -badgeSize, y: -badgeSize, width: badgeSize * 2, height: badgeSize * 2 };
+
+    attrs[selector] = { transform: transforms[position] };
+    attrs[`${selector}Bg`] = {
+      fill: '#FFFFFF',
+      stroke: '#000000',
+      strokeWidth: 0.5,
+      ...shapeGeom
     };
+    attrs[`${selector}Text`] = {
+      x: 0,
+      y: badgeFontSize / 2,
+      fontSize: badgeFontSize,
+      textAnchor: 'middle',
+      fontFamily: 'GufoFont',
+      fill: '#000000',
+      class: badgeClassName,
+      text: String.fromCodePoint(code)
+    };
+  });
 
-    return attrs;
-  }, {});
+  return attrs;
+}
+
+function buildFontAttrs(state: FontIconState): joint.dia.Cell.Selectors {
+  return {
+    ...computeBadgeAttrs(state),
+    icon: {
+      class: buildIconClassName(state.sizeClass, state.statusCode),
+      text: state.glyph
+    }
+  };
+}
+
+function syncFontPresentation(instance: FontIconElementInstance, state: FontIconState): void {
+  const currentSize = instance.size();
+
+  if (
+    currentSize.width !== state.expectedSize.width ||
+    currentSize.height !== state.expectedSize.height
+  ) {
+    instance.resize(state.expectedSize.width, state.expectedSize.height, { silent: true });
+  }
+
+  instance.attr(buildFontAttrs(state));
 }
 
 export const FontIconElement: IconElementConstructor = createIconElement<FontIconElementMethods>({
   type: 'noc.FontIconElement',
   attrs: {
-    icon: getDefaultFontIconAttrs(),
+    icon: {
+      ...getDefaultFontIconAttrs(),
+      fontFamily: 'GufoFont',
+      x: 'calc(0.375*w)',
+      y: 'calc(0.375*w)',
+      strokeWidth: 0.5
+    },
     nodeName: {
-      ref: 'icon',
-      refX: '50%',
-      refY: '100%',
-      textAnchor: 'middle',
-      display: 'block',
-      fill: '#000000',
-      ...textLabelBg
+      ...makeLabelAttrs('block')
     },
     ipaddr: {
-      ref: 'icon',
-      refX: '50%',
-      refY: '100%',
-      textAnchor: 'middle',
-      display: 'none',
-      fill: '#000000',
-      ...textLabelBg
+      ...makeLabelAttrs('none')
     }
   },
-  iconMarkup: { tagName: 'text', selector: 'icon', className: 'scalable' },
-  buildExtraMarkup: (instance) => buildFontBadgeMarkup(instance as FontIconElementInstance),
-  buildExtraAttrs: (instance) => buildFontBadgeAttrs(instance as FontIconElementInstance),
-  getBreakWidth: (instance, iconAttrs) => instance.getSizeFromClass(getString(iconAttrs, 'size')) * 2,
-  onIconInit: (instance, iconAttrs) => {
-    instance.setClass(getString(iconAttrs, 'size'), getNumber(iconAttrs, 'status_code', 0));
-  },
-  onIconAttrsChange: (instance, iconAttrs) => {
-    instance.setClass(getString(iconAttrs, 'size'), getNumber(iconAttrs, 'status_code', 0));
+  buildMarkup: (instance) => buildFontMarkup(deriveFontIconState(instance as FontIconElementInstance)),
+  onIconInit: (instance) => {
+    const element = instance as FontIconElementInstance;
+    let syncing = false;
+
+    const sync = (rebuildMarkup: boolean): void => {
+      if (syncing) {
+        return;
+      }
+      syncing = true;
+      try {
+        const state = deriveFontIconState(element);
+        if (rebuildMarkup) {
+          element.set('markup', buildFontMarkup(state), { silent: true });
+        }
+        syncFontPresentation(element, state);
+      } finally {
+        syncing = false;
+      }
+    };
+
+    sync(false);
+    element.on('change:attrs', () => {
+      sync(false);
+    });
+    element.on('change:data', () => {
+      sync(true);
+    });
   },
   methods: {
-    getSizeFromClass: function (this: FontIconElementInstance, sizeClass: string): number {
-      if (typeof document === 'undefined' || typeof window === 'undefined') {
-        return 32;
-      }
-
-      const tempElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      tempElement.setAttribute('class', ['gf', sizeClass].filter(Boolean).join(' '));
-      tempElement.textContent = '\uE283';
-      document.body.appendChild(tempElement);
-      const computedStyle = window.getComputedStyle(tempElement);
-      const fontSize = Number.parseFloat(computedStyle.fontSize) || 32;
-      document.body.removeChild(tempElement);
-      return fontSize;
-    },
-
     setClass: function (this: FontIconElementInstance, size?: string, statusCode?: number): void {
-      const className = ['gf', size, getFontStatusClass(statusCode)].filter(Boolean).join(' ');
-      this.attr('icon/class', className);
-      getShapeOverlays(this.get('data')).forEach((overlay) => {
-        const selectors = getBadgeSelectors(overlay.position);
-        this.attr(`${selectors.text}/class`, className);
-      });
+      const sizeClass = typeof size === 'string' && size.length > 0 ? size : 'gf-1x';
+      const nextStatusCode = typeof statusCode === 'number' ? statusCode : 0;
+      this.attr('icon/class', buildIconClassName(sizeClass, nextStatusCode));
     }
   }
 });

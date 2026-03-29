@@ -320,7 +320,10 @@ class MapConverter {
         iconUnicode: glyphText,
         iconSizeClass: toOptionalText(node.cls),
         statusCode: DEFAULT_STATUS_CODE,
-        data
+        data: {
+          ...data,
+          glyph: glyphText,
+        },
       });
     }
 

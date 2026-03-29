@@ -1,6 +1,5 @@
 import { getDefaultImageIconAttrs, getImageStatusFilter } from '../core/nodePresentation';
-import { createIconElement, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
-import { buildBadgeMarkup, getBadgeGeometry, getBadgeSelectors, getShapeOverlays } from './iconBadges';
+import { createIconElement, getNestedRecord, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
 import { textLabelBg } from './labeling';
 
 let stencilDir = '/stencils';
@@ -11,53 +10,6 @@ interface ImageIconElementMethods {
 }
 
 type ImageIconElementInstance = IconElementInstance<ImageIconElementMethods>;
-
-function buildImageBadgeMarkup(instance: ImageIconElementInstance) {
-  return buildBadgeMarkup(getShapeOverlays(instance.get('data')));
-}
-
-function buildImageBadgeAttrs(instance: ImageIconElementInstance): Record<string, unknown> {
-  const overlays = getShapeOverlays(instance.get('data'));
-  const filter = `url(#${getImageStatusFilter(instance.attr('icon/status_code'))})`;
-
-  return overlays.reduce<Record<string, unknown>>((attrs, overlay) => {
-    const selectors = getBadgeSelectors(overlay.position);
-    const geometry = getBadgeGeometry(instance.size(), overlay.position);
-    const centerX = geometry.x + geometry.size / 2;
-    const centerY = geometry.y + geometry.size / 2;
-
-    attrs[selectors.body] = overlay.form === 'c'
-      ? {
-          cx: centerX,
-          cy: centerY,
-          r: geometry.size / 2,
-          strokeWidth: 0.5,
-          filter
-        }
-      : {
-          x: geometry.x,
-          y: geometry.y,
-          width: geometry.size,
-          height: geometry.size,
-          strokeWidth: 0.5,
-          filter
-        };
-
-    attrs[selectors.text] = {
-      text: String.fromCodePoint(overlay.code),
-      x: centerX,
-      y: centerY,
-      xAlignment: 'middle',
-      yAlignment: 'middle',
-      textAnchor: 'middle',
-      textVerticalAnchor: 'middle',
-      class: 'gf',
-      filter
-    };
-
-    return attrs;
-  }, {});
-}
 
 function syncImageHref(
   instance: ImageIconElementInstance,
@@ -77,6 +29,12 @@ function syncImageHref(
   if (currentXlinkHref !== normalizedHref) {
     instance.attr('icon/xlinkHref', normalizedHref);
   }
+}
+
+function syncImagePresentation(instance: ImageIconElementInstance): void {
+  const iconAttrs = getNestedRecord(instance.get('attrs'), 'icon');
+  syncImageHref(instance, iconAttrs);
+  instance.setStatus(getNumber(iconAttrs, 'status_code', 0));
 }
 
 export function setStencilDir(dir: string): void {
@@ -119,26 +77,31 @@ export const ImageIconElement: IconElementConstructor = createIconElement<ImageI
     }
   },
   iconMarkup: { tagName: 'image', selector: 'icon', className: 'scalable' },
-  buildExtraMarkup: (instance) => buildImageBadgeMarkup(instance as ImageIconElementInstance),
-  buildExtraAttrs: (instance) => buildImageBadgeAttrs(instance as ImageIconElementInstance),
-  getBreakWidth: (_instance, iconAttrs) => getNumber(iconAttrs, 'width', 64) * 2,
-  onIconInit: (instance, iconAttrs) => {
-    syncImageHref(instance as ImageIconElementInstance, iconAttrs);
-    instance.setStatus(getNumber(iconAttrs, 'status_code', 0));
-  },
-  onIconAttrsChange: (instance, iconAttrs) => {
-    syncImageHref(instance as ImageIconElementInstance, iconAttrs);
-    instance.setStatus(getNumber(iconAttrs, 'status_code', 0));
+  onIconInit: (instance) => {
+    const element = instance as ImageIconElementInstance;
+    let syncing = false;
+
+    const sync = (): void => {
+      if (syncing) {
+        return;
+      }
+      syncing = true;
+      try {
+        syncImagePresentation(element);
+      } finally {
+        syncing = false;
+      }
+    };
+
+    sync();
+    element.on('change:attrs', () => {
+      sync();
+    });
   },
   methods: {
     setStatus: function (this: ImageIconElementInstance, statusCode: number): void {
       const filter = getImageStatusFilter(statusCode);
       this.attr('icon/filter', `url(#${filter})`);
-      getShapeOverlays(this.get('data')).forEach((overlay) => {
-        const selectors = getBadgeSelectors(overlay.position);
-        this.attr(`${selectors.body}/filter`, `url(#${filter})`);
-        this.attr(`${selectors.text}/filter`, `url(#${filter})`);
-      });
     },
 
     convertImageIdToPath: function (this: ImageIconElementInstance, href: string): string {

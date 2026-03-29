@@ -25,10 +25,16 @@ export const glyphSegmentMapData: MapConverterInput = {
       metrics_label: '',
       metrics_template: '',
       level: 25,
-      name: 'SAE',
+      name: 'SAE lllllllll xxx',
       glyph: 61996,
       cls: 'gf-1x',
-      shape_overlay: [],
+      shape_overlay: [
+        {
+          code: 58024,
+          position: 'E',
+          form: 's'
+        }
+      ],
       ports: [],
       caps: [],
       object_filter: null,
@@ -75,7 +81,7 @@ export const glyphSegmentMapData: MapConverterInput = {
       cls: 'gf-1x',
       shape_overlay: [
         {
-          code: 58024,
+          code: 0xE30B,
           position: 'NE',
           form: 'c'
         }
