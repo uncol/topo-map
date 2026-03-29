@@ -78,7 +78,7 @@ function generateTopology(rows, cols) {
         x: startX + col * spacingX,
         y: startY + row * spacingY,
         attrs: {
-          title: {
+          nodeName: {
             text: `Node ${index + 1} ${loremText}`
           },
           ipaddr: {

@@ -8,18 +8,18 @@ describe('elementStatus', () => {
       id: 'node-1',
       type: 'noc.FontIconElement',
       size: { width: 64, height: 64 },
-      attrs: {
-        icon: {
-          text: '\uF20A',
-          size: 'gf-1x',
-          status_code: 1
-        },
-        title: {
-          text: 'Core'
-        },
-        ipaddr: {
-          text: '10.0.0.1'
-        }
+        attrs: {
+          icon: {
+            text: '\uF20A',
+            size: 'gf-1x',
+            status_code: 1
+          },
+          nodeName: {
+            text: 'Core'
+          },
+          ipaddr: {
+            text: '10.0.0.1'
+          }
       },
       data: {
         id: 'node-1',
@@ -45,7 +45,7 @@ describe('elementStatus', () => {
       metrics_label: 'CPU<br/>85%'
     });
     expect(element.attr('icon/status_code')).toBe(36);
-    expect(element.attr('title/text')).toBe('Core\nCPU\n85%');
+    expect(element.attr('nodeName/text')).toBe('Core\nCPU\n85%');
     expect(element.attr('ipaddr/text')).toBe('10.0.0.1\nCPU\n85%');
   });
 
@@ -54,19 +54,19 @@ describe('elementStatus', () => {
       id: 'node-2',
       type: 'noc.ImageIconElement',
       size: { width: 64, height: 64 },
-      attrs: {
-        icon: {
-          href: '#img-Cisco-router',
-          width: '64',
-          height: '64',
-          status_code: 2
-        },
-        title: {
-          text: 'Router'
-        },
-        ipaddr: {
-          text: '10.0.0.2'
-        }
+        attrs: {
+          icon: {
+            href: '#img-Cisco-router',
+            width: '64',
+            height: '64',
+            status_code: 2
+          },
+          nodeName: {
+            text: 'Router'
+          },
+          ipaddr: {
+            text: '10.0.0.2'
+          }
       },
       data: {
         id: 'node-2',
@@ -89,7 +89,7 @@ describe('elementStatus', () => {
       metrics_label: ''
     });
     expect(element.attr('icon/status_code')).toBe(4);
-    expect(element.attr('title/text')).toBe('Router');
+    expect(element.attr('nodeName/text')).toBe('Router');
     expect(element.attr('ipaddr/text')).toBe('10.0.0.2');
   });
 
@@ -98,18 +98,18 @@ describe('elementStatus', () => {
       id: 'node-3',
       type: 'noc.FontIconElement',
       size: { width: 64, height: 64 },
-      attrs: {
-        icon: {
-          text: '\uF20A',
-          size: 'gf-1x',
-          status_code: 1
-        },
-        title: {
-          text: 'Edge'
-        },
-        ipaddr: {
-          text: '10.0.0.3'
-        }
+        attrs: {
+          icon: {
+            text: '\uF20A',
+            size: 'gf-1x',
+            status_code: 1
+          },
+          nodeName: {
+            text: 'Edge'
+          },
+          ipaddr: {
+            text: '10.0.0.3'
+          }
       },
       data: {
         id: 'node-3',
@@ -131,7 +131,7 @@ describe('elementStatus', () => {
     expect(element.get('data')).toMatchObject({
       isMaintenance: false
     });
-    expect(element.attr('title/text')).toBe('Edge\nMEM\n90%');
+    expect(element.attr('nodeName/text')).toBe('Edge\nMEM\n90%');
     expect(element.attr('ipaddr/text')).toBe('10.0.0.3\nMEM\n90%');
   });
 });

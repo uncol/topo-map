@@ -1,5 +1,6 @@
 import { getDefaultFontIconAttrs, getFontStatusClass } from '../core/nodePresentation';
 import { createIconElement, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
+import { buildBadgeMarkup, getBadgeGeometry, getBadgeSelectors, getShapeOverlays } from './iconBadges';
 import { textLabelBg } from './labeling';
 
 interface FontIconElementMethods {
@@ -8,6 +9,52 @@ interface FontIconElementMethods {
 }
 
 type FontIconElementInstance = IconElementInstance<FontIconElementMethods>;
+
+function buildFontBadgeMarkup(instance: FontIconElementInstance) {
+  return buildBadgeMarkup(getShapeOverlays(instance.get('data')));
+}
+
+function buildFontBadgeAttrs(instance: FontIconElementInstance): Record<string, unknown> {
+  const overlays = getShapeOverlays(instance.get('data'));
+  const className = ['gf', instance.attr('icon/size'), getFontStatusClass(instance.attr('icon/status_code'))]
+    .filter((value): value is string => typeof value === 'string' && value.length > 0)
+    .join(' ');
+
+  return overlays.reduce<Record<string, unknown>>((attrs, overlay) => {
+    const selectors = getBadgeSelectors(overlay.position);
+    const geometry = getBadgeGeometry(instance.size(), overlay.position);
+    const centerX = geometry.x + geometry.size / 2;
+    const centerY = geometry.y + geometry.size / 2;
+
+    attrs[selectors.body] = overlay.form === 'c'
+      ? {
+          cx: centerX,
+          cy: centerY,
+          r: geometry.size / 2,
+          strokeWidth: 0.5
+        }
+      : {
+          x: geometry.x,
+          y: geometry.y,
+          width: geometry.size,
+          height: geometry.size,
+          strokeWidth: 0.5
+        };
+
+    attrs[selectors.text] = {
+      text: String.fromCodePoint(overlay.code),
+      x: centerX,
+      y: centerY,
+      xAlignment: 'middle',
+      yAlignment: 'middle',
+      textAnchor: 'middle',
+      textVerticalAnchor: 'middle',
+      class: className
+    };
+
+    return attrs;
+  }, {});
+}
 
 export const FontIconElement: IconElementConstructor = createIconElement<FontIconElementMethods>({
   type: 'noc.FontIconElement',
@@ -33,6 +80,8 @@ export const FontIconElement: IconElementConstructor = createIconElement<FontIco
     }
   },
   iconMarkup: { tagName: 'text', selector: 'icon', className: 'scalable' },
+  buildExtraMarkup: (instance) => buildFontBadgeMarkup(instance as FontIconElementInstance),
+  buildExtraAttrs: (instance) => buildFontBadgeAttrs(instance as FontIconElementInstance),
   getBreakWidth: (instance, iconAttrs) => instance.getSizeFromClass(getString(iconAttrs, 'size')) * 2,
   onIconInit: (instance, iconAttrs) => {
     instance.setClass(getString(iconAttrs, 'size'), getNumber(iconAttrs, 'status_code', 0));
@@ -42,6 +91,10 @@ export const FontIconElement: IconElementConstructor = createIconElement<FontIco
   },
   methods: {
     getSizeFromClass: function (this: FontIconElementInstance, sizeClass: string): number {
+      if (typeof document === 'undefined' || typeof window === 'undefined') {
+        return 32;
+      }
+
       const tempElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       tempElement.setAttribute('class', ['gf', sizeClass].filter(Boolean).join(' '));
       tempElement.textContent = '\uE283';
@@ -55,11 +108,9 @@ export const FontIconElement: IconElementConstructor = createIconElement<FontIco
     setClass: function (this: FontIconElementInstance, size?: string, statusCode?: number): void {
       const className = ['gf', size, getFontStatusClass(statusCode)].filter(Boolean).join(' ');
       this.attr('icon/class', className);
-
-      const embeddedCells = this.getEmbeddedCells();
-      embeddedCells.forEach((badge) => {
-        badge.attr('body/class', className);
-        badge.attr('text/class', className);
+      getShapeOverlays(this.get('data')).forEach((overlay) => {
+        const selectors = getBadgeSelectors(overlay.position);
+        this.attr(`${selectors.text}/class`, className);
       });
     }
   }

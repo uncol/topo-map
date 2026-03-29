@@ -70,7 +70,8 @@ export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint
                 metrics_label: node.metricsLabel,
                 iconUnicode: node.iconUnicode,
                 iconSizeClass: node.iconSizeClass,
-                iconHref: node.iconHref
+                iconHref: node.iconHref,
+                shapeOverlay: node.shapeOverlay
               }
             }
           : {
@@ -93,7 +94,8 @@ export function createGraphFromData(nodes: NodeData[], links: LinkData[]): joint
                 metrics_label: node.metricsLabel,
                 iconUnicode: node.iconUnicode,
                 iconSizeClass: node.iconSizeClass,
-                iconHref: node.iconHref
+                iconHref: node.iconHref,
+                shapeOverlay: node.shapeOverlay
               }
             }
       ) as Record<string, unknown>;

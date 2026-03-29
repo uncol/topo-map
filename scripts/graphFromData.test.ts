@@ -18,7 +18,7 @@ describe('createGraphFromData', () => {
       id: 'node-1',
       type: 'noc.FontIconElement',
       attrs: {
-        title: {
+        nodeName: {
           text: 'Core'
         },
         icon: {
@@ -43,7 +43,8 @@ describe('createGraphFromData', () => {
         y: 20,
         label: 'Router',
         iconHref: '#img-Cisco-router',
-        statusCode: 0
+        statusCode: 0,
+        shapeOverlay: [{ code: 61972, position: 'NE', form: 'c' }]
       }
     ], []);
 
@@ -56,7 +57,7 @@ describe('createGraphFromData', () => {
           href: '#img-Cisco-router',
           status_code: 0
         },
-        title: {
+        nodeName: {
           text: 'Router'
         }
       },
@@ -66,7 +67,8 @@ describe('createGraphFromData', () => {
         name: 'Router',
         status_code: 0,
         metrics_label: undefined,
-        iconHref: '#img-Cisco-router'
+        iconHref: '#img-Cisco-router',
+        shapeOverlay: [{ code: 61972, position: 'NE', form: 'c' }]
       }
     });
   });

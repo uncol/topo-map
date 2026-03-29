@@ -66,6 +66,7 @@ export interface NodeData {
   iconSizeClass?: string;
   iconStatusClass?: string;
   iconHref?: string;
+  shapeOverlay?: ShapeOverlay[];
   attrs?: Record<string, unknown>;
 }
 

@@ -298,7 +298,7 @@ class MapConverter {
       node_id: node.node_id,
       object_filter: node.object_filter,
       ports: node.ports,
-      shape_overlay: node.shape_overlay,
+      shapeOverlay: node.shape_overlay,
       type: node.type,
     };
     if (shape.length === 0) {
