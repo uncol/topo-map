@@ -1,14 +1,13 @@
 import type * as joint from '@joint/core';
 import { getDefaultFontIconAttrs, getFontStatusClass } from '../core/nodePresentation';
 import type { ShapeOverlay, ShapeOverlayPosition } from '../core/types';
+import { BADGE_SCALE, buildBadgeAttrs, buildBadgeMarkup, getBadgeOverlays } from './badgeOverlay';
 import { createIconElement, getNestedRecord, getNumber, getString, IconElementConstructor, IconElementInstance } from './iconElementFactory';
 import { elementMarkup, textLabelBg } from './labeling';
 
 type AttrMap = Record<string, unknown>;
 
 const DEFAULT_ICON_SIZE = 64;
-
-const BADGE_SCALE = 0.15; // change to resize badges: size, font, spacing, label width
 
 const GF_SIZE_MAP: Record<string, number> = {
   'gf-1x': 64,
@@ -18,19 +17,6 @@ const GF_SIZE_MAP: Record<string, number> = {
   'gf-24px': 24,
   'gf-32px': 32,
   'gf-48px': 48
-};
-
-const VALID_POSITIONS: ShapeOverlayPosition[] = ['NW', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W'];
-
-const POSITION_TO_SELECTOR: Record<ShapeOverlayPosition, string> = {
-  NW: 'badgeNw',
-  NE: 'badgeNe',
-  SW: 'badgeSw',
-  SE: 'badgeSe',
-  N: 'badgeN',
-  E: 'badgeE',
-  S: 'badgeS',
-  W: 'badgeW'
 };
 
 const FONT_ICON_MARKUP = { tagName: 'text', selector: 'icon', className: 'scalable' } as const;
@@ -56,40 +42,8 @@ function isRecord(value: unknown): value is AttrMap {
   return typeof value === 'object' && value !== null;
 }
 
-function isShapeOverlayPosition(value: unknown): value is ShapeOverlayPosition {
-  return typeof value === 'string' && VALID_POSITIONS.includes(value as ShapeOverlayPosition);
-}
-
 function getShapeOverlays(data: unknown): ShapeOverlay[] {
-  if (!isRecord(data) || !Array.isArray(data.shapeOverlay)) {
-    return [];
-  }
-
-  const seenPositions = new Set<ShapeOverlayPosition>();
-
-  return data.shapeOverlay.flatMap((item): ShapeOverlay[] => {
-    if (!isRecord(item)) {
-      return [];
-    }
-
-    const { code, position, form } = item;
-    if (
-      typeof code !== 'number' ||
-      !Number.isFinite(code) ||
-      !isShapeOverlayPosition(position) ||
-      (form !== 'c' && form !== 's') ||
-      seenPositions.has(position)
-    ) {
-      return [];
-    }
-
-    seenPositions.add(position);
-    return [{
-      code,
-      position,
-      form
-    }];
-  });
+  return getBadgeOverlays(data);
 }
 
 function computeSize(iconSize: number): joint.dia.Size {
@@ -99,18 +53,6 @@ function computeSize(iconSize: number): joint.dia.Size {
   return {
     width: iconSize * 4,
     height: iconPadding + iconSize + labelHeight * 2 + labelGap / 2
-  };
-}
-
-function makeBadgeMarkup(selector: string, form: ShapeOverlay['form']): joint.dia.MarkupJSON[number] {
-  const shape = form === 'c' ? 'circle' : 'rect';
-  return {
-    tagName: 'g',
-    selector,
-    children: [
-      { tagName: shape, selector: `${selector}Bg` },
-      { tagName: 'text', selector: `${selector}Text` }
-    ]
   };
 }
 
@@ -130,10 +72,6 @@ function makeLabelAttrs(display: 'block' | 'none'): AttrMap {
 
 function buildIconClassName(size: string, statusCode: number): string {
   return ['gf', size, getFontStatusClass(statusCode)].filter(Boolean).join(' ');
-}
-
-function buildBadgeClassName(statusCode: number): string {
-  return [getFontStatusClass(statusCode)].filter(Boolean).join(' ');
 }
 
 function getDataString(data: unknown, key: string): string {
@@ -176,16 +114,13 @@ function deriveFontIconState(instance: FontIconElementInstance): FontIconState {
 }
 
 function buildFontMarkup(state: FontIconState): joint.dia.MarkupJSON {
-  const badgeMarkup = state.overlays.map((overlay) =>
-    makeBadgeMarkup(POSITION_TO_SELECTOR[overlay.position], overlay.form)
-  );
+  const badgeMarkup = buildBadgeMarkup(state.overlays);
   return [...elementMarkup, FONT_ICON_MARKUP, ICON_AREA_MARKUP, ...badgeMarkup];
 }
 
 function computeBadgeAttrs(state: FontIconState): AttrMap {
   const badgeSize = state.iconSize * BADGE_SCALE;
   const badgeFontSize = state.iconSize * BADGE_SCALE;
-  const badgeClassName = buildBadgeClassName(state.statusCode);
   const iconXY = 1.5 * state.iconSize;
 
   const transforms: Record<ShapeOverlayPosition, string> = {
@@ -209,33 +144,10 @@ function computeBadgeAttrs(state: FontIconState): AttrMap {
       stroke: 'none'
     }
   };
-
-  state.overlays.forEach(({ position, code, form }) => {
-    const selector = POSITION_TO_SELECTOR[position];
-    const shapeGeom = form === 'c'
-      ? { cx: 0, cy: 0, r: badgeSize }
-      : { x: -badgeSize, y: -badgeSize, width: badgeSize * 2, height: badgeSize * 2 };
-
-    attrs[selector] = { transform: transforms[position] };
-    attrs[`${selector}Bg`] = {
-      fill: '#FFFFFF',
-      stroke: '#000000',
-      strokeWidth: 0.5,
-      ...shapeGeom
-    };
-    attrs[`${selector}Text`] = {
-      x: 0,
-      y: badgeFontSize / 2,
-      fontSize: badgeFontSize,
-      textAnchor: 'middle',
-      fontFamily: 'GufoFont',
-      fill: '#000000',
-      class: badgeClassName,
-      text: String.fromCodePoint(code)
-    };
-  });
-
-  return attrs;
+  return {
+    ...attrs,
+    ...buildBadgeAttrs(state.overlays, state.statusCode, badgeSize, badgeFontSize, transforms)
+  };
 }
 
 function buildFontAttrs(state: FontIconState): joint.dia.Cell.Selectors {

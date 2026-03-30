@@ -73,6 +73,32 @@ describe('createGraphFromData', () => {
     });
   });
 
+  it('creates nodes with isMaintenance disabled even when statusCode contains the maintenance bit', () => {
+    const graph = createGraphFromData([
+      {
+        id: 'node-1',
+        x: 10,
+        y: 20,
+        label: 'Core',
+        statusCode: 36
+      }
+    ], []);
+
+    expect(graph.cells).toHaveLength(1);
+    expect(graph.cells[0]).toMatchObject({
+      attrs: {
+        icon: {
+          status_code: 36
+        }
+      },
+      data: {
+        id: 'node-1',
+        isMaintenance: false,
+        status_code: 36
+      }
+    });
+  });
+
   it('passes link data through to the graph JSON', () => {
     const graph = createGraphFromData([], [
       {

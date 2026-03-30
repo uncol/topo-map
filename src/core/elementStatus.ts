@@ -6,6 +6,7 @@ import {
   normalizeMetricsLabel,
   type NodePresentationModel
 } from './nodePresentation';
+import { MAINTENANCE_STATUS_BIT, readShapeOverlays, syncMaintenanceShapeOverlay } from './shapeOverlay';
 import type { ElementStatusUpdate } from './types';
 
 type AttrMap = Record<string, unknown>;
@@ -62,14 +63,21 @@ export function applyElementStatus(element: joint.dia.Element, update: ElementSt
     Object.prototype.hasOwnProperty.call(update, 'metrics_label')
       ? update.metrics_label
       : getString(currentData, 'metrics_label');
+  const isMaintenance = (rawStatusCode & MAINTENANCE_STATUS_BIT) !== 0;
+  const nextShapeOverlay = syncMaintenanceShapeOverlay(readShapeOverlays(currentData), isMaintenance);
   const nextData: AttrMap = {
     ...currentData,
     name: currentName,
     address: currentIpaddr,
-    isMaintenance: (update.status_code & 0x20) !== 0,
+    isMaintenance,
     status_code: rawStatusCode,
     metrics_label: nextMetricsLabel
   };
+  if (nextShapeOverlay.length > 0) {
+    nextData.shapeOverlay = nextShapeOverlay;
+  } else {
+    delete nextData.shapeOverlay;
+  }
   delete nextData.status;
   delete nextData.iconStatusClass;
   delete nextData.label;

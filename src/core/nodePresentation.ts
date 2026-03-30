@@ -27,13 +27,13 @@ interface BaseNodePresentationModel {
   name?: string | undefined;
   metricsLabel?: string | undefined;
   ipaddrText?: string | undefined;
+  statusCode?: number | undefined;
 }
 
 export interface FontNodePresentationModel extends BaseNodePresentationModel {
   kind: 'font';
   iconUnicode?: string | undefined;
   iconSizeClass?: string | undefined;
-  statusCode?: number | undefined;
 }
 
 export interface ImageNodePresentationModel extends BaseNodePresentationModel {
@@ -41,7 +41,6 @@ export interface ImageNodePresentationModel extends BaseNodePresentationModel {
   width: number;
   height: number;
   iconHref: string;
-  statusCode?: number | undefined;
 }
 
 export type NodePresentationModel = FontNodePresentationModel | ImageNodePresentationModel;
