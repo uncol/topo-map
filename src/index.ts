@@ -1,4 +1,11 @@
 export {
+  BLANK_CONTEXTMENU_EVENT,
+  BLANK_POINTERDOWN_EVENT,
+  CELL_CONTEXTMENU_EVENT,
+  CELL_HIGHLIGHT_EVENT,
+  CELL_POINTERCLICK_EVENT,
+  CELL_UNHIGHLIGHT_EVENT,
+  ELEMENT_POINTERDBLCLICK_EVENT,
   NODE_SEARCH_REQUEST_EVENT,
   NODE_SEARCH_RESULT_EVENT,
   normalizeNodeSearchMode,
@@ -44,3 +51,31 @@ export type {
   MapConverterInput
 } from './decoders/MapConverter';
 export { Topology } from './Topology';
+export {
+  WORKFLOW_CONTEXTMENU_EVENT,
+  WORKFLOW_DIRTY_CHANGE_EVENT,
+  WORKFLOW_DOCUMENT_CHANGE_EVENT,
+  WORKFLOW_SELECTION_CHANGE_EVENT,
+  WORKFLOW_VALIDATION_CHANGE_EVENT,
+  type WorkflowContextMenuDetail,
+  type WorkflowDocument,
+  type WorkflowDocumentChangeDetail,
+  type WorkflowDirtyChangeDetail,
+  type WorkflowEditorConfig,
+  type WorkflowMode,
+  type WorkflowModelRef,
+  type WorkflowPoint,
+  type WorkflowSelection,
+  type WorkflowSelectionChangeDetail,
+  type WorkflowState,
+  type WorkflowTransition,
+  type WorkflowValidationChangeDetail
+} from './workflow/types';
+export { WorkflowEditor } from './workflow/WorkflowEditor';
+export {
+  exportWorkflowForSave,
+  graphToWorkflow,
+  hasExplicitStatePositions,
+  normalizeWorkflowDocument,
+  workflowToGraph
+} from './workflow/workflowAdapter';

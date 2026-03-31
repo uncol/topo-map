@@ -23,6 +23,7 @@
   "dependencies": {
     "@gufo-labs/font": "^0.0.9",
     "@joint/core": "4.2.4",
+    "@joint/layout-directed-graph": "^4.2.3",
     "rbush": "4.0.1"
   },
   "devDependencies": {

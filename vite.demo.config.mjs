@@ -15,7 +15,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(process.cwd(), 'examples/index.html'),
-        vanilla: resolve(process.cwd(), 'examples/vanilla-index.html')
+        vanilla: resolve(process.cwd(), 'examples/vanilla-index.html'),
+        workflow: resolve(process.cwd(), 'examples/workflow-index.html')
       }
     }
   }
