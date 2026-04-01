@@ -20,6 +20,12 @@
 - `GuidesManager`: динамические направляющие выравнивания.
 - `SnapManager`: привязка координат к сетке.
 
+### Workflow editor internals
+
+- `WorkflowSpatialIndex`: RBush-индекс только для `workflow.State`, используется для nearby search во время drag.
+- `WorkflowGuidesManager`: рендерит вертикальные и горизонтальные guides в `WorkflowEditor`.
+- `workflow/internal/guides.ts`: pure helper для выбора лучшего совпадения по `left/center/right` и `top/middle/bottom`.
+
 ### Modes
 
 - `PanMode`.
@@ -40,6 +46,7 @@
 - Состояние viewport централизовано в `ViewportState`.
 - Graph/Paper скрыты за фасадом `DiagramService`.
 - Производительность обеспечивается RBush-индексом и опциональным culling.
+- `WorkflowEditor` использует отдельный RBush-индекс для guides без viewport culling.
 - Координатные преобразования local/paper/client выполняются явно в проблемных режимах.
 
 ## Поток инициализации

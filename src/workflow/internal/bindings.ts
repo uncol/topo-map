@@ -46,8 +46,17 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
     if (!isOutPortGroup(resolvePortGroup(magnetNode))) {
       return;
     }
+    runtime.state.activeDragElementId = null;
+    runtime.clearGuides();
     runtime.selectCell(String(elementView.model.id));
     runtime.beginLinkCreation();
+  });
+
+  runtime.paper.on('element:pointerdown', (elementView, event) => {
+    if (!isPrimaryMouseButton(event) || runtime.state.mode !== 'edit') {
+      return;
+    }
+    runtime.state.activeDragElementId = String(elementView.model.id);
   });
 
   runtime.paper.on('blank:pointerclick', () => {
@@ -58,6 +67,8 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
     if (!isPrimaryMouseButton(event)) {
       return;
     }
+    runtime.state.activeDragElementId = null;
+    runtime.clearGuides();
     const clientPoint = resolveClientPoint(event);
     if (!clientPoint) {
       return;
@@ -86,6 +97,8 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
 
   runtime.paper.on('blank:pointerup', () => {
     runtime.state.panState = null;
+    runtime.state.activeDragElementId = null;
+    runtime.clearGuides();
     runtime.paperHost.style.cursor = runtime.state.mode === 'pan' ? 'grab' : 'default';
     runtime.endLinkCreationSoon();
   });
@@ -118,10 +131,13 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
   });
 
   runtime.paper.on('cell:pointerup', () => {
+    runtime.state.activeDragElementId = null;
+    runtime.clearGuides();
     runtime.endLinkCreationSoon();
   });
 
   runtime.paper.on('link:connect', (linkView) => {
+    runtime.clearGuides();
     runtime.prepareLinkData(linkView.model);
     runtime.syncWorkflowFromGraph();
     runtime.markDocumentChanged();
@@ -144,6 +160,9 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
   runtime.graph.on('change:position', (cell) => {
     if (!cell.isElement() || runtime.state.suspendDocumentSyncDepth > 0) {
       return;
+    }
+    if (runtime.state.mode === 'edit' && runtime.state.activeDragElementId === String(cell.id)) {
+      runtime.updateGuidesForElement(cell);
     }
     runtime.scheduleGraphSync({
       selectionChange: runtime.state.selectedCellId === String(cell.id)

@@ -17,6 +17,8 @@ import type { WorkflowEditorRuntime } from './runtime';
 
 export function loadWorkflow(runtime: WorkflowEditorRuntime, input: unknown): void {
   runtime.cancelScheduledGraphSync();
+  runtime.state.activeDragElementId = null;
+  runtime.clearGuides();
   const workflow = normalizeWorkflowDocument(input);
   const needsLayout = !hasExplicitStatePositions(workflow);
 
@@ -32,6 +34,7 @@ export function loadWorkflow(runtime: WorkflowEditorRuntime, input: unknown): vo
     runtime.selectCell(null);
     runtime.setDirty(false);
   });
+  runtime.rebuildSpatialIndex();
 
   if (runtime.config.fitToPageOnLoad) {
     runtime.fitToContent();
@@ -57,6 +60,7 @@ export function addState(
   partial: Partial<WorkflowState> = {}
 ): string {
   runtime.flushScheduledGraphSync();
+  runtime.clearGuides();
   const resolvedPosition: WorkflowPoint =
     typeof partial.x === 'number' && typeof partial.y === 'number'
       ? { x: partial.x, y: partial.y }
@@ -99,6 +103,7 @@ export function addState(
     runtime.decorateStateById(state.id);
     runtime.syncWorkflowFromGraph();
   });
+  runtime.rebuildSpatialIndex();
   runtime.selectCell(state.id);
   runtime.markDocumentChanged();
   return state.id;
@@ -182,6 +187,8 @@ export function updateTransition(
 
 export function removeSelected(runtime: WorkflowEditorRuntime): boolean {
   runtime.flushScheduledGraphSync();
+  runtime.state.activeDragElementId = null;
+  runtime.clearGuides();
   if (!runtime.state.selectedCellId) {
     return false;
   }
@@ -199,6 +206,7 @@ export function removeSelected(runtime: WorkflowEditorRuntime): boolean {
     }
     runtime.syncWorkflowFromGraph();
   });
+  runtime.rebuildSpatialIndex();
   runtime.selectCell(null);
   runtime.markDocumentChanged();
   return true;
@@ -206,10 +214,13 @@ export function removeSelected(runtime: WorkflowEditorRuntime): boolean {
 
 export function autoLayout(runtime: WorkflowEditorRuntime): void {
   runtime.flushScheduledGraphSync();
+  runtime.state.activeDragElementId = null;
+  runtime.clearGuides();
   runtime.withDocumentSyncSuspended(() => {
     applyWorkflowLayout(runtime.graph);
     runtime.syncWorkflowFromGraph();
   });
+  runtime.rebuildSpatialIndex();
   runtime.fitToContent();
   runtime.markDocumentChanged();
 }

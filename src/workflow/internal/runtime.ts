@@ -5,6 +5,8 @@ import type {
   WorkflowSelection
 } from '../types';
 import type { WorkflowEditorConfigResolved, WorkflowEditorState } from './editorState';
+import type { WorkflowGuidesManager } from './GuidesManager';
+import type { WorkflowSpatialIndex } from './spatialIndex';
 
 export interface WorkflowEditorRuntime {
   host: EventTarget;
@@ -13,6 +15,8 @@ export interface WorkflowEditorRuntime {
   graph: joint.dia.Graph;
   paper: joint.dia.Paper;
   paperHost: HTMLDivElement;
+  spatialIndex: WorkflowSpatialIndex;
+  guidesManager: WorkflowGuidesManager;
   emitDirtyChange: (dirty: boolean) => void;
   emitSelectionChange: () => void;
   emitDocumentChange: () => void;
@@ -35,6 +39,10 @@ export interface WorkflowEditorRuntime {
   resize: () => void;
   fitToContent: (padding?: number) => void;
   setZoom: (nextScale: number, focus?: WorkflowPoint) => void;
+  rebuildSpatialIndex: () => void;
+  updateGuidesForElement: (element: joint.dia.Element) => void;
+  clearGuides: () => void;
+  setGuidesEnabled: (enabled: boolean) => void;
   withDocumentSyncSuspended: (callback: () => void) => void;
   syncWorkflowFromGraph: () => void;
   performGraphSync: () => void;

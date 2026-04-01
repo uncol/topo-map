@@ -7,6 +7,8 @@ TypeScript module for an interactive network topology map with:
 - snap-to-grid and dynamic alignment guides,
 - JSON serialization/deserialization.
 
+The repository also contains `WorkflowEditor`, a workflow-specific editor with pan/edit modes, state transitions, wheel zoom, and alignment guides for dragged states.
+
 ## Install
 
 ```bash

@@ -89,6 +89,8 @@ export interface WorkflowEditorConfig {
   minScale?: number;
   maxScale?: number;
   gridSize?: number;
+  guidesEnabled?: boolean;
+  guideThreshold?: number;
   fitToPageOnLoad?: boolean;
   wheelZoom?: boolean;
 }

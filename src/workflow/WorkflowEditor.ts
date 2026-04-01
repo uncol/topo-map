@@ -18,8 +18,10 @@ import { createWorkflowEditorState, resolveWorkflowEditorConfig } from './intern
 import { clearSelection, getSelection, selectCell } from './internal/selection';
 import { cancelScheduledGraphSync, flushScheduledGraphSync, markDocumentChanged, performGraphSync, scheduleGraphSync, setDirty, syncWorkflowFromGraph, withDocumentSyncSuspended } from './internal/sync';
 import { decorateState, decorateStateById, decorateStates, refreshAllLinks, refreshLink } from './internal/styling';
+import { WorkflowGuidesManager } from './internal/GuidesManager';
 import { autoLayout, createDefaultLink, exportForSave, loadWorkflow, prepareLinkData, toJSON, addState, removeSelected, updateState, updateTransition, updateWorkflowMeta } from './internal/mutations';
 import type { WorkflowEditorRuntime } from './internal/runtime';
+import { WorkflowSpatialIndex } from './internal/spatialIndex';
 import { applyViewport, clientToLocalPoint, fitToContent, resize, setZoom, zoomIn, zoomOut } from './internal/viewport';
 
 const PAPER_BACKGROUND = '#f8fafc';
@@ -62,6 +64,18 @@ export class WorkflowEditor extends EventTarget {
       validateConnection: (sourceView, sourceMagnet, targetView, targetMagnet) =>
         validateConnection(runtime, sourceView, sourceMagnet, targetView, targetMagnet)
     });
+    const spatialIndex = new WorkflowSpatialIndex(graph);
+    const guidesManager = new WorkflowGuidesManager(
+      paper,
+      () => ({
+        scale: runtime.state.scale,
+        tx: runtime.state.tx,
+        ty: runtime.state.ty
+      }),
+      resolvedConfig.guideThreshold,
+      (rect) => spatialIndex.searchNearby(rect)
+    );
+    guidesManager.setEnabled(resolvedConfig.guidesEnabled);
 
     Object.assign(runtime, {
       host: this,
@@ -70,6 +84,8 @@ export class WorkflowEditor extends EventTarget {
       graph,
       paper,
       paperHost,
+      spatialIndex,
+      guidesManager,
       emitDirtyChange: (dirty: boolean) => {
         emitDirtyChange(this, dirty);
       },
@@ -131,6 +147,18 @@ export class WorkflowEditor extends EventTarget {
       },
       setZoom: (nextScale: number, focus?: WorkflowPoint) => {
         setZoom(runtime, nextScale, focus);
+      },
+      rebuildSpatialIndex: () => {
+        spatialIndex.rebuildIndex();
+      },
+      updateGuidesForElement: (element: joint.dia.Element) => {
+        guidesManager.updateForElement(element);
+      },
+      clearGuides: () => {
+        guidesManager.clear();
+      },
+      setGuidesEnabled: (enabled: boolean) => {
+        guidesManager.setEnabled(enabled);
       },
       withDocumentSyncSuspended: (callback: () => void) => {
         withDocumentSyncSuspended(runtime, callback);
@@ -224,6 +252,8 @@ export class WorkflowEditor extends EventTarget {
     if (this.runtime.state.mode === mode) {
       return;
     }
+    this.runtime.clearGuides();
+    this.runtime.state.activeDragElementId = null;
     this.runtime.state.mode = mode;
     this.runtime.state.panState = null;
     this.runtime.paperHost.style.cursor = mode === 'pan' ? 'grab' : 'default';
@@ -254,7 +284,15 @@ export class WorkflowEditor extends EventTarget {
     fitToContent(this.runtime, padding);
   }
 
+  public setGuidesEnabled(enabled: boolean): void {
+    this.runtime.setGuidesEnabled(enabled);
+    if (!enabled) {
+      this.runtime.clearGuides();
+    }
+  }
+
   public notifyResize(): void {
+    this.runtime.clearGuides();
     resize(this.runtime);
   }
 
@@ -266,6 +304,9 @@ export class WorkflowEditor extends EventTarget {
     cancelScheduledGraphSync(this.runtime);
     clearPendingEndLinkCreationTimeout(this.runtime);
     this.resizeObserver?.disconnect();
+    this.runtime.clearGuides();
+    this.runtime.guidesManager.destroy();
+    this.runtime.spatialIndex.destroy();
     this.runtime.paper.remove();
     this.runtime.config.mainContainer.replaceChildren();
   }
