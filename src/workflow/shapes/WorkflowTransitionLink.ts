@@ -13,7 +13,7 @@ export const WorkflowTransitionLink = joint.shapes.standard.Link.define('workflo
     }
   },
   router: {
-    name: 'metro'
+    name: 'orthogonal'
   },
   connector: {
     name: 'rounded'

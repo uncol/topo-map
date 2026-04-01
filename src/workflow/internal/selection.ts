@@ -1,6 +1,7 @@
 import * as joint from '@joint/core';
 import { clonePlain } from '../clonePlain';
 import type { WorkflowSelection } from '../types';
+import { createWorkflowLinkTools } from './linkTools';
 import type { WorkflowEditorRuntime } from './runtime';
 
 const STATE_HIGHLIGHT_ID = 'workflow:state-highlight';
@@ -98,18 +99,7 @@ export function updateTools(runtime: WorkflowEditorRuntime): void {
       tools.push(new removeToolCtor({ x: '100%', y: 0, offset: { x: -12, y: 12 } }));
     }
   } else if (cell.isLink()) {
-    const verticesToolCtor = (joint.linkTools as { Vertices?: new () => joint.dia.ToolView }).Vertices;
-    const segmentsToolCtor = (joint.linkTools as { Segments?: new () => joint.dia.ToolView }).Segments;
-    const removeToolCtor = (joint.linkTools as { Remove?: new () => joint.dia.ToolView }).Remove;
-    if (verticesToolCtor) {
-      tools.push(new verticesToolCtor());
-    }
-    if (segmentsToolCtor) {
-      tools.push(new segmentsToolCtor());
-    }
-    if (removeToolCtor) {
-      tools.push(new removeToolCtor());
-    }
+    tools.push(...createWorkflowLinkTools(runtime.config.gridSize));
   }
 
   if (tools.length > 0) {

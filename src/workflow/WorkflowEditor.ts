@@ -56,7 +56,7 @@ export class WorkflowEditor extends EventTarget {
       background: { color: PAPER_BACKGROUND },
       async: false,
       linkPinning: false,
-      defaultRouter: { name: 'metro' },
+      defaultRouter: { name: 'orthogonal' },
       defaultConnector: { name: 'rounded' },
       defaultLink: () => createDefaultLink(),
       interactive: (cellView, eventName) => resolveInteractivity(runtime, cellView, eventName),
