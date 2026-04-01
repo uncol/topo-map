@@ -18,6 +18,7 @@ import type { WorkflowEditorRuntime } from './runtime';
 export function loadWorkflow(runtime: WorkflowEditorRuntime, input: unknown): void {
   runtime.cancelScheduledGraphSync();
   runtime.state.activeDragElementId = null;
+  runtime.state.activeVertexDrag = null;
   runtime.clearGuides();
   const workflow = normalizeWorkflowDocument(input);
   const needsLayout = !hasExplicitStatePositions(workflow);
@@ -188,6 +189,7 @@ export function updateTransition(
 export function removeSelected(runtime: WorkflowEditorRuntime): boolean {
   runtime.flushScheduledGraphSync();
   runtime.state.activeDragElementId = null;
+  runtime.state.activeVertexDrag = null;
   runtime.clearGuides();
   if (!runtime.state.selectedCellId) {
     return false;
@@ -215,6 +217,7 @@ export function removeSelected(runtime: WorkflowEditorRuntime): boolean {
 export function autoLayout(runtime: WorkflowEditorRuntime): void {
   runtime.flushScheduledGraphSync();
   runtime.state.activeDragElementId = null;
+  runtime.state.activeVertexDrag = null;
   runtime.clearGuides();
   runtime.withDocumentSyncSuspended(() => {
     applyWorkflowLayout(runtime.graph);

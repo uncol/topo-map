@@ -38,6 +38,7 @@ function createRuntime(): {
     state: {
       mode: 'edit',
       activeDragElementId: null,
+      activeVertexDrag: null,
       panState: null,
       tx: 0,
       ty: 0,
@@ -63,6 +64,7 @@ function createRuntime(): {
     decorateState: vi.fn(),
     scheduleGraphSync: vi.fn(),
     updateGuidesForElement: vi.fn(),
+    updateGuidesForPoint: vi.fn(),
     clearGuides: vi.fn(),
     setZoom: vi.fn()
   } as unknown as WorkflowEditorRuntime;
@@ -78,6 +80,15 @@ function createState(id: string): joint.shapes.standard.Rectangle {
     type: 'workflow.State',
     position: { x: 20, y: 20 },
     size: { width: 100, height: 40 }
+  });
+}
+
+function createLink(id: string): joint.shapes.standard.Link {
+  return new joint.shapes.standard.Link({
+    id,
+    type: 'workflow.Transition',
+    source: { id: 'state-a' },
+    target: { id: 'state-b' }
   });
 }
 
@@ -105,10 +116,15 @@ describe('workflow bindings guides integration', () => {
   it('clears guides and drag state on pointerup', () => {
     const { runtime, handlers } = createRuntime();
     runtime.state.activeDragElementId = 'state-a';
+    runtime.state.activeVertexDrag = {
+      linkId: 'link-a',
+      index: 0
+    };
 
     handlers.get('cell:pointerup')?.();
 
     expect(runtime.state.activeDragElementId).toBeNull();
+    expect(runtime.state.activeVertexDrag).toBeNull();
     expect(runtime.clearGuides).toHaveBeenCalledTimes(1);
     expect(runtime.endLinkCreationSoon).toHaveBeenCalledTimes(1);
   });
@@ -126,5 +142,25 @@ describe('workflow bindings guides integration', () => {
 
     expect(runtime.state.activeDragElementId).toBe('state-a');
     expect(runtime.updateGuidesForElement).not.toHaveBeenCalled();
+  });
+
+  it('updates point guides while dragging a link vertex in edit mode', () => {
+    const { runtime, graph } = createRuntime();
+    const link = createLink('link-a');
+    graph.addCell(link);
+    runtime.state.activeVertexDrag = {
+      linkId: 'link-a',
+      index: 0
+    };
+
+    link.vertices([{ x: 140, y: 90 }]);
+
+    expect(runtime.updateGuidesForPoint).toHaveBeenCalledWith({
+      x: 140,
+      y: 90
+    });
+    expect(runtime.scheduleGraphSync).toHaveBeenCalledWith({
+      selectionChange: false
+    });
   });
 });

@@ -99,7 +99,21 @@ export function updateTools(runtime: WorkflowEditorRuntime): void {
       tools.push(new removeToolCtor({ x: '100%', y: 0, offset: { x: -12, y: 12 } }));
     }
   } else if (cell.isLink()) {
-    tools.push(...createWorkflowLinkTools(runtime.config.gridSize));
+    tools.push(
+      ...createWorkflowLinkTools(runtime.config.gridSize, {
+        onVertexMoveStart: (link, index) => {
+          runtime.state.activeDragElementId = null;
+          runtime.state.activeVertexDrag = {
+            linkId: String(link.id),
+            index
+          };
+        },
+        onVertexMoveEnd: () => {
+          runtime.state.activeVertexDrag = null;
+          runtime.clearGuides();
+        }
+      })
+    );
   }
 
   if (tools.length > 0) {

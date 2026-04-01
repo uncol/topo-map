@@ -1,6 +1,6 @@
 import * as joint from '@joint/core';
-import type { Rect } from '../../core/types';
-import { createGuideSearchRect, getElementRect, resolveGuides, type GuideMatch } from './guides';
+import type { Point, Rect } from '../../core/types';
+import { createGuideSearchRect, getElementRect, resolveGuides, resolvePointGuides, type GuideMatch } from './guides';
 
 const GUIDE_STROKE = '#0ea5e9';
 const GUIDE_SECONDARY_STROKE = '#22c55e';
@@ -85,6 +85,26 @@ export class WorkflowGuidesManager {
       .filter((other) => other.id !== element.id)
       .map((other) => getElementRect(other));
     const { xGuide, yGuide } = resolveGuides(movingRect, nearbyRects, tolerance);
+
+    this.renderGuides(xGuide, yGuide);
+  }
+
+  public updateForPoint(point: Point): void {
+    if (!this.enabled) {
+      this.clear();
+      return;
+    }
+
+    const scale = Math.max(this.getViewportSnapshot().scale, 0.0001);
+    const tolerance = this.tolerancePx / scale;
+    const searchRect = createGuideSearchRect({
+      x: point.x,
+      y: point.y,
+      width: 0,
+      height: 0
+    });
+    const nearbyRects = this.findNearby(searchRect).map((other) => getElementRect(other));
+    const { xGuide, yGuide } = resolvePointGuides(point, nearbyRects, tolerance);
 
     this.renderGuides(xGuide, yGuide);
   }

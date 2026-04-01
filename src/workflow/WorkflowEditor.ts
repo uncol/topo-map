@@ -154,6 +154,9 @@ export class WorkflowEditor extends EventTarget {
       updateGuidesForElement: (element: joint.dia.Element) => {
         guidesManager.updateForElement(element);
       },
+      updateGuidesForPoint: (point: WorkflowPoint) => {
+        guidesManager.updateForPoint(point);
+      },
       clearGuides: () => {
         guidesManager.clear();
       },
@@ -254,6 +257,7 @@ export class WorkflowEditor extends EventTarget {
     }
     this.runtime.clearGuides();
     this.runtime.state.activeDragElementId = null;
+    this.runtime.state.activeVertexDrag = null;
     this.runtime.state.mode = mode;
     this.runtime.state.panState = null;
     this.runtime.paperHost.style.cursor = mode === 'pan' ? 'grab' : 'default';

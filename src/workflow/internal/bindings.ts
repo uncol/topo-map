@@ -47,6 +47,7 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
       return;
     }
     runtime.state.activeDragElementId = null;
+    runtime.state.activeVertexDrag = null;
     runtime.clearGuides();
     runtime.selectCell(String(elementView.model.id));
     runtime.beginLinkCreation();
@@ -56,6 +57,7 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
     if (!isPrimaryMouseButton(event) || runtime.state.mode !== 'edit') {
       return;
     }
+    runtime.state.activeVertexDrag = null;
     runtime.state.activeDragElementId = String(elementView.model.id);
   });
 
@@ -68,6 +70,7 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
       return;
     }
     runtime.state.activeDragElementId = null;
+    runtime.state.activeVertexDrag = null;
     runtime.clearGuides();
     const clientPoint = resolveClientPoint(event);
     if (!clientPoint) {
@@ -98,6 +101,7 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
   runtime.paper.on('blank:pointerup', () => {
     runtime.state.panState = null;
     runtime.state.activeDragElementId = null;
+    runtime.state.activeVertexDrag = null;
     runtime.clearGuides();
     runtime.paperHost.style.cursor = runtime.state.mode === 'pan' ? 'grab' : 'default';
     runtime.endLinkCreationSoon();
@@ -132,11 +136,13 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
 
   runtime.paper.on('cell:pointerup', () => {
     runtime.state.activeDragElementId = null;
+    runtime.state.activeVertexDrag = null;
     runtime.clearGuides();
     runtime.endLinkCreationSoon();
   });
 
   runtime.paper.on('link:connect', (linkView) => {
+    runtime.state.activeVertexDrag = null;
     runtime.clearGuides();
     runtime.prepareLinkData(linkView.model);
     runtime.syncWorkflowFromGraph();
@@ -172,6 +178,18 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
   runtime.graph.on('change:vertices', (cell) => {
     if (!cell.isLink() || runtime.state.suspendDocumentSyncDepth > 0) {
       return;
+    }
+    const activeVertexDrag = runtime.state.activeVertexDrag;
+    if (runtime.state.mode === 'edit' && activeVertexDrag && activeVertexDrag.linkId === String(cell.id)) {
+      const vertex = cell.vertices()[activeVertexDrag.index];
+      if (vertex) {
+        runtime.updateGuidesForPoint({
+          x: vertex.x,
+          y: vertex.y
+        });
+      } else {
+        runtime.clearGuides();
+      }
     }
     runtime.scheduleGraphSync({
       selectionChange: runtime.state.selectedCellId === String(cell.id)

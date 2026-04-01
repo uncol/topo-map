@@ -41,6 +41,7 @@ export interface WorkflowEditorRuntime {
   setZoom: (nextScale: number, focus?: WorkflowPoint) => void;
   rebuildSpatialIndex: () => void;
   updateGuidesForElement: (element: joint.dia.Element) => void;
+  updateGuidesForPoint: (point: WorkflowPoint) => void;
   clearGuides: () => void;
   setGuidesEnabled: (enabled: boolean) => void;
   withDocumentSyncSuspended: (callback: () => void) => void;

@@ -1,6 +1,6 @@
 import type * as joint from '@joint/core';
 import { inflateRect } from '../../core/geometry';
-import type { Rect } from '../../core/types';
+import type { Point, Rect } from '../../core/types';
 
 export const GUIDE_SEARCH_PADDING = 500;
 
@@ -56,6 +56,21 @@ export function resolveGuides(movingRect: Rect, nearbyRects: Rect[], tolerance: 
   };
 }
 
+export function resolvePointGuides(point: Point, nearbyRects: Rect[], tolerance: number): ResolvedGuides {
+  let xGuide: GuideMatch | null = null;
+  let yGuide: GuideMatch | null = null;
+
+  nearbyRects.forEach((rect) => {
+    xGuide = pickBetterMatch(xGuide, findBestPointMatch(point.x, toGuideCandidates(rect, 'x'), 'x', tolerance));
+    yGuide = pickBetterMatch(yGuide, findBestPointMatch(point.y, toGuideCandidates(rect, 'y'), 'y', tolerance));
+  });
+
+  return {
+    xGuide,
+    yGuide
+  };
+}
+
 function toGuideCandidates(rect: Rect, axis: 'x' | 'y'): GuideCandidate[] {
   if (axis === 'x') {
     return [
@@ -97,6 +112,34 @@ function findBestMatch(
       };
       best = pickBetterMatch(best, next);
     });
+  });
+
+  return best;
+}
+
+function findBestPointMatch(
+  sourceValue: number,
+  candidates: GuideCandidate[],
+  axis: 'x' | 'y',
+  tolerance: number
+): GuideMatch | null {
+  let best: GuideMatch | null = null;
+
+  candidates.forEach((candidate) => {
+    if (candidate.axis !== axis) {
+      return;
+    }
+
+    const delta = Math.abs(sourceValue - candidate.value);
+    if (delta > tolerance) {
+      return;
+    }
+
+    const next: GuideMatch = {
+      ...candidate,
+      delta
+    };
+    best = pickBetterMatch(best, next);
   });
 
   return best;

@@ -15,6 +15,11 @@ export interface PanState {
   ty: number;
 }
 
+export interface ActiveVertexDragState {
+  linkId: string;
+  index: number;
+}
+
 export type WorkflowEditorConfigResolved = Required<Omit<WorkflowEditorConfig, 'mainContainer'>> &
   Pick<WorkflowEditorConfig, 'mainContainer'>;
 
@@ -27,6 +32,7 @@ export interface WorkflowEditorState {
   ty: number;
   panState: PanState | null;
   activeDragElementId: string | null;
+  activeVertexDrag: ActiveVertexDragState | null;
   linkCreationInProgress: boolean;
   pendingGraphSyncTimeout: ReturnType<typeof globalThis.setTimeout> | null;
   pendingEndLinkCreationTimeout: ReturnType<typeof globalThis.setTimeout> | null;
@@ -63,6 +69,7 @@ export function createWorkflowEditorState(
     ty: 0,
     panState: null,
     activeDragElementId: null,
+    activeVertexDrag: null,
     linkCreationInProgress: false,
     pendingGraphSyncTimeout: null,
     pendingEndLinkCreationTimeout: null,

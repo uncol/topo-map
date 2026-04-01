@@ -1,5 +1,10 @@
 import * as joint from '@joint/core';
 
+interface VertexToolCallbacks {
+  onVertexMoveStart?: (link: joint.dia.Link, index: number) => void;
+  onVertexMoveEnd?: (link: joint.dia.Link) => void;
+}
+
 type EditableLinkView = joint.dia.LinkView & {
   getVertexIndex(x: number, y: number): number;
   checkMouseleave(event: joint.dia.Event): void;
@@ -22,6 +27,8 @@ type VerticesToolInstance = joint.dia.ToolView<joint.dia.LinkView> & {
     handle: { options: { index: number }; position(x: number, y: number): void },
     event: joint.dia.Event
   ): void;
+  onHandleWillChange(handle: { options: { index: number } }, event: joint.dia.Event): void;
+  onHandleChanged(handle: { options: { index: number } }, event: joint.dia.Event): void;
   onPathPointerDown(event: joint.dia.Event): void;
 };
 
@@ -46,7 +53,7 @@ export function getWorkflowVertexToolOptions(): joint.linkTools.Vertices.Options
   };
 }
 
-function createVerticesTool(gridSize: number): joint.dia.ToolView | null {
+function createVerticesTool(gridSize: number, callbacks?: VertexToolCallbacks): joint.dia.ToolView | null {
   const verticesToolCtor = (joint.linkTools as {
     Vertices?: new (options?: joint.linkTools.Vertices.Options) => joint.linkTools.Vertices;
   }).Vertices;
@@ -55,6 +62,21 @@ function createVerticesTool(gridSize: number): joint.dia.ToolView | null {
   }
 
   const tool = new verticesToolCtor(getWorkflowVertexToolOptions()) as unknown as VerticesToolInstance;
+
+  const baseOnHandleWillChange =
+    tool.onHandleWillChange?.bind(tool) ??
+    ((_handle: { options: { index: number } }, _event: joint.dia.Event): void => undefined);
+  const baseOnHandleChanged =
+    tool.onHandleChanged?.bind(tool) ??
+    ((_handle: { options: { index: number } }, _event: joint.dia.Event): void => undefined);
+
+  tool.onHandleWillChange = function onHandleWillChange(
+    handle: { options: { index: number } },
+    event: joint.dia.Event
+  ): void {
+    baseOnHandleWillChange(handle, event);
+    callbacks?.onVertexMoveStart?.(this.relatedView.model, handle.options.index);
+  };
 
   tool.onHandleChanging = function onHandleChanging(
     handle: { options: { index: number }; position(x: number, y: number): void },
@@ -77,6 +99,14 @@ function createVerticesTool(gridSize: number): joint.dia.ToolView | null {
         y
       );
     }
+  };
+
+  tool.onHandleChanged = function onHandleChanged(
+    handle: { options: { index: number } },
+    event: joint.dia.Event
+  ): void {
+    baseOnHandleChanged(handle, event);
+    callbacks?.onVertexMoveEnd?.(this.relatedView.model);
   };
 
   tool.onPathPointerDown = function onPathPointerDown(event: joint.dia.Event): void {
@@ -104,10 +134,10 @@ function createVerticesTool(gridSize: number): joint.dia.ToolView | null {
   return tool as unknown as joint.dia.ToolView;
 }
 
-export function createWorkflowLinkTools(gridSize: number): joint.dia.ToolView[] {
+export function createWorkflowLinkTools(gridSize: number, callbacks?: VertexToolCallbacks): joint.dia.ToolView[] {
   const tools: joint.dia.ToolView[] = [];
 
-  const verticesTool = createVerticesTool(gridSize);
+  const verticesTool = createVerticesTool(gridSize, callbacks);
   if (verticesTool) {
     tools.push(verticesTool);
   }
