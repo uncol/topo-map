@@ -49,6 +49,8 @@ import { EditMode } from './modes/EditMode';
 import { PanMode } from './modes/PanMode';
 import { ZoomToAreaMode } from './modes/ZoomToAreaMode';
 import { setStencilDir } from './shapes/ImageIconElement';
+import { TopologyMoveHistory } from './topology/TopologyMoveHistory';
+import { bindHistoryShortcuts } from './history/bindHistoryShortcuts';
 
 const DEFAULT_INITIAL_SCALE = 1;
 const DEFAULT_MIN_SCALE = 0.1;
@@ -93,6 +95,8 @@ export class Topology {
 
   private readonly resetViewCommand: ResetViewCommand;
 
+  private readonly moveHistory: TopologyMoveHistory;
+
   private readonly debug: Debug;
 
   private readonly events: InteractionEvents;
@@ -112,6 +116,8 @@ export class Topology {
   private previousViewportSnapshot: ViewportStateSnapshot | null = null;
 
   private readonly unsubscribeViewportEvents: () => void;
+
+  private readonly unbindHistoryShortcuts: () => void;
 
   private readonly onNodeSearchRequestBound = (event: Event): void => {
     this.handleNodeSearchRequest(event);
@@ -187,10 +193,21 @@ export class Topology {
       DEFAULT_PADDING
     );
     this.nodeSearchIndexManager = new NodeSearchIndexManager(this.diagramService.getGraph());
+    this.moveHistory = new TopologyMoveHistory(this.diagramService.getGraph());
 
     const panMode = new PanMode(this.panManager, this.diagramService);
     const zoomToAreaMode = new ZoomToAreaMode(this.diagramService, this.zoomManager, this.viewportState);
-    this.editMode = new EditMode(this.diagramService, this.guidesManager, this.snapManager);
+    this.editMode = new EditMode(this.diagramService, this.guidesManager, this.snapManager, {
+      onNodeMoveStart: (element) => {
+        this.moveHistory.begin(element);
+      },
+      onNodeMoveEnd: (element) => {
+        this.moveHistory.commit(element);
+      },
+      onNodeMoveCancel: () => {
+        this.moveHistory.cancel();
+      }
+    });
     this.editMode.setGuidesEnabled(true);
 
     this.modeManager = new ModeManager(
@@ -217,6 +234,10 @@ export class Topology {
     this.debug.setup(this.diagramService.getGraph(), this.diagramService.getPaper(), (listener) =>
       this.viewportState.subscribe(listener)
     );
+    this.unbindHistoryShortcuts = bindHistoryShortcuts(this.diagramService.getPaperHost(), {
+      undo: () => this.undo(),
+      redo: () => this.redo()
+    });
     this.config.onReady?.();
     this.logDebug('initialized', this.config);
   }
@@ -242,6 +263,7 @@ export class Topology {
   public loadDocument(input: MapDocument | MapDocumentJSON): void {
     this.logDebug('loadDocument:start');
     this.events.clearInteractionState();
+    this.moveHistory.clear();
     const document = input instanceof MapDocument ? input : MapDocument.fromJSON(input);
 
     this.applyMapPaperConfig(document.paperConfig);
@@ -435,6 +457,22 @@ export class Topology {
     this.resetViewCommand.execute();
   }
 
+  public undo(): boolean {
+    return this.moveHistory.undo();
+  }
+
+  public redo(): boolean {
+    return this.moveHistory.redo();
+  }
+
+  public canUndo(): boolean {
+    return this.moveHistory.canUndo();
+  }
+
+  public canRedo(): boolean {
+    return this.moveHistory.canRedo();
+  }
+
   public notifyResize(payload: ResizePayload): void {
     if (payload.main) {
       this.applyResize('main', payload.main);
@@ -460,6 +498,7 @@ export class Topology {
     this.config.mainContainer.removeEventListener(UNHIGHLIGHT_REQUEST_EVENT, this.onUnhighlightRequestBound as EventListener);
     this.events.teardown();
     this.events.clearInteractionState();
+    this.unbindHistoryShortcuts();
     this.debug.teardown(this.diagramService.getGraph(), this.diagramService.getPaper());
     this.modeManager.destroy();
     this.zoomManager.destroy();

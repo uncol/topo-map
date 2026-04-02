@@ -6,6 +6,7 @@ import type {
 } from '../types';
 import type { WorkflowEditorConfigResolved, WorkflowEditorState } from './editorState';
 import type { WorkflowGuidesManager } from './GuidesManager';
+import type { WorkflowHistoryController } from './history';
 import type { WorkflowSpatialIndex } from './spatialIndex';
 
 export interface WorkflowEditorRuntime {
@@ -17,6 +18,7 @@ export interface WorkflowEditorRuntime {
   paperHost: HTMLDivElement;
   spatialIndex: WorkflowSpatialIndex;
   guidesManager: WorkflowGuidesManager;
+  history: WorkflowHistoryController;
   emitDirtyChange: (dirty: boolean) => void;
   emitSelectionChange: () => void;
   emitDocumentChange: () => void;

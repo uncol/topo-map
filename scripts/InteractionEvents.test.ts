@@ -237,7 +237,7 @@ describe('InteractionEvents', () => {
     elementPointerDblClick?.(elementView, { button: 0 }, 10, 20);
     vi.runAllTimers();
 
-    expect(events.map((event) => event.type)).toEqual(['topo:cell:highlight', 'topo:element:pointerdblclick']);
-    expect(addSpy).toHaveBeenCalledTimes(1);
+    expect(events.map((event) => event.type)).toEqual(['topo:element:pointerdblclick']);
+    expect(addSpy).toHaveBeenCalledTimes(0);
   });
 });

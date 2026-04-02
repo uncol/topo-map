@@ -52,6 +52,22 @@ function createRuntime(): {
       style: {},
       addEventListener: vi.fn()
     },
+    history: {
+      beginGesture: vi.fn(),
+      commitGesture: vi.fn(),
+      cancelGesture: vi.fn(),
+      beginImplicitChange: vi.fn(),
+      commitImplicitChange: vi.fn(),
+      cancelImplicitChange: vi.fn(),
+      recordChange: vi.fn(),
+      reset: vi.fn(),
+      undo: vi.fn(),
+      redo: vi.fn(),
+      canUndo: vi.fn(),
+      canRedo: vi.fn(),
+      isReplayInProgress: vi.fn(),
+      syncDirtyState: vi.fn()
+    },
     selectCell: vi.fn(),
     beginLinkCreation: vi.fn(),
     endLinkCreationSoon: vi.fn(),

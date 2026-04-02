@@ -22,6 +22,7 @@ export function cancelScheduledGraphSync(runtime: WorkflowEditorRuntime): void {
     runtime.state.pendingGraphSyncTimeout = null;
   }
   runtime.state.pendingGraphSyncSelectionChange = false;
+  runtime.history.cancelImplicitChange();
 }
 
 export function syncWorkflowFromGraph(runtime: WorkflowEditorRuntime): void {
@@ -52,6 +53,7 @@ export function flushScheduledGraphSync(runtime: WorkflowEditorRuntime): void {
   runtime.state.pendingGraphSyncSelectionChange = false;
   performGraphSync(runtime);
   runtime.emitDocumentChange();
+  runtime.history.commitImplicitChange();
   if (!shouldEmitSelectionChange) {
     return;
   }
@@ -68,6 +70,7 @@ export function scheduleGraphSync(
   runtime: WorkflowEditorRuntime,
   options: { selectionChange?: boolean } = {}
 ): void {
+  runtime.history.beginImplicitChange();
   runtime.state.pendingGraphSyncSelectionChange ||= options.selectionChange ?? false;
   setDirty(runtime, true);
   if (runtime.state.pendingGraphSyncTimeout !== null) {

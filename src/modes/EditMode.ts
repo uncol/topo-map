@@ -12,6 +12,12 @@ interface DragState {
   startPosition: Point;
 }
 
+export interface EditModeHistoryHooks {
+  onNodeMoveStart?: (element: joint.dia.Element) => void;
+  onNodeMoveEnd?: (element: joint.dia.Element) => void;
+  onNodeMoveCancel?: () => void;
+}
+
 export class EditMode implements InteractionMode {
   private readonly diagramService: DiagramService;
 
@@ -25,10 +31,18 @@ export class EditMode implements InteractionMode {
 
   private dragState: DragState | null = null;
 
-  public constructor(diagramService: DiagramService, guidesManager: GuidesManager, snapManager: SnapManager) {
+  private readonly historyHooks: EditModeHistoryHooks;
+
+  public constructor(
+    diagramService: DiagramService,
+    guidesManager: GuidesManager,
+    snapManager: SnapManager,
+    historyHooks: EditModeHistoryHooks = {}
+  ) {
     this.diagramService = diagramService;
     this.guidesManager = guidesManager;
     this.snapManager = snapManager;
+    this.historyHooks = historyHooks;
   }
 
   public setSnapEnabled(enabled: boolean): void {
@@ -62,6 +76,7 @@ export class EditMode implements InteractionMode {
     this.active = false;
     this.dragState = null;
     this.guidesManager.clear();
+    this.historyHooks.onNodeMoveCancel?.();
   }
 
   public onBlankPointerDown(_event: joint.dia.Event, _x: number, _y: number): void {
@@ -96,6 +111,7 @@ export class EditMode implements InteractionMode {
       startPointer: pointer,
       startPosition: { x: position.x, y: position.y }
     };
+    this.historyHooks.onNodeMoveStart?.(model);
   }
 
   public onElementPointerMove(_elementView: joint.dia.ElementView, event: joint.dia.Event, x: number, y: number): void {
@@ -152,6 +168,10 @@ export class EditMode implements InteractionMode {
     if (!this.dragState) {
       return;
     }
+    // TODO: If Topology history is expanded beyond node moves, add separate transaction
+    // boundaries here for link gestures and explicit property mutations instead of trying
+    // to infer them indirectly from low-level graph change events.
+    this.historyHooks.onNodeMoveEnd?.(this.dragState.element);
     this.dragState = null;
     this.guidesManager.clear();
   }

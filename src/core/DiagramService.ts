@@ -14,6 +14,8 @@ export class DiagramService {
 
   private readonly paper: joint.dia.Paper;
 
+  private readonly paperHost: HTMLDivElement;
+
   private readonly viewportState: ViewportState;
 
   private readonly asyncRendering: boolean;
@@ -40,6 +42,7 @@ export class DiagramService {
     this.graph = new joint.dia.Graph({}, { cellNamespace });
     ensureIconCenterAnchorRegistered();
     const paperHost = this.createPaperHost(container, 'topology-main-paper-host');
+    this.paperHost = paperHost;
 
     this.paper = new joint.dia.Paper({
       el: paperHost,
@@ -115,6 +118,10 @@ export class DiagramService {
 
   public getPaper(): joint.dia.Paper {
     return this.paper;
+  }
+
+  public getPaperHost(): HTMLDivElement {
+    return this.paperHost;
   }
 
   public setViewportPredicate(predicate: ((view: joint.mvc.View<joint.mvc.Model, SVGElement>) => boolean) | null): void {

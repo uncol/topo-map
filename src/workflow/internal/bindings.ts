@@ -46,6 +46,7 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
     if (!isOutPortGroup(resolvePortGroup(magnetNode))) {
       return;
     }
+    runtime.history.beginGesture('link-change');
     runtime.state.activeDragElementId = null;
     runtime.state.activeVertexDrag = null;
     runtime.clearGuides();
@@ -57,8 +58,17 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
     if (!isPrimaryMouseButton(event) || runtime.state.mode !== 'edit') {
       return;
     }
+    runtime.history.beginGesture('state-move');
     runtime.state.activeVertexDrag = null;
     runtime.state.activeDragElementId = String(elementView.model.id);
+  });
+
+  runtime.paper.on('link:pointerdown', (_linkView, event) => {
+    if (!isPrimaryMouseButton(event) || runtime.state.mode !== 'edit') {
+      return;
+    }
+    runtime.history.beginGesture('link-change');
+    runtime.state.activeDragElementId = null;
   });
 
   runtime.paper.on('blank:pointerclick', () => {
@@ -103,6 +113,8 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
     runtime.state.activeDragElementId = null;
     runtime.state.activeVertexDrag = null;
     runtime.clearGuides();
+    runtime.history.commitGesture('state-move');
+    runtime.history.commitGesture('link-change');
     runtime.paperHost.style.cursor = runtime.state.mode === 'pan' ? 'grab' : 'default';
     runtime.endLinkCreationSoon();
   });
@@ -138,6 +150,8 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
     runtime.state.activeDragElementId = null;
     runtime.state.activeVertexDrag = null;
     runtime.clearGuides();
+    runtime.history.commitGesture('state-move');
+    runtime.history.commitGesture('link-change');
     runtime.endLinkCreationSoon();
   });
 
@@ -149,6 +163,7 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
     runtime.markDocumentChanged();
     runtime.endLinkCreation();
     runtime.selectCell(String(linkView.model.id));
+    runtime.history.commitGesture('link-change');
   });
 
   runtime.paper.on('cell:mouseenter', (cellView) => {
@@ -190,6 +205,24 @@ export function bindEvents(runtime: WorkflowEditorRuntime): void {
       } else {
         runtime.clearGuides();
       }
+    }
+    runtime.scheduleGraphSync({
+      selectionChange: runtime.state.selectedCellId === String(cell.id)
+    });
+  });
+
+  runtime.graph.on('change:source', (cell) => {
+    if (!cell.isLink() || runtime.state.suspendDocumentSyncDepth > 0) {
+      return;
+    }
+    runtime.scheduleGraphSync({
+      selectionChange: runtime.state.selectedCellId === String(cell.id)
+    });
+  });
+
+  runtime.graph.on('change:target', (cell) => {
+    if (!cell.isLink() || runtime.state.suspendDocumentSyncDepth > 0) {
+      return;
     }
     runtime.scheduleGraphSync({
       selectionChange: runtime.state.selectedCellId === String(cell.id)

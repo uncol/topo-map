@@ -13,14 +13,24 @@ import {
   workflowToGraph
 } from '../workflowAdapter';
 import { generateId } from './helpers';
+import { captureWorkflowSnapshot } from './history';
 import type { WorkflowEditorRuntime } from './runtime';
 
-export function loadWorkflow(runtime: WorkflowEditorRuntime, input: unknown): void {
+interface ApplyWorkflowDocumentOptions {
+  dirty: boolean;
+  viewportMode?: 'load' | 'preserve';
+  emitDocumentChange?: boolean;
+}
+
+export function applyWorkflowDocument(
+  runtime: WorkflowEditorRuntime,
+  workflow: WorkflowDocument,
+  options: ApplyWorkflowDocumentOptions
+): void {
   runtime.cancelScheduledGraphSync();
   runtime.state.activeDragElementId = null;
   runtime.state.activeVertexDrag = null;
   runtime.clearGuides();
-  const workflow = normalizeWorkflowDocument(input);
   const needsLayout = !hasExplicitStatePositions(workflow);
 
   runtime.withDocumentSyncSuspended(() => {
@@ -33,17 +43,30 @@ export function loadWorkflow(runtime: WorkflowEditorRuntime, input: unknown): vo
     runtime.decorateStates();
     runtime.refreshAllLinks();
     runtime.selectCell(null);
-    runtime.setDirty(false);
+    runtime.setDirty(options.dirty);
   });
   runtime.rebuildSpatialIndex();
 
-  if (runtime.config.fitToPageOnLoad) {
+  if (options.viewportMode === 'preserve') {
+    runtime.applyViewport();
+  } else if (runtime.config.fitToPageOnLoad) {
     runtime.fitToContent();
   } else {
     runtime.applyViewport();
   }
 
-  runtime.emitDocumentChange();
+  if (options.emitDocumentChange !== false) {
+    runtime.emitDocumentChange();
+  }
+}
+
+export function loadWorkflow(runtime: WorkflowEditorRuntime, input: unknown): void {
+  const workflow = normalizeWorkflowDocument(input);
+  applyWorkflowDocument(runtime, workflow, {
+    dirty: false,
+    viewportMode: 'load'
+  });
+  runtime.history.reset(captureWorkflowSnapshot(runtime));
 }
 
 export function toJSON(runtime: WorkflowEditorRuntime): WorkflowDocument {
@@ -60,6 +83,7 @@ export function addState(
   position: WorkflowPoint,
   partial: Partial<WorkflowState> = {}
 ): string {
+  const before = captureWorkflowSnapshot(runtime);
   runtime.flushScheduledGraphSync();
   runtime.clearGuides();
   const resolvedPosition: WorkflowPoint =
@@ -107,10 +131,12 @@ export function addState(
   runtime.rebuildSpatialIndex();
   runtime.selectCell(state.id);
   runtime.markDocumentChanged();
+  runtime.history.recordChange(before, captureWorkflowSnapshot(runtime));
   return state.id;
 }
 
 export function updateWorkflowMeta(runtime: WorkflowEditorRuntime, patch: Partial<WorkflowDocument>): void {
+  const before = captureWorkflowSnapshot(runtime);
   runtime.flushScheduledGraphSync();
   runtime.state.workflow = {
     ...runtime.state.workflow,
@@ -121,6 +147,7 @@ export function updateWorkflowMeta(runtime: WorkflowEditorRuntime, patch: Partia
   runtime.selectCell(runtime.state.selectedCellId);
   runtime.emitValidationChange();
   runtime.markDocumentChanged();
+  runtime.history.recordChange(before, captureWorkflowSnapshot(runtime));
 }
 
 export function updateState(
@@ -128,6 +155,7 @@ export function updateState(
   id: string,
   patch: Partial<WorkflowState>
 ): boolean {
+  const before = captureWorkflowSnapshot(runtime);
   runtime.flushScheduledGraphSync();
   const cell = runtime.graph.getCell(id);
   if (!cell?.isElement()) {
@@ -149,6 +177,7 @@ export function updateState(
   if (runtime.state.selectedCellId === id) {
     runtime.emitSelectionChange();
   }
+  runtime.history.recordChange(before, captureWorkflowSnapshot(runtime));
   return true;
 }
 
@@ -157,6 +186,7 @@ export function updateTransition(
   id: string,
   patch: Partial<WorkflowTransition>
 ): boolean {
+  const before = captureWorkflowSnapshot(runtime);
   runtime.flushScheduledGraphSync();
   const cell = runtime.graph.getCell(id);
   if (!cell?.isLink()) {
@@ -183,10 +213,12 @@ export function updateTransition(
   if (runtime.state.selectedCellId === id) {
     runtime.emitSelectionChange();
   }
+  runtime.history.recordChange(before, captureWorkflowSnapshot(runtime));
   return true;
 }
 
 export function removeSelected(runtime: WorkflowEditorRuntime): boolean {
+  const before = captureWorkflowSnapshot(runtime);
   runtime.flushScheduledGraphSync();
   runtime.state.activeDragElementId = null;
   runtime.state.activeVertexDrag = null;
@@ -211,10 +243,12 @@ export function removeSelected(runtime: WorkflowEditorRuntime): boolean {
   runtime.rebuildSpatialIndex();
   runtime.selectCell(null);
   runtime.markDocumentChanged();
+  runtime.history.recordChange(before, captureWorkflowSnapshot(runtime));
   return true;
 }
 
 export function autoLayout(runtime: WorkflowEditorRuntime): void {
+  const before = captureWorkflowSnapshot(runtime);
   runtime.flushScheduledGraphSync();
   runtime.state.activeDragElementId = null;
   runtime.state.activeVertexDrag = null;
@@ -226,6 +260,7 @@ export function autoLayout(runtime: WorkflowEditorRuntime): void {
   runtime.rebuildSpatialIndex();
   runtime.fitToContent();
   runtime.markDocumentChanged();
+  runtime.history.recordChange(before, captureWorkflowSnapshot(runtime));
 }
 
 export function createDefaultLink(): joint.shapes.standard.Link {

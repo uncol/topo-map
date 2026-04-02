@@ -35,8 +35,8 @@ describe('FontIconElement', () => {
       height: 164
     });
     expect(element.attr('badgeNeText/text')).toBe(String.fromCodePoint(61972));
-    expect(element.attr('badgeNeText/class')).toBe('gf gf-ok');
-    expect(element.attr('badgeNeText/class')).toContain('gf-ok');
+    expect(element.attr('badgeNeText/class')).toBe('gf');
+    expect(element.attr('badgeNeText/class')).toContain('gf');
     expect(element.attr('badgeNeText/style')).toBe('--gf-size: 9.6px;');
     expect(element.attr('iconArea/width')).toBe(64);
     expect(element.attr('icon/class')).toContain('gf-1x');
@@ -77,7 +77,7 @@ describe('FontIconElement', () => {
     });
     expect(element.attr('icon/class')).toContain('gf-2x');
     expect(element.attr('icon/class')).toContain('gf-fail');
-    expect(element.attr('badgeNeText/class')).toBe('gf gf-fail');
+    expect(element.attr('badgeNeText/class')).toBe('gf');
     expect(element.attr('badgeNeText/style')).toBe('--gf-size: 19.2px;');
   });
 });

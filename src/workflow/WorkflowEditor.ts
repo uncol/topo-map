@@ -1,3 +1,4 @@
+import { bindHistoryShortcuts } from '../history/bindHistoryShortcuts';
 import * as joint from '@joint/core';
 import { workflowCellNamespace } from './shapes/workflowCellNamespace';
 import type {
@@ -13,13 +14,14 @@ import type {
 import { emitContextMenu, emitDirtyChange, emitDocumentChange, emitSelectionChange, emitValidationChange } from './internal/events';
 import { resolveInteractivity, bindEvents } from './internal/bindings';
 import { createDefaultWorkflow as createInitialWorkflow } from './internal/helpers';
+import { createWorkflowHistoryController } from './internal/history';
 import { clearPendingEndLinkCreationTimeout, beginLinkCreation, endLinkCreation, endLinkCreationSoon, setElementPortsVisible, shouldShowPortsForElement, syncPortsVisibility, validateConnection, validateMagnet } from './internal/ports';
 import { createWorkflowEditorState, resolveWorkflowEditorConfig } from './internal/editorState';
 import { clearSelection, getSelection, selectCell } from './internal/selection';
 import { cancelScheduledGraphSync, flushScheduledGraphSync, markDocumentChanged, performGraphSync, scheduleGraphSync, setDirty, syncWorkflowFromGraph, withDocumentSyncSuspended } from './internal/sync';
 import { decorateState, decorateStateById, decorateStates, refreshAllLinks, refreshLink } from './internal/styling';
 import { WorkflowGuidesManager } from './internal/GuidesManager';
-import { autoLayout, createDefaultLink, exportForSave, loadWorkflow, prepareLinkData, toJSON, addState, removeSelected, updateState, updateTransition, updateWorkflowMeta } from './internal/mutations';
+import { applyWorkflowDocument, autoLayout, createDefaultLink, exportForSave, loadWorkflow, prepareLinkData, toJSON, addState, removeSelected, updateState, updateTransition, updateWorkflowMeta } from './internal/mutations';
 import type { WorkflowEditorRuntime } from './internal/runtime';
 import { WorkflowSpatialIndex } from './internal/spatialIndex';
 import { applyViewport, clientToLocalPoint, fitToContent, resize, setZoom, zoomIn, zoomOut } from './internal/viewport';
@@ -30,6 +32,12 @@ export class WorkflowEditor extends EventTarget {
   private readonly runtime: WorkflowEditorRuntime;
 
   private readonly resizeObserver: ResizeObserver | null;
+
+  private readonly unbindHistoryShortcuts: () => void;
+
+  private focusPaperHost(): void {
+    this.runtime.paperHost.focus({ preventScroll: true });
+  }
 
   public constructor(config: WorkflowEditorConfig) {
     super();
@@ -86,6 +94,7 @@ export class WorkflowEditor extends EventTarget {
       paperHost,
       spatialIndex,
       guidesManager,
+      history: undefined as unknown as WorkflowEditorRuntime['history'],
       emitDirtyChange: (dirty: boolean) => {
         emitDirtyChange(this, dirty);
       },
@@ -191,10 +200,21 @@ export class WorkflowEditor extends EventTarget {
         prepareLinkData(runtime, link);
       }
     } satisfies WorkflowEditorRuntime);
+    runtime.history = createWorkflowHistoryController(runtime, (snapshot) => {
+      applyWorkflowDocument(runtime, snapshot, {
+        dirty: runtime.state.dirty,
+        viewportMode: 'preserve'
+      });
+    });
 
     this.runtime = runtime;
     applyViewport(this.runtime);
     bindEvents(this.runtime);
+    this.runtime.history.reset();
+    this.unbindHistoryShortcuts = bindHistoryShortcuts(paperHost, {
+      undo: () => this.undo(),
+      redo: () => this.redo()
+    });
 
     this.resizeObserver =
       typeof ResizeObserver === 'function'
@@ -209,6 +229,7 @@ export class WorkflowEditor extends EventTarget {
 
   public loadWorkflow(input: unknown): void {
     loadWorkflow(this.runtime, input);
+    this.focusPaperHost();
   }
 
   public toJSON() {
@@ -220,23 +241,38 @@ export class WorkflowEditor extends EventTarget {
   }
 
   public addState(position: WorkflowPoint, partial: Partial<WorkflowState> = {}): string {
-    return addState(this.runtime, position, partial);
+    const stateId = addState(this.runtime, position, partial);
+    this.focusPaperHost();
+    return stateId;
   }
 
   public updateWorkflowMeta(patch: Partial<WorkflowDocument>): void {
     updateWorkflowMeta(this.runtime, patch);
+    this.focusPaperHost();
   }
 
   public updateState(id: string, patch: Partial<WorkflowState>): boolean {
-    return updateState(this.runtime, id, patch);
+    const updated = updateState(this.runtime, id, patch);
+    if (updated) {
+      this.focusPaperHost();
+    }
+    return updated;
   }
 
   public updateTransition(id: string, patch: Partial<WorkflowTransition>): boolean {
-    return updateTransition(this.runtime, id, patch);
+    const updated = updateTransition(this.runtime, id, patch);
+    if (updated) {
+      this.focusPaperHost();
+    }
+    return updated;
   }
 
   public removeSelected(): boolean {
-    return removeSelected(this.runtime);
+    const removed = removeSelected(this.runtime);
+    if (removed) {
+      this.focusPaperHost();
+    }
+    return removed;
   }
 
   public selectCell(cellId: string | null): void {
@@ -270,6 +306,7 @@ export class WorkflowEditor extends EventTarget {
 
   public autoLayout(): void {
     autoLayout(this.runtime);
+    this.focusPaperHost();
   }
 
   public zoomIn(): void {
@@ -286,6 +323,22 @@ export class WorkflowEditor extends EventTarget {
 
   public fitToContent(padding = 48): void {
     fitToContent(this.runtime, padding);
+  }
+
+  public undo(): boolean {
+    return this.runtime.history.undo();
+  }
+
+  public redo(): boolean {
+    return this.runtime.history.redo();
+  }
+
+  public canUndo(): boolean {
+    return this.runtime.history.canUndo();
+  }
+
+  public canRedo(): boolean {
+    return this.runtime.history.canRedo();
   }
 
   public setGuidesEnabled(enabled: boolean): void {
@@ -308,6 +361,7 @@ export class WorkflowEditor extends EventTarget {
     cancelScheduledGraphSync(this.runtime);
     clearPendingEndLinkCreationTimeout(this.runtime);
     this.resizeObserver?.disconnect();
+    this.unbindHistoryShortcuts();
     this.runtime.clearGuides();
     this.runtime.guidesManager.destroy();
     this.runtime.spatialIndex.destroy();

@@ -28,11 +28,11 @@ describe('convertMapData', () => {
     expect(sae?.position).toEqual({ x: 56.25, y: 23.75 });
     expect((sae as Record<string, any>)?.attrs.icon.text).toBe(String.fromCodePoint(61996));
     expect((sae as Record<string, any>)?.attrs.icon.size).toBe('gf-1x');
-    expect((sae as Record<string, any>)?.attrs.nodeName.text).toBe('SAE');
+    expect((sae as Record<string, any>)?.attrs.nodeName.text).toBe('SAE lllllllll xxx');
     expect((sae as Record<string, any>)?.attrs.ipaddr.text).toBe('1.1.1.1');
     expect((sae as Record<string, any>)?.data).toMatchObject({
       id: '1',
-      name: 'SAE',
+      name: 'SAE lllllllll xxx',
       address: '1.1.1.1'
     });
 
