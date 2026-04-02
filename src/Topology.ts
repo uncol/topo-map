@@ -12,6 +12,8 @@ import {
   NODE_SEARCH_RESULT_EVENT,
   normalizeNodeSearchMode,
   SCALE_CHANGE_EVENT,
+  TOPOLOGY_CAN_REDO_CHANGE_EVENT,
+  TOPOLOGY_CAN_UNDO_CHANGE_EVENT,
   UNHIGHLIGHT_REQUEST_EVENT,
   type NodeSearchResultDetail
 } from './core/events';
@@ -119,6 +121,10 @@ export class Topology {
 
   private readonly unbindHistoryShortcuts: () => void;
 
+  private previousCanUndo = false;
+
+  private previousCanRedo = false;
+
   private readonly onNodeSearchRequestBound = (event: Event): void => {
     this.handleNodeSearchRequest(event);
   };
@@ -203,6 +209,7 @@ export class Topology {
       },
       onNodeMoveEnd: (element) => {
         this.moveHistory.commit(element);
+        this.emitHistoryAvailabilityChanges();
       },
       onNodeMoveCancel: () => {
         this.moveHistory.cancel();
@@ -238,6 +245,7 @@ export class Topology {
       undo: () => this.undo(),
       redo: () => this.redo()
     });
+    this.emitHistoryAvailabilityChanges();
     this.config.onReady?.();
     this.logDebug('initialized', this.config);
   }
@@ -264,6 +272,7 @@ export class Topology {
     this.logDebug('loadDocument:start');
     this.events.clearInteractionState();
     this.moveHistory.clear();
+    this.emitHistoryAvailabilityChanges();
     const document = input instanceof MapDocument ? input : MapDocument.fromJSON(input);
 
     this.applyMapPaperConfig(document.paperConfig);
@@ -458,11 +467,19 @@ export class Topology {
   }
 
   public undo(): boolean {
-    return this.moveHistory.undo();
+    const changed = this.moveHistory.undo();
+    if (changed) {
+      this.emitHistoryAvailabilityChanges();
+    }
+    return changed;
   }
 
   public redo(): boolean {
-    return this.moveHistory.redo();
+    const changed = this.moveHistory.redo();
+    if (changed) {
+      this.emitHistoryAvailabilityChanges();
+    }
+    return changed;
   }
 
   public canUndo(): boolean {
@@ -513,6 +530,29 @@ export class Topology {
 
   private logDebug(message: string, ...payload: unknown[]): void {
     this.debug.log(message, ...payload);
+  }
+
+  private emitHistoryAvailabilityChanges(): void {
+    const canUndo = this.moveHistory.canUndo();
+    const canRedo = this.moveHistory.canRedo();
+
+    if (canUndo !== this.previousCanUndo) {
+      this.previousCanUndo = canUndo;
+      this.config.mainContainer.dispatchEvent(
+        new CustomEvent(TOPOLOGY_CAN_UNDO_CHANGE_EVENT, {
+          detail: canUndo
+        })
+      );
+    }
+
+    if (canRedo !== this.previousCanRedo) {
+      this.previousCanRedo = canRedo;
+      this.config.mainContainer.dispatchEvent(
+        new CustomEvent(TOPOLOGY_CAN_REDO_CHANGE_EVENT, {
+          detail: canRedo
+        })
+      );
+    }
   }
 
   private applyResize(target: 'main' | 'minimap', newSize: Size): void {

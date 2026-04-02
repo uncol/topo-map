@@ -1,10 +1,13 @@
 import { clonePlain } from '../clonePlain';
 import {
+  WORKFLOW_CAN_REDO_CHANGE_EVENT,
+  WORKFLOW_CAN_UNDO_CHANGE_EVENT,
   WORKFLOW_CONTEXTMENU_EVENT,
   WORKFLOW_DIRTY_CHANGE_EVENT,
   WORKFLOW_DOCUMENT_CHANGE_EVENT,
   WORKFLOW_SELECTION_CHANGE_EVENT,
   WORKFLOW_VALIDATION_CHANGE_EVENT,
+  type WorkflowHistoryAvailabilityChangeDetail,
   type WorkflowContextMenuDetail,
   type WorkflowDirtyChangeDetail,
   type WorkflowDocument,
@@ -26,6 +29,14 @@ export function emitDirtyChange(host: EventTarget, dirty: boolean): void {
   dispatchTypedEvent<WorkflowDirtyChangeDetail>(host, WORKFLOW_DIRTY_CHANGE_EVENT, {
     dirty
   });
+}
+
+export function emitCanUndoChange(host: EventTarget, target: boolean): void {
+  dispatchTypedEvent<WorkflowHistoryAvailabilityChangeDetail>(host, WORKFLOW_CAN_UNDO_CHANGE_EVENT, target);
+}
+
+export function emitCanRedoChange(host: EventTarget, target: boolean): void {
+  dispatchTypedEvent<WorkflowHistoryAvailabilityChangeDetail>(host, WORKFLOW_CAN_REDO_CHANGE_EVENT, target);
 }
 
 export function emitSelectionChange(host: EventTarget, selection: WorkflowSelection): void {

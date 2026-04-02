@@ -9,6 +9,8 @@ export {
   NODE_SEARCH_REQUEST_EVENT,
   NODE_SEARCH_RESULT_EVENT,
   normalizeNodeSearchMode,
+  TOPOLOGY_CAN_REDO_CHANGE_EVENT,
+  TOPOLOGY_CAN_UNDO_CHANGE_EVENT,
   UNHIGHLIGHT_REQUEST_EVENT,
   SCALE_CHANGE_EVENT
 } from './core/events';
@@ -52,6 +54,8 @@ export type {
 } from './decoders/MapConverter';
 export { Topology } from './Topology';
 export {
+  WORKFLOW_CAN_REDO_CHANGE_EVENT,
+  WORKFLOW_CAN_UNDO_CHANGE_EVENT,
   WORKFLOW_CONTEXTMENU_EVENT,
   WORKFLOW_DIRTY_CHANGE_EVENT,
   WORKFLOW_DOCUMENT_CHANGE_EVENT,
@@ -62,6 +66,7 @@ export {
   type WorkflowDocumentChangeDetail,
   type WorkflowDirtyChangeDetail,
   type WorkflowEditorConfig,
+  type WorkflowHistoryAvailabilityChangeDetail,
   type WorkflowMode,
   type WorkflowModelRef,
   type WorkflowPoint,

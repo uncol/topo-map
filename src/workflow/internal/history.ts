@@ -42,6 +42,23 @@ export function createWorkflowHistoryController(
   let baseline = captureWorkflowSnapshot(runtime);
   let activeGesture: WorkflowHistoryGesture | null = null;
   let implicitChangeActive = false;
+  let lastCanUndo = history.canUndo();
+  let lastCanRedo = history.canRedo();
+
+  const emitAvailabilityChanges = (): void => {
+    const nextCanUndo = history.canUndo();
+    const nextCanRedo = history.canRedo();
+
+    if (nextCanUndo !== lastCanUndo) {
+      lastCanUndo = nextCanUndo;
+      runtime.emitCanUndoChange(nextCanUndo);
+    }
+
+    if (nextCanRedo !== lastCanRedo) {
+      lastCanRedo = nextCanRedo;
+      runtime.emitCanRedoChange(nextCanRedo);
+    }
+  };
 
   const syncDirtyState = (): void => {
     runtime.setDirty(!equalsWorkflowDocument(captureWorkflowSnapshot(runtime), baseline));
@@ -62,6 +79,7 @@ export function createWorkflowHistoryController(
       activeGesture = null;
       const recorded = history.commit(captureWorkflowSnapshot(runtime));
       syncDirtyState();
+      emitAvailabilityChanges();
       return recorded;
     },
     cancelGesture: (kind?: WorkflowHistoryGesture): void => {
@@ -85,6 +103,7 @@ export function createWorkflowHistoryController(
       implicitChangeActive = false;
       const recorded = history.commit(captureWorkflowSnapshot(runtime));
       syncDirtyState();
+      emitAvailabilityChanges();
       return recorded;
     },
     cancelImplicitChange: (): void => {
@@ -94,6 +113,7 @@ export function createWorkflowHistoryController(
     recordChange: (before: WorkflowDocument, after: WorkflowDocument): boolean => {
       const recorded = history.record(before, after);
       runtime.setDirty(!equalsWorkflowDocument(after, baseline));
+      emitAvailabilityChanges();
       return recorded;
     },
     reset: (snapshot?: WorkflowDocument): void => {
@@ -102,6 +122,7 @@ export function createWorkflowHistoryController(
       implicitChangeActive = false;
       history.clear();
       runtime.setDirty(false);
+      emitAvailabilityChanges();
     },
     undo: (): boolean => {
       const changed = history.undo((snapshot) => {
@@ -109,6 +130,7 @@ export function createWorkflowHistoryController(
       });
       if (changed) {
         syncDirtyState();
+        emitAvailabilityChanges();
       }
       return changed;
     },
@@ -118,6 +140,7 @@ export function createWorkflowHistoryController(
       });
       if (changed) {
         syncDirtyState();
+        emitAvailabilityChanges();
       }
       return changed;
     },

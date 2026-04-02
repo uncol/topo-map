@@ -20,6 +20,8 @@ export interface WorkflowEditorRuntime {
   guidesManager: WorkflowGuidesManager;
   history: WorkflowHistoryController;
   emitDirtyChange: (dirty: boolean) => void;
+  emitCanUndoChange: (target: boolean) => void;
+  emitCanRedoChange: (target: boolean) => void;
   emitSelectionChange: () => void;
   emitDocumentChange: () => void;
   emitContextMenu: (detail: WorkflowContextMenuDetail) => void;

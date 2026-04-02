@@ -18,7 +18,9 @@ function createRuntime(initialWorkflow: WorkflowDocument): WorkflowEditorRuntime
       workflow: clonePlain(initialWorkflow)
     },
     flushScheduledGraphSync: vi.fn(),
-    setDirty: vi.fn()
+    setDirty: vi.fn(),
+    emitCanUndoChange: vi.fn(),
+    emitCanRedoChange: vi.fn()
   } as unknown as WorkflowEditorRuntime;
 
   runtime.history = createWorkflowHistoryController(runtime, (snapshot) => {
@@ -37,10 +39,13 @@ describe('workflow history controller', () => {
     runtime.state.workflow = clonePlain(after);
     runtime.history.recordChange(before, after);
 
+    expect(runtime.emitCanUndoChange).toHaveBeenCalledWith(true);
+
     expect(runtime.history.canUndo()).toBe(true);
 
     runtime.history.undo();
     expect(runtime.state.workflow).toEqual(before);
+    expect(runtime.emitCanRedoChange).toHaveBeenCalledWith(true);
 
     runtime.history.redo();
     expect(runtime.state.workflow).toEqual(after);

@@ -121,8 +121,12 @@ export interface WorkflowValidationChangeDetail {
   issues: string[];
 }
 
+export type WorkflowHistoryAvailabilityChangeDetail = boolean;
+
 export const WORKFLOW_SELECTION_CHANGE_EVENT = 'workflow:selection-change';
 export const WORKFLOW_DOCUMENT_CHANGE_EVENT = 'workflow:document-change';
 export const WORKFLOW_DIRTY_CHANGE_EVENT = 'workflow:dirty-change';
 export const WORKFLOW_CONTEXTMENU_EVENT = 'workflow:contextmenu';
 export const WORKFLOW_VALIDATION_CHANGE_EVENT = 'workflow:validation-change';
+export const WORKFLOW_CAN_UNDO_CHANGE_EVENT = 'workflow:can-undo-change';
+export const WORKFLOW_CAN_REDO_CHANGE_EVENT = 'workflow:can-redo-change';

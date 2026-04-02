@@ -11,7 +11,7 @@ import type {
   WorkflowState,
   WorkflowTransition
 } from './types';
-import { emitContextMenu, emitDirtyChange, emitDocumentChange, emitSelectionChange, emitValidationChange } from './internal/events';
+import { emitCanRedoChange, emitCanUndoChange, emitContextMenu, emitDirtyChange, emitDocumentChange, emitSelectionChange, emitValidationChange } from './internal/events';
 import { resolveInteractivity, bindEvents } from './internal/bindings';
 import { createDefaultWorkflow as createInitialWorkflow } from './internal/helpers';
 import { createWorkflowHistoryController } from './internal/history';
@@ -97,6 +97,12 @@ export class WorkflowEditor extends EventTarget {
       history: undefined as unknown as WorkflowEditorRuntime['history'],
       emitDirtyChange: (dirty: boolean) => {
         emitDirtyChange(this, dirty);
+      },
+      emitCanUndoChange: (target: boolean) => {
+        emitCanUndoChange(this, target);
+      },
+      emitCanRedoChange: (target: boolean) => {
+        emitCanRedoChange(this, target);
       },
       emitSelectionChange: () => {
         emitSelectionChange(this, getSelection(runtime));

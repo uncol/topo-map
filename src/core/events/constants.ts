@@ -8,4 +8,6 @@ export const ELEMENT_POINTERDBLCLICK_EVENT = 'topo:element:pointerdblclick';
 export const NODE_SEARCH_REQUEST_EVENT = 'topo:node-search:request';
 export const NODE_SEARCH_RESULT_EVENT = 'topo:node-search:result';
 export const SCALE_CHANGE_EVENT = 'topo:scale-change';
+export const TOPOLOGY_CAN_UNDO_CHANGE_EVENT = 'topo:can-undo-change';
+export const TOPOLOGY_CAN_REDO_CHANGE_EVENT = 'topo:can-redo-change';
 export const UNHIGHLIGHT_REQUEST_EVENT = 'topo:unhighlight:request';
