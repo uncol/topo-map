@@ -1,4 +1,5 @@
 import '@gufo-labs/font/gufo-font.css';
+import { bigMapData } from '../tmp/bigMapData.ts';
 import { configuredShapeMapData, glyphSegmentMapData } from '../scripts/fixtures/configuredShapeMapData.ts';
 import {
   NODE_SEARCH_REQUEST_EVENT,
@@ -123,7 +124,11 @@ const MAPS = {
   'configured-shape': {
     label: 'Configured Shape',
     data: configuredShapeMapData
-  }
+  },
+  'big-map': {
+    label: 'Big Map',
+    data: bigMapData
+  },
 };
 
 const modePan = document.getElementById('mode-pan');

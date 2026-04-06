@@ -19,6 +19,12 @@ interface MapConverterPort {
   ports?: Array<string> | null;
 }
 
+interface MapConverterPortal {
+  generator?: string | null;
+  id?: ScalarId | null;
+  settings?: object | null;
+}
+
 interface MapConverterNode {
   id?: ScalarId | null;
   x?: number | null;
@@ -41,6 +47,7 @@ interface MapConverterNode {
   shape_overlay?: Array<ShapeOverlay> | null;
   type?: string | null;
   role?: string | null;
+  portal?: MapConverterPortal | null;
 }
 
 interface MapConverterLink {
