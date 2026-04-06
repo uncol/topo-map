@@ -1,5 +1,4 @@
 import '@gufo-labs/font/gufo-font.css';
-import { bigMapData } from '../tmp/bigMapData.ts';
 import { configuredShapeMapData, glyphSegmentMapData } from '../scripts/fixtures/configuredShapeMapData.ts';
 import {
   NODE_SEARCH_REQUEST_EVENT,
@@ -7,6 +6,7 @@ import {
   normalizeNodeSearchMode,
   Topology
 } from '../src/index.ts';
+import { bigMapData } from '../tmp/bigMapData.ts';
 
 const mainContainer = document.getElementById('topology-main');
 const minimapContainer = document.getElementById('topology-minimap');
