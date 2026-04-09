@@ -75,6 +75,59 @@ describe('DataFacade', () => {
     expect(api.links.getById<{ type: string; nested: { weight: number } }>('link-1')?.data.nested.weight).toBe(10);
   });
 
+  it('returns link bandwidth by link id', () => {
+    const graph = createGraph();
+    graph.addCells([
+      new joint.dia.Link({
+        id: 'link-1',
+        type: 'standard.Link',
+        source: { x: 0, y: 0 },
+        target: { x: 100, y: 100 },
+        data: {
+          id: 'link-1',
+          in_bw: 1000,
+          out_bw: 2000
+        }
+      }),
+      new joint.dia.Link({
+        id: 'link-2',
+        type: 'standard.Link',
+        source: { x: 0, y: 0 },
+        target: { x: 100, y: 100 },
+        data: {
+          id: 'link-2',
+          out_bw: 3000
+        }
+      }),
+      new joint.dia.Link({
+        id: 'link-3',
+        type: 'standard.Link',
+        source: { x: 0, y: 0 },
+        target: { x: 100, y: 100 },
+        data: {
+          id: 'link-3'
+        }
+      }),
+      new joint.dia.Element({
+        id: 'node-1',
+        type: 'standard.Rectangle',
+        data: {
+          id: 'node-1',
+          in_bw: 10,
+          out_bw: 20
+        }
+      })
+    ]);
+
+    const api = new DataFacade(graph);
+
+    expect(api.links.getLinkBw('link-1')).toEqual({ in: 1000, out: 2000 });
+    expect(api.links.getLinkBw('link-2')).toEqual({ in: 0, out: 3000 });
+    expect(api.links.getLinkBw('link-3')).toEqual({ in: 0, out: 0 });
+    expect(api.links.getLinkBw('node-1')).toBeNull();
+    expect(api.links.getLinkBw('missing')).toBeNull();
+  });
+
   it('gets and sets status for one or many supported elements', () => {
     const graph = createGraph();
     graph.addCells([

@@ -114,6 +114,11 @@ export interface LinkRecord<TData extends CellData = CellData> {
   data: TData;
 }
 
+export interface LinkBwValue {
+  in: number;
+  out: number;
+}
+
 export interface ElementDataApi {
   getIdsByDataType(type: string): string[];
   getById<TData extends CellData = CellData>(id: string): ElementRecord<TData> | null;
@@ -128,6 +133,7 @@ export interface ElementDataApi {
 export interface LinkDataApi {
   getById<TData extends CellData = CellData>(id: string): LinkRecord<TData> | null;
   getAll<TData extends CellData = CellData>(): LinkRecord<TData>[];
+  getLinkBw(id: string): LinkBwValue | null;
 }
 
 export interface DataApi {

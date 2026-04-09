@@ -31,6 +31,7 @@ export type {
   Interface,
   InterfaceTags,
   LinkData,
+  LinkBwValue,
   LinkDataApi,
   LinkRecord,
   Mode,

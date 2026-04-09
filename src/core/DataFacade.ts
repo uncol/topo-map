@@ -5,6 +5,7 @@ import type {
   DataApi,
   ElementDataApi,
   ElementRecord,
+  LinkBwValue,
   ElementStatusRecord,
   ElementStatusUpdate,
   ElementStatusUpdateMap,
@@ -30,6 +31,10 @@ function cloneValue<T>(value: T): T {
     clone[key] = cloneValue(item);
   });
   return clone as T;
+}
+
+function toOptionalFiniteNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 function toRecord<TData extends CellData>(
@@ -188,6 +193,25 @@ class LinkDataFacade implements LinkDataApi {
       const record = toRecord<TData>(link);
       return record ? [record] : [];
     });
+  }
+
+  public getLinkBw(id: string): LinkBwValue | null {
+    const cell = this.graph.getCell(id);
+    if (!cell?.isLink()) {
+      return null;
+    }
+
+    const data = cell.get('data');
+    if (!isRecord(data)) {
+      return null;
+    }
+
+    const inputBw = toOptionalFiniteNumber(data.in_bw);
+    const outputBw = toOptionalFiniteNumber(data.out_bw);
+    return {
+      in: inputBw ?? 0,
+      out: outputBw ?? 0
+    };
   }
 }
 
