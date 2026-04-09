@@ -28,6 +28,8 @@ export type {
   ElementStatusRecord,
   ElementStatusUpdate,
   ElementStatusUpdateMap,
+  Interface,
+  InterfaceTags,
   LinkData,
   LinkDataApi,
   LinkRecord,

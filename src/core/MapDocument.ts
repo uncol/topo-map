@@ -1,8 +1,9 @@
 import type * as joint from '@joint/core';
-import type { PaperConfig, ViewportSnapshot } from './types';
+import type { Interface, PaperConfig, ViewportSnapshot } from './types';
 
 export interface MapDocumentJSON {
   graph: joint.dia.Graph.JSON;
+  interfaces: Interface[];
   viewport?: ViewportSnapshot;
   paperConfig?: PaperConfig;
   schemaVersion?: string;
@@ -10,6 +11,7 @@ export interface MapDocumentJSON {
 
 interface MapDocumentInit {
   graph: joint.dia.Graph.JSON;
+  interfaces: Interface[];
   viewport: ViewportSnapshot | undefined;
   paperConfig: PaperConfig | undefined;
   schemaVersion: string | undefined;
@@ -38,6 +40,42 @@ function normalizeGraph(value: unknown): joint.dia.Graph.JSON {
   return isRecord(value) ? (value as joint.dia.Graph.JSON) : ({ cells: [] } as joint.dia.Graph.JSON);
 }
 
+function cloneInterfaces(interfaces: Interface[]): Interface[] {
+  return interfaces.map((item) => ({
+    id: item.id,
+    tags: {
+      object: item.tags.object,
+      interface: item.tags.interface
+    }
+  }));
+}
+
+function normalizeInterfaces(value: unknown): Interface[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    if (!isRecord(item) || typeof item.id !== 'string' || !isRecord(item.tags)) {
+      return [];
+    }
+
+    const object = item.tags.object;
+    const interfaceName = item.tags.interface;
+    if (typeof object !== 'string' || typeof interfaceName !== 'string') {
+      return [];
+    }
+
+    return [{
+      id: item.id,
+      tags: {
+        object,
+        interface: interfaceName
+      }
+    }];
+  });
+}
+
 export class MapDocument {
   public static readonly DEFAULT_SCHEMA_VERSION = '1.0.0';
 
@@ -49,6 +87,8 @@ export class MapDocument {
 
   public readonly graph: joint.dia.Graph.JSON;
 
+  public readonly interfaces: Interface[];
+
   public readonly viewport: ViewportSnapshot | undefined;
 
   public readonly paperConfig: PaperConfig;
@@ -57,6 +97,7 @@ export class MapDocument {
 
   public constructor(init: MapDocumentInit) {
     this.graph = normalizeGraph(init.graph);
+    this.interfaces = cloneInterfaces(normalizeInterfaces(init.interfaces));
     this.viewport = init.viewport;
     this.paperConfig = normalizePaperConfig(init.paperConfig);
     this.schemaVersion =
@@ -69,6 +110,7 @@ export class MapDocument {
     if (!isRecord(input)) {
       return new MapDocument({
         graph: { cells: [] } as joint.dia.Graph.JSON,
+        interfaces: [],
         viewport: MapDocument.DEFAULT_VIEWPORT,
         paperConfig: undefined,
         schemaVersion: undefined
@@ -78,6 +120,7 @@ export class MapDocument {
     if ('graph' in input) {
       return new MapDocument({
         graph: normalizeGraph(input.graph),
+        interfaces: normalizeInterfaces(input.interfaces),
         viewport: normalizeViewport(input.viewport) ?? MapDocument.DEFAULT_VIEWPORT,
         paperConfig: normalizePaperConfig(input.paperConfig),
         schemaVersion: typeof input.schemaVersion === 'string' ? input.schemaVersion : undefined
@@ -86,6 +129,7 @@ export class MapDocument {
 
     return new MapDocument({
       graph: normalizeGraph(input),
+      interfaces: [],
       viewport: MapDocument.DEFAULT_VIEWPORT,
       paperConfig: undefined,
       schemaVersion: undefined
@@ -96,10 +140,12 @@ export class MapDocument {
     graph: joint.dia.Graph.JSON,
     viewport?: ViewportSnapshot,
     paperConfig: PaperConfig = {},
+    interfaces: Interface[] = [],
     schemaVersion = MapDocument.DEFAULT_SCHEMA_VERSION
   ): MapDocument {
     return new MapDocument({
       graph,
+      interfaces,
       viewport,
       paperConfig,
       schemaVersion
@@ -113,6 +159,7 @@ export class MapDocument {
   public toJSON(): MapDocumentJSON {
     const json: MapDocumentJSON = {
       graph: this.graph,
+      interfaces: cloneInterfaces(this.interfaces),
       paperConfig: { ...this.paperConfig },
       schemaVersion: this.schemaVersion
     };

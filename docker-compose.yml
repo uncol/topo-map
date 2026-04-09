@@ -1,4 +1,38 @@
 services:
+  dev:
+    build: .
+    command: pnpm demo
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  build:
+    build: .
+    command: pnpm build
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: "no"
+
+  test:
+    build: .
+    command: pnpm test
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: "no"
+
+  typecheck:
+    build: .
+    command: pnpm typecheck
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: "no"
+
   nginx:
     image: nginx
     container_name: topo_demo

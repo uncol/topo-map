@@ -9,6 +9,22 @@ describe('convertMapData', () => {
     expect(result.viewport).toBeUndefined();
     expect(result.graph.layers).toEqual([{ id: 'links' }, { id: 'nodes' }]);
     expect(result.graph.defaultLayer).toBe('nodes');
+    expect(result.interfaces).toEqual([
+      {
+        id: '1',
+        tags: {
+          object: 'chr-1',
+          interface: 'ether1'
+        }
+      },
+      {
+        id: '0',
+        tags: {
+          object: 'chr-2',
+          interface: 'ether2'
+        }
+      }
+    ]);
     expect(result.paperConfig).toEqual({
       id: '694f2320f73e86f3d01e51c2',
       type: 'segment',

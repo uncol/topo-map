@@ -4,6 +4,7 @@ import { createGraphLayers, LINK_LAYER_ID, NODE_LAYER_ID } from '../core/graphLa
 import { createNodeCell } from '../core/nodeCellFactory';
 import { DEFAULT_STATUS_CODE } from '../core/nodePresentation';
 import {
+  type Interface,
   PAPER_TYPES,
   type PaperConfig,
   type PaperType,
@@ -261,8 +262,9 @@ class MapConverter {
     };
 
     const viewport = normalizeViewport(this.mapData.viewport);
+    const interfaces = this.collectInterfaces();
 
-    return MapDocument.fromGraph(graphJson, viewport, normalizePaperConfig(this.mapData));
+    return MapDocument.fromGraph(graphJson, viewport, normalizePaperConfig(this.mapData), interfaces);
   }
 
   private buildPortMap(): Record<string, string> {
@@ -381,6 +383,37 @@ class MapConverter {
       target: createIconLinkEnd(dstId),
       data,
     };
+  }
+
+  private collectInterfaces(): Interface[] {
+    const interfaces: Interface[] = [];
+
+    for (const node of this.mapData.nodes ?? []) {
+      const objectName = toText(node.name);
+      for (const port of node.ports ?? []) {
+        const portId = toId(port.id);
+        if (!portId) {
+          continue;
+        }
+
+        for (const interfaceName of port.ports ?? []) {
+          const normalizedInterfaceName = toOptionalText(interfaceName);
+          if (!normalizedInterfaceName) {
+            continue;
+          }
+
+          interfaces.push({
+            id: portId,
+            tags: {
+              object: objectName,
+              interface: normalizedInterfaceName
+            }
+          });
+        }
+      }
+    }
+
+    return interfaces;
   }
 }
 

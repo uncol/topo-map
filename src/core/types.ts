@@ -52,6 +52,16 @@ export interface ShapeOverlay {
   form: ShapeOverlayForm;
 }
 
+export interface InterfaceTags {
+  object: string;
+  interface: string;
+}
+
+export interface Interface {
+  id: string;
+  tags: InterfaceTags;
+}
+
 export interface NodeData {
   id: string;
   x: number;

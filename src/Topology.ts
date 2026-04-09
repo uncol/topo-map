@@ -25,6 +25,7 @@ import { MapDocument, type MapDocumentJSON } from './core/MapDocument';
 import type {
   Config,
   DataApi,
+  Interface,
   LinkData,
   Mode,
   NodeData,
@@ -39,6 +40,7 @@ import type {
 import { ViewportState } from './core/ViewportState';
 import type { MapConverterInput } from './decoders/MapConverter';
 import { convertMapData } from './decoders/MapConverter';
+import { bindHistoryShortcuts } from './history/bindHistoryShortcuts';
 import { GuidesManager } from './managers/GuidesManager';
 import { MinimapManager } from './managers/MinimapManager';
 import { ModeManager } from './managers/ModeManager';
@@ -52,7 +54,6 @@ import { PanMode } from './modes/PanMode';
 import { ZoomToAreaMode } from './modes/ZoomToAreaMode';
 import { setStencilDir } from './shapes/ImageIconElement';
 import { TopologyMoveHistory } from './topology/TopologyMoveHistory';
-import { bindHistoryShortcuts } from './history/bindHistoryShortcuts';
 
 const DEFAULT_INITIAL_SCALE = 1;
 const DEFAULT_MIN_SCALE = 0.1;
@@ -61,6 +62,16 @@ const DEFAULT_GRID_SIZE = 20;
 const DEFAULT_GUIDE_THRESHOLD = 5;
 const DEFAULT_PADDING = 10;
 const DEFAULT_FOCUS_ANIMATION_MS = 650;
+
+function cloneInterfaces(interfaces: Interface[]): Interface[] {
+  return interfaces.map((item) => ({
+    id: item.id,
+    tags: {
+      object: item.tags.object,
+      interface: item.tags.interface
+    }
+  }));
+}
 
 export class Topology {
   public readonly data: DataApi;
@@ -104,6 +115,8 @@ export class Topology {
   private readonly events: InteractionEvents;
 
   private currentPaperConfig: PaperConfig = {};
+
+  private interfaces: Interface[] = [];
 
   private lastMainWidth = -1;
 
@@ -257,7 +270,12 @@ export class Topology {
   }
 
   public toDocument(): MapDocument {
-    return MapDocument.fromGraph(this.diagramService.toJSON(), this.viewportState.getSnapshot(), this.currentPaperConfig);
+    return MapDocument.fromGraph(
+      this.diagramService.toJSON(),
+      this.viewportState.getSnapshot(),
+      this.currentPaperConfig,
+      this.interfaces
+    );
   }
 
   public toJSON(): MapDocumentJSON {
@@ -276,6 +294,7 @@ export class Topology {
     const document = input instanceof MapDocument ? input : MapDocument.fromJSON(input);
 
     this.applyMapPaperConfig(document.paperConfig);
+    this.interfaces = cloneInterfaces(document.interfaces);
 
     this.diagramService.fromJSON(document.graph);
     this.mapBoundsState.refreshNow();
@@ -311,6 +330,14 @@ export class Topology {
   public convertAndLoad(data: MapConverterInput): void {
     this.logDebug('fromMapData:start');
     this.loadDocument(convertMapData(data));
+  }
+
+  public convertMapData(data: MapConverterInput): MapDocument {
+    return convertMapData(data);
+  }
+
+  public getInterfaces(): Interface[] {
+    return cloneInterfaces(this.interfaces);
   }
 
   public setMode(mode: Mode): void {
