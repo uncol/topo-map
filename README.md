@@ -59,6 +59,7 @@ Open: `http://localhost:8080`
 - `toJSON()`
 - `fromJSON(data)`
 - `data.elements.getIdsByDataType(type)`
+- `data.links.updateData(id, patch)`
 - `setMode('pan' | 'zoomToArea' | 'edit')`
 - `getMode()`
 - `setSnapToGrid(enabled)`
@@ -67,6 +68,16 @@ Open: `http://localhost:8080`
 - `resizeMain(width, height)`
 - `resizeMinimap(width, height)`
 - `destroy()`
+
+### DOM events
+
+- `topo:cell:pointerclick`
+- `topo:cell:highlight`
+- `topo:cell:unhighlight`
+- `topo:cell:contextmenu`
+- `topo:element:pointerdblclick`
+- `topo:link:hover` with `detail` containing `link.data` plus `position: [x, y]`
+- `topo:link:mouseout` with `detail` containing `position: [x, y]`
 
 ### Viewport restore behavior
 

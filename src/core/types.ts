@@ -134,6 +134,7 @@ export interface LinkDataApi {
   getById<TData extends CellData = CellData>(id: string): LinkRecord<TData> | null;
   getAll<TData extends CellData = CellData>(): LinkRecord<TData>[];
   getLinkBw(id: string): LinkBwValue | null;
+  updateData(id: string, patch: CellData): boolean;
 }
 
 export interface DataApi {

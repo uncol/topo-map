@@ -101,10 +101,11 @@ data.elements.setStatuses(updates: Record<string, { status_code: number; metrics
 data.elements.setRandomStatuses(updates: Array<{ status_code: number; metrics_label?: string }>): string[]
 data.links.getById(id: string): { id: string; data: Record<string, unknown> } | null
 data.links.getAll(): Array<{ id: string; data: Record<string, unknown> }>
+data.links.updateData(id: string, patch: Record<string, unknown>): boolean
 ```
 
 Назначение:
-- синхронный read-only доступ к `data` из уже загруженного графа;
+- синхронный доступ к `data` из уже загруженного графа;
 - для элементов, созданных через `loadData()` и `convertAndLoad()`, `data` заполняется на этапе построения cell;
 - `getStatus`/`getStatuses` возвращают данные статуса из `data` (`status_code`, `metrics_label`);
 - `setStatus`/`setStatuses` сохраняют raw `status_code` в `data`; effective status для rendering вычисляется как `status_code & 0x1f`;
@@ -114,6 +115,10 @@ data.links.getAll(): Array<{ id: string; data: Record<string, unknown> }>
 - `setRandomStatuses` выбирает случайный `ElementStatusUpdate` из переданного массива и возвращает обновленные `id`;
 - `elements` читает только `graph.getElements()`;
 - `links` читает только `graph.getLinks()`;
+- `links.updateData(id, patch)` обновляет `link.data` по ключам из `patch`;
+- каждое значение из `patch` заменяет значение целиком, без deep merge;
+- если значение в `patch` равно `null` или `undefined`, соответствующий ключ удаляется из `link.data`;
+- `links.updateData(...)` не пишет изменения в history и не форсит обычные UI update events;
 - методы возвращают обычные JS-объекты, без утечки `joint.dia.Cell`.
 
 ### Режимы и взаимодействие
@@ -166,6 +171,21 @@ destroy(): void
 - отписка от событий;
 - удаление paper/layers;
 - очистка графа и индексов.
+
+## DOM events
+
+`mainContainer` получает `CustomEvent` с `bubbles: true` и `composed: true`.
+
+- `topo:cell:pointerclick`
+- `topo:cell:highlight`
+- `topo:cell:unhighlight`
+- `topo:cell:contextmenu`
+- `topo:element:pointerdblclick`
+- `topo:link:hover`
+- `topo:link:mouseout`
+
+Для `topo:link:hover` в `event.detail` передаются поля из `link.data`, дополненные `position: [x, y]`.
+Для `topo:link:mouseout` в `event.detail` передается `position: [x, y]`.
 
 ## Минимальный пример
 

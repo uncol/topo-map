@@ -128,6 +128,92 @@ describe('DataFacade', () => {
     expect(api.links.getLinkBw('missing')).toBeNull();
   });
 
+  it('updates link data with full value replacement and nullish key removal without emitting change events', () => {
+    const graph = createGraph();
+    const link = new joint.dia.Link({
+      id: 'link-1',
+      type: 'standard.Link',
+      source: { x: 0, y: 0 },
+      target: { x: 100, y: 100 },
+      data: {
+        method: 'lldp',
+        metrics: [{ name: 'in', value: 10 }],
+        meta: { a: 1, b: 2 },
+        flag: true
+      }
+    });
+
+    graph.addCells([
+      link,
+      new joint.dia.Element({
+        id: 'node-1',
+        type: 'standard.Rectangle',
+        data: { name: 'node-1' }
+      })
+    ]);
+
+    const api = new DataFacade(graph);
+    const linkChangeSpy = vi.fn();
+    const graphChangeSpy = vi.fn();
+    const metrics = [{ name: 'out', value: 20 }];
+    const meta = { a: 3 };
+
+    link.on('change:data', linkChangeSpy);
+    graph.on('change:data', graphChangeSpy);
+
+    expect(api.links.updateData('link-1', {
+      metrics,
+      meta,
+      method: undefined,
+      flag: null
+    })).toBe(true);
+
+    expect(api.links.getById<{
+      metrics: Array<{ name: string; value: number }>;
+      meta: { a: number };
+    }>('link-1')).toEqual({
+      id: 'link-1',
+      data: {
+        metrics: [{ name: 'out', value: 20 }],
+        meta: { a: 3 }
+      }
+    });
+    expect(link.get('data')).toEqual({
+      metrics: [{ name: 'out', value: 20 }],
+      meta: { a: 3 }
+    });
+    expect(linkChangeSpy).not.toHaveBeenCalled();
+    expect(graphChangeSpy).not.toHaveBeenCalled();
+
+    metrics[0]!.value = 99;
+    meta.a = 42;
+
+    expect(api.links.getById<{
+      metrics: Array<{ name: string; value: number }>;
+      meta: { a: number };
+    }>('link-1')).toEqual({
+      id: 'link-1',
+      data: {
+        metrics: [{ name: 'out', value: 20 }],
+        meta: { a: 3 }
+      }
+    });
+  });
+
+  it('returns false when link data update targets a missing cell or a non-link cell', () => {
+    const graph = createGraph();
+    graph.addCell(new joint.dia.Element({
+      id: 'node-1',
+      type: 'standard.Rectangle',
+      data: { name: 'node-1' }
+    }));
+
+    const api = new DataFacade(graph);
+
+    expect(api.links.updateData('missing', { metrics: [] })).toBe(false);
+    expect(api.links.updateData('node-1', { metrics: [] })).toBe(false);
+  });
+
   it('gets and sets status for one or many supported elements', () => {
     const graph = createGraph();
     graph.addCells([

@@ -240,4 +240,53 @@ describe('InteractionEvents', () => {
     expect(events.map((event) => event.type)).toEqual(['topo:element:pointerdblclick']);
     expect(addSpy).toHaveBeenCalledTimes(0);
   });
+
+  it('emits link hover with data and client coordinates', () => {
+    const { paper, handlers } = createPaperStub();
+    const { element, events } = createContainerStub();
+    const addSpy = mockHighlighterAdd();
+
+    const topologyEvents = new InteractionEvents(element, paper);
+
+    topologyEvents.setup();
+
+    const linkData = { type: 'link', method: 'lldp', in_bw: 100, out_bw: 200 };
+    const linkView = createCellView('link-1', false, linkData) as joint.dia.LinkView;
+    const mouseEnter = handlers.get('link:mouseenter');
+
+    mouseEnter?.(linkView, { clientX: 150, clientY: 250 });
+
+    expect(addSpy).toHaveBeenCalledWith(linkView, 'line', 'topo:link-hover-highlight', expect.any(Object));
+
+    const hoverEvent = events.find((event) => event.type === 'topo:link:hover');
+
+    expect(hoverEvent?.detail).toEqual({
+      ...linkData,
+      position: [150, 250]
+    });
+  });
+
+  it('emits link mouseout with pointer coordinates', () => {
+    const { paper, handlers } = createPaperStub();
+    const { element, events } = createContainerStub();
+    const removeSpy = vi.spyOn(joint.highlighters.mask, 'remove').mockImplementation(() => undefined);
+
+    const topologyEvents = new InteractionEvents(element, paper);
+
+    topologyEvents.setup();
+
+    const linkData = { type: 'link', method: 'lldp' };
+    const linkView = createCellView('link-1', false, linkData) as joint.dia.LinkView;
+    const mouseLeave = handlers.get('link:mouseleave');
+
+    mouseLeave?.(linkView, { clientX: 170, clientY: 270 });
+
+    expect(removeSpy).toHaveBeenCalledWith(linkView, 'topo:link-hover-highlight');
+
+    const mouseOutEvent = events.find((event) => event.type === 'topo:link:mouseout');
+
+    expect(mouseOutEvent?.detail).toEqual({
+      position: [170, 270]
+    });
+  });
 });

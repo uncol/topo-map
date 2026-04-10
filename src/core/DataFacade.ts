@@ -37,6 +37,21 @@ function toOptionalFiniteNumber(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
+function mergePatchedData(currentData: unknown, patch: CellData): CellData {
+  const nextData = isRecord(currentData) ? cloneValue(currentData) : {};
+
+  Object.entries(patch).forEach(([key, value]) => {
+    if (value == null) {
+      delete nextData[key];
+      return;
+    }
+
+    nextData[key] = cloneValue(value);
+  });
+
+  return nextData;
+}
+
 function toRecord<TData extends CellData>(
   cell: joint.dia.Cell
 ): ElementRecord<TData> | LinkRecord<TData> | null {
@@ -212,6 +227,17 @@ class LinkDataFacade implements LinkDataApi {
       in: inputBw ?? 0,
       out: outputBw ?? 0
     };
+  }
+
+  public updateData(id: string, patch: CellData): boolean {
+    const cell = this.graph.getCell(id);
+    if (!cell?.isLink()) {
+      return false;
+    }
+
+    const nextData = mergePatchedData(cell.get('data'), patch);
+    cell.set('data', nextData, { silent: true });
+    return true;
   }
 }
 

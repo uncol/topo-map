@@ -134,14 +134,6 @@ export function applyLinkStatus(link: joint.dia.Link, status: number): void {
     return;
   }
 
-  console.log('[LinkElement] apply link status', {
-    linkId: String(link.id),
-    status,
-    glyph: style.glyph ?? '',
-    stroke: style.stroke ?? LINK_DEFAULT_STROKE,
-    fontSize: style.fontSize ?? 10
-  });
-
   link.attr('line/stroke', style.stroke ?? LINK_DEFAULT_STROKE);
   link.removeAttr('line/filter');
   link.label(0, {

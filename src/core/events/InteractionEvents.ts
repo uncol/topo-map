@@ -7,7 +7,9 @@ import {
   CELL_HIGHLIGHT_EVENT,
   CELL_POINTERCLICK_EVENT,
   CELL_UNHIGHLIGHT_EVENT,
-  ELEMENT_POINTERDBLCLICK_EVENT
+  ELEMENT_POINTERDBLCLICK_EVENT,
+  LINK_HOVER_EVENT,
+  LINK_MOUSEOUT_EVENT
 } from './constants';
 import { getEventClientPoint, isPrimaryMouseButton } from './pointer';
 
@@ -29,12 +31,14 @@ export class InteractionEvents {
 
   private readonly pendingContextMenuTimers = new Set<number>();
 
-  private readonly onLinkMouseEnterBound = (linkView: joint.dia.LinkView): void => {
+  private readonly onLinkMouseEnterBound = (linkView: joint.dia.LinkView, event: joint.dia.Event): void => {
     this.applyLinkHoverStyle(linkView);
+    this.emitBubbledEvent(LINK_HOVER_EVENT, this.getLinkHoverEventDetail(linkView, event));
   };
 
-  private readonly onLinkMouseLeaveBound = (linkView: joint.dia.LinkView): void => {
+  private readonly onLinkMouseLeaveBound = (linkView: joint.dia.LinkView, event: joint.dia.Event): void => {
     this.restoreLinkHoverStyle(linkView);
+    this.emitBubbledEvent(LINK_MOUSEOUT_EVENT, this.getPointerCoordinateDetail(event));
   };
 
   private readonly onCellPointerClickBound = (
@@ -283,6 +287,23 @@ export class InteractionEvents {
     return {
       id: String(model.id),
       data: model.get('data') || {}
+    };
+  }
+
+  private getLinkHoverEventDetail(linkView: joint.dia.LinkView, event: joint.dia.Event): Record<string, unknown> {
+    const data = linkView.model.get('data');
+
+    return {
+      ...(data && typeof data === 'object' ? (data as Record<string, unknown>) : {}),
+      ...this.getPointerCoordinateDetail(event)
+    };
+  }
+
+  private getPointerCoordinateDetail(event: joint.dia.Event): Record<string, unknown> {
+    const clientPoint = getEventClientPoint(event);
+
+    return {
+      position: [clientPoint?.x ?? 0, clientPoint?.y ?? 0]
     };
   }
 
