@@ -53,6 +53,10 @@ import { EditMode } from './modes/EditMode';
 import { PanMode } from './modes/PanMode';
 import { ZoomToAreaMode } from './modes/ZoomToAreaMode';
 import { setStencilDir } from './shapes/ImageIconElement';
+import {
+  applyLinkUtilization,
+  resetLinkUtilization
+} from './shapes/LinkElement';
 import { TopologyMoveHistory } from './topology/TopologyMoveHistory';
 
 const DEFAULT_INITIAL_SCALE = 1;
@@ -338,6 +342,23 @@ export class Topology {
 
   public getInterfaces(): Interface[] {
     return cloneInterfaces(this.interfaces);
+  }
+
+  public setLinkUtilization(linkId: string, value: number): boolean {
+    const link = this.diagramService.getGraph().getCell(linkId);
+    if (!link?.isLink()) {
+      return false;
+    }
+
+    applyLinkUtilization(link, value, this.data.links.getLinkBw(linkId) ?? { in: 0, out: 0 });
+
+    return true;
+  }
+
+  public resetAllLinkUtilization(): void {
+    this.diagramService.getGraph().getLinks().forEach((link) => {
+      resetLinkUtilization(link);
+    });
   }
 
   public setMode(mode: Mode): void {

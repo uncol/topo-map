@@ -1,8 +1,13 @@
 import * as joint from '@joint/core';
+import type { LinkBwValue } from '../core/types';
 
 interface LinkStrokeStyle {
   strokeWidth: number;
   strokeDasharray?: string;
+}
+
+export interface LinkUtilizationStyle {
+  stroke: string;
 }
 
 interface LinkDataPayload {
@@ -25,6 +30,20 @@ const bwStyle: Array<{ threshold: number; style: LinkStrokeStyle }> = [
   { threshold: 0, style: { strokeWidth: 1, strokeDasharray: '10 5' } }
 ];
 const defaultStrokeStyle = bwStyle[bwStyle.length - 1]!.style;
+export const LINK_DEFAULT_STROKE = '#000000';
+export const LINK_UTILIZATION_STYLES: Array<{ threshold: number; style: LinkUtilizationStyle }> = [
+  { threshold: 0.95, style: { stroke: '#ff0000' } },
+  { threshold: 0.8, style: { stroke: '#990000' } },
+  { threshold: 0.5, style: { stroke: '#ff9933' } },
+  { threshold: 0.0, style: { stroke: '#006600' } }
+];
+// GufoFont circle icon (E280) used for the balance point marker.
+// const LINK_UTILIZATION_BALANCE_TEXT = String.fromCodePoint(0xE280);
+const LINK_UTILIZATION_BALANCE_TEXT = '●';
+const LINK_UTILIZATION_FILTER = {
+  name: 'dropShadow',
+  args: { dx: 1, dy: 1, blur: 2 }
+} as const;
 
 function normalizeBw(bw: unknown): number {
   if (typeof bw !== 'number' || !Number.isFinite(bw) || bw < 0) {
@@ -39,6 +58,64 @@ function getStrokeStyle(bw: unknown): LinkStrokeStyle {
   const match = bwStyle.find(({ threshold }) => threshold <= normalizedBw);
 
   return match?.style ?? defaultStrokeStyle;
+}
+
+export function normalizeLinkUtilization(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(1, Math.max(0, value));
+}
+
+export function getLinkUtilizationStyle(value: number): LinkUtilizationStyle {
+  const normalizedValue = normalizeLinkUtilization(value);
+  const match = LINK_UTILIZATION_STYLES.find(({ threshold }) => normalizedValue >= threshold);
+
+  return match?.style ?? LINK_UTILIZATION_STYLES[LINK_UTILIZATION_STYLES.length - 1]!.style;
+}
+
+export function applyLinkUtilization(
+  link: joint.dia.Link,
+  value: number,
+  linkBw: LinkBwValue
+): void {
+  const style = getLinkUtilizationStyle(value);
+  const totalBw = linkBw.in + linkBw.out;
+  const balancePosition = totalBw > 0 ? linkBw.in / totalBw : 0.5;
+  const balanceVisibility = totalBw > 0 ? 'visible' : 'hidden';
+
+  console.log('[Topology] link balance point', {
+    linkId: String(link.id),
+    position: balancePosition,
+    visibility: balanceVisibility,
+    in: linkBw.in,
+    out: linkBw.out
+  });
+
+  link.attr('line/stroke', style.stroke);
+  link.attr('line/filter', LINK_UTILIZATION_FILTER);
+  link.label(0, {
+    position: balancePosition,
+    attrs: {
+      text: {
+        text: LINK_UTILIZATION_BALANCE_TEXT,
+        // fontFamily: 'GufoFont',
+        fill: style.stroke,
+        visibility: balanceVisibility,
+        'font-size': 5
+      }
+    }
+  });
+}
+
+export function resetLinkUtilization(link: joint.dia.Link): void {
+  link.attr('line/stroke', LINK_DEFAULT_STROKE);
+  link.removeAttr('line/filter');
+  const labels = link.get('labels');
+  if (Array.isArray(labels) && labels.length > 0) {
+    link.set('labels', labels.slice(1));
+  }
 }
 
 export const LinkElement = joint.shapes.standard.Link.define('noc.LinkElement', {
@@ -61,7 +138,7 @@ export const LinkElement = joint.shapes.standard.Link.define('noc.LinkElement', 
   ],
   attrs: {
     line: {
-      stroke: '#000000',
+      stroke: LINK_DEFAULT_STROKE,
       strokeWidth: 1,
       strokeLinecap: 'round',
       targetMarker: { type: 'none' }
