@@ -75,6 +75,95 @@ describe('DataFacade', () => {
     expect(api.links.getById<{ type: string; nested: { weight: number } }>('link-1')?.data.nested.weight).toBe(10);
   });
 
+  it('returns node id by port id from element data', () => {
+    const graph = createGraph();
+    graph.addCells([
+      new joint.dia.Element({
+        id: 'node-1',
+        type: 'standard.Rectangle',
+        data: {
+          name: 'alpha',
+          ports: [
+            { id: 'port-1' },
+            { id: 22 },
+            { id: null },
+            {}
+          ]
+        }
+      }),
+      new joint.dia.Element({
+        id: 'node-2',
+        type: 'standard.Rectangle',
+        data: {
+          name: 'beta',
+          ports: [
+            { id: 'port-2' }
+          ]
+        }
+      })
+    ]);
+
+    const api = new DataFacade(graph);
+
+    expect(api.elements.getNodeIdByPortId('port-1')).toBe('node-1');
+    expect(api.elements.getNodeIdByPortId(22)).toBe('node-1');
+    expect(api.elements.getNodeIdByPortId('port-2')).toBe('node-2');
+    expect(api.elements.getNodeIdByPortId('missing')).toBeNull();
+    expect(api.elements.getNodeIdByPortId(Number.NaN)).toBeNull();
+  });
+
+  it('rebuilds port id index after element data changes', () => {
+    const graph = createGraph();
+    const element = new joint.dia.Element({
+      id: 'node-1',
+      type: 'standard.Rectangle',
+      data: {
+        ports: [{ id: 'port-1' }]
+      }
+    });
+
+    graph.addCell(element);
+
+    const api = new DataFacade(graph);
+
+    expect(api.elements.getNodeIdByPortId('port-1')).toBe('node-1');
+
+    element.set('data', {
+      ports: [{ id: 'port-2' }]
+    });
+
+    expect(api.elements.getNodeIdByPortId('port-1')).toBeNull();
+    expect(api.elements.getNodeIdByPortId('port-2')).toBe('node-1');
+  });
+
+  it('rebuilds port id index after graph reset', () => {
+    const graph = createGraph();
+    graph.addCell(new joint.dia.Element({
+      id: 'node-1',
+      type: 'standard.Rectangle',
+      data: {
+        ports: [{ id: 'port-1' }]
+      }
+    }));
+
+    const api = new DataFacade(graph);
+
+    expect(api.elements.getNodeIdByPortId('port-1')).toBe('node-1');
+
+    graph.resetCells([
+      new joint.dia.Element({
+        id: 'node-2',
+        type: 'standard.Rectangle',
+        data: {
+          ports: [{ id: 'port-2' }]
+        }
+      })
+    ]);
+
+    expect(api.elements.getNodeIdByPortId('port-1')).toBeNull();
+    expect(api.elements.getNodeIdByPortId('port-2')).toBe('node-2');
+  });
+
   it('returns link bandwidth by link id', () => {
     const graph = createGraph();
     graph.addCells([

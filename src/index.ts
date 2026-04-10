@@ -43,6 +43,7 @@ export type {
   NodeSearchResult,
   PaperConfig,
   PaperType,
+  PortId,
   ResizePayload,
   ShapeOverlay,
   ShapeOverlayForm,

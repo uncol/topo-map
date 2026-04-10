@@ -10,6 +10,7 @@ import type {
   ElementStatusUpdate,
   ElementStatusUpdateMap,
   LinkDataApi,
+  PortId,
   LinkRecord
 } from './types';
 
@@ -35,6 +36,33 @@ function cloneValue<T>(value: T): T {
 
 function toOptionalFiniteNumber(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function toOptionalId(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.length > 0) {
+    return value;
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return undefined;
+}
+
+function extractPortIds(data: unknown): string[] {
+  if (!isRecord(data) || !Array.isArray(data.ports)) {
+    return [];
+  }
+
+  return data.ports.flatMap((port) => {
+    if (!isRecord(port)) {
+      return [];
+    }
+
+    const portId = toOptionalId(port.id);
+    return portId ? [portId] : [];
+  });
 }
 
 function mergePatchedData(currentData: unknown, patch: CellData): CellData {
@@ -67,7 +95,13 @@ function toRecord<TData extends CellData>(
 }
 
 class ElementDataFacade implements ElementDataApi {
-  public constructor(private readonly graph: joint.dia.Graph) {}
+  private portToNodeIndex: Map<string, string> | null = null;
+
+  public constructor(private readonly graph: joint.dia.Graph) {
+    this.graph.on('add remove reset change:data', () => {
+      this.portToNodeIndex = null;
+    });
+  }
 
   public getIdsByDataType(type: string): string[] {
     const expectedType = type.trim();
@@ -99,6 +133,19 @@ class ElementDataFacade implements ElementDataApi {
       const record = toRecord<TData>(element);
       return record ? [record] : [];
     });
+  }
+
+  public getNodeIdByPortId(portId: PortId): string | null {
+    const expectedPortId = toOptionalId(portId);
+    if (!expectedPortId) {
+      return null;
+    }
+
+    if (!this.portToNodeIndex) {
+      this.portToNodeIndex = this.buildPortToNodeIndex();
+    }
+
+    return this.portToNodeIndex.get(expectedPortId) ?? null;
   }
 
   public getStatus(id: string): ElementStatusUpdate | null {
@@ -188,6 +235,18 @@ class ElementDataFacade implements ElementDataApi {
     }
 
     return cell;
+  }
+
+  private buildPortToNodeIndex(): Map<string, string> {
+    const index = new Map<string, string>();
+
+    this.graph.getElements().forEach((element) => {
+      extractPortIds(element.get('data')).forEach((portId) => {
+        index.set(portId, String(element.id));
+      });
+    });
+
+    return index;
   }
 }
 

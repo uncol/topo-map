@@ -1,6 +1,6 @@
 {
   "name": "topo-map",
-  "version": "3.4.0",
+  "version": "3.4.4",
   "description": "Interactive JointJS topology map module",
   "type": "module",
   "main": "dist/index.js",

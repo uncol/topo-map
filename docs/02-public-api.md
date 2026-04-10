@@ -94,6 +94,7 @@ fromJSON(data: object): void
 data.elements.getIdsByDataType(type: string): string[]
 data.elements.getById(id: string): { id: string; data: Record<string, unknown> } | null
 data.elements.getAll(): Array<{ id: string; data: Record<string, unknown> }>
+data.elements.getNodeIdByPortId(portId: string | number): string | null
 data.elements.getStatus(id: string): { status_code: number; metrics_label?: string } | null
 data.elements.getStatuses(ids: string[]): Array<{ id: string; status_code: number | null; metrics_label: string | null }>
 data.elements.setStatus(id: string, update: { status_code: number; metrics_label?: string }): boolean
@@ -113,6 +114,7 @@ data.links.updateData(id: string, patch: Record<string, unknown>): boolean
 - `ImageIconElement` маппит effective status code в filter id: `0 -> osUnknown`, `1 -> osOk`, `2 -> osAlarm`, `3 -> osUnreach`, `4 -> osDown`;
 - `metrics_label` сохраняется в `data` и, если не пустой, добавляется к `name` в заголовке элемента с заменой `<br/>` на перевод строки;
 - `setRandomStatuses` выбирает случайный `ElementStatusUpdate` из переданного массива и возвращает обновленные `id`;
+- `getNodeIdByPortId(portId)` просматривает `element.data.ports` и возвращает `id` элемента, которому принадлежит указанный порт;
 - `elements` читает только `graph.getElements()`;
 - `links` читает только `graph.getLinks()`;
 - `links.updateData(id, patch)` обновляет `link.data` по ключам из `patch`;
