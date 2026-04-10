@@ -10,6 +10,17 @@ export interface LinkUtilizationStyle {
   stroke: string;
 }
 
+export const LINK_OK = 0;
+export const LINK_ADMIN_DOWN = 1;
+export const LINK_OPER_DOWN = 2;
+export const LINK_STP_BLOCKED = 3;
+
+export interface LinkStatusStyle {
+  stroke?: string;
+  glyph?: string;
+  fontSize?: number;
+}
+
 interface LinkDataPayload {
   bw?: unknown;
 }
@@ -37,13 +48,29 @@ export const LINK_UTILIZATION_STYLES: Array<{ threshold: number; style: LinkUtil
   { threshold: 0.5, style: { stroke: '#ff9933' } },
   { threshold: 0.0, style: { stroke: '#006600' } }
 ];
-// GufoFont circle icon (E280) used for the balance point marker.
-// const LINK_UTILIZATION_BALANCE_TEXT = String.fromCodePoint(0xE280);
 const LINK_UTILIZATION_BALANCE_TEXT = '●';
 const LINK_UTILIZATION_FILTER = {
   name: 'dropShadow',
   args: { dx: 1, dy: 1, blur: 2 }
 } as const;
+const LINK_STATUS_STYLES: Record<number, LinkStatusStyle> = {
+  [LINK_OK]: {},
+  [LINK_ADMIN_DOWN]: {
+    stroke: '#7f8c8d',
+    glyph: '\uf00d',
+    fontSize: 10
+  },
+  [LINK_OPER_DOWN]: {
+    stroke: '#c0392b',
+    glyph: '\uf071',
+    fontSize: 10
+  },
+  [LINK_STP_BLOCKED]: {
+    stroke: '#8e44ad',
+    glyph: '\uf05e',
+    fontSize: 12
+  }
+};
 
 function normalizeBw(bw: unknown): number {
   if (typeof bw !== 'number' || !Number.isFinite(bw) || bw < 0) {
@@ -85,14 +112,6 @@ export function applyLinkUtilization(
   const balancePosition = totalBw > 0 ? linkBw.in / totalBw : 0.5;
   const balanceVisibility = totalBw > 0 ? 'visible' : 'hidden';
 
-  console.log('[Topology] link balance point', {
-    linkId: String(link.id),
-    position: balancePosition,
-    visibility: balanceVisibility,
-    in: linkBw.in,
-    out: linkBw.out
-  });
-
   link.attr('line/stroke', style.stroke);
   link.attr('line/filter', LINK_UTILIZATION_FILTER);
   link.label(0, {
@@ -100,7 +119,6 @@ export function applyLinkUtilization(
     attrs: {
       text: {
         text: LINK_UTILIZATION_BALANCE_TEXT,
-        // fontFamily: 'GufoFont',
         fill: style.stroke,
         visibility: balanceVisibility,
         'font-size': 5
@@ -109,13 +127,42 @@ export function applyLinkUtilization(
   });
 }
 
-export function resetLinkUtilization(link: joint.dia.Link): void {
+export function applyLinkStatus(link: joint.dia.Link, status: number): void {
+  const style = LINK_STATUS_STYLES[status];
+  if (!style || status === LINK_OK) {
+    resetLinkPresentation(link);
+    return;
+  }
+
+  console.log('[LinkElement] apply link status', {
+    linkId: String(link.id),
+    status,
+    glyph: style.glyph ?? '',
+    stroke: style.stroke ?? LINK_DEFAULT_STROKE,
+    fontSize: style.fontSize ?? 10
+  });
+
+  link.attr('line/stroke', style.stroke ?? LINK_DEFAULT_STROKE);
+  link.removeAttr('line/filter');
+  link.label(0, {
+    position: 0.5,
+    attrs: {
+      text: {
+        text: style.glyph ?? '',
+        fontFamily: 'FontAwesome',
+        fontWeight: 900,
+        fill: style.stroke ?? LINK_DEFAULT_STROKE,
+        visibility: 'visible',
+        'font-size': style.fontSize ?? 10
+      }
+    }
+  });
+}
+
+export function resetLinkPresentation(link: joint.dia.Link): void {
   link.attr('line/stroke', LINK_DEFAULT_STROKE);
   link.removeAttr('line/filter');
-  const labels = link.get('labels');
-  if (Array.isArray(labels) && labels.length > 0) {
-    link.set('labels', labels.slice(1));
-  }
+  link.set('labels', []);
 }
 
 export const LinkElement = joint.shapes.standard.Link.define('noc.LinkElement', {

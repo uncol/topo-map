@@ -55,7 +55,8 @@ import { ZoomToAreaMode } from './modes/ZoomToAreaMode';
 import { setStencilDir } from './shapes/ImageIconElement';
 import {
   applyLinkUtilization,
-  resetLinkUtilization
+  applyLinkStatus,
+  resetLinkPresentation
 } from './shapes/LinkElement';
 import { TopologyMoveHistory } from './topology/TopologyMoveHistory';
 
@@ -355,9 +356,20 @@ export class Topology {
     return true;
   }
 
-  public resetAllLinkUtilization(): void {
+  public setLinkStatus(linkId: string, status: number): boolean {
+    const link = this.diagramService.getGraph().getCell(linkId);
+    if (!link?.isLink()) {
+      return false;
+    }
+
+    applyLinkStatus(link, status);
+
+    return true;
+  }
+
+  public resetAllLinkPresentation(): void {
     this.diagramService.getGraph().getLinks().forEach((link) => {
-      resetLinkUtilization(link);
+      resetLinkPresentation(link);
     });
   }
 
