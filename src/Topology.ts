@@ -69,6 +69,10 @@ const DEFAULT_GUIDE_THRESHOLD = 5;
 const DEFAULT_PADDING = 10;
 const DEFAULT_FOCUS_ANIMATION_MS = 650;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 function cloneInterfaces(interfaces: Interface[]): Interface[] {
   return interfaces.map((item) => ({
     id: item.id,
@@ -77,6 +81,43 @@ function cloneInterfaces(interfaces: Interface[]): Interface[] {
       interface: item.tags.interface
     }
   }));
+}
+
+function mergeClassToken(currentValue: unknown, className: string, enabled: boolean): string {
+  const normalizedClassName = className.trim();
+  if (normalizedClassName.length === 0) {
+    return typeof currentValue === 'string' ? currentValue.trim() : '';
+  }
+
+  const tokens = new Set(
+    typeof currentValue === 'string'
+      ? currentValue
+          .split(/\s+/)
+          .map((token) => token.trim())
+          .filter((token) => token.length > 0)
+      : []
+  );
+
+  if (enabled) {
+    tokens.add(normalizedClassName);
+  } else {
+    tokens.delete(normalizedClassName);
+  }
+
+  return [...tokens].join(' ');
+}
+
+function normalizeNodeLookupId(value: string | number): string | null {
+  if (typeof value === 'string') {
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : null;
+  }
+
+  if (Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return null;
 }
 
 export class Topology {
@@ -452,6 +493,25 @@ export class Topology {
     return matched;
   }
 
+  public setElementTextClass(nodeId: string | number, className: string, enabled: boolean): boolean {
+    const normalizedClassName = className.trim();
+    if (normalizedClassName.length === 0) {
+      return false;
+    }
+
+    const element = this.findElementByNodeId(nodeId);
+    if (!element) {
+      return false;
+    }
+
+    const nextNodeNameClass = mergeClassToken(element.attr('nodeName/class'), normalizedClassName, enabled);
+    const nextIpaddrClass = mergeClassToken(element.attr('ipaddr/class'), normalizedClassName, enabled);
+
+    element.attr('nodeName/class', nextNodeNameClass);
+    element.attr('ipaddr/class', nextIpaddrClass);
+    return true;
+  }
+
   public setZoom(scale: number): void {
     if (!Number.isFinite(scale) || scale <= 0) {
       return;
@@ -702,6 +762,23 @@ export class Topology {
         composed: true,
         detail
       })
+    );
+  }
+
+  private findElementByNodeId(nodeId: string | number): joint.dia.Element | null {
+    const expectedNodeId = normalizeNodeLookupId(nodeId);
+    if (!expectedNodeId) {
+      return null;
+    }
+
+    return (
+      this.diagramService
+        .getGraph()
+        .getElements()
+        .find((element) => {
+          const data = element.get('data');
+          return isRecord(data) && String(data.id ?? '') === expectedNodeId;
+        }) ?? null
     );
   }
 

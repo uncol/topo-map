@@ -130,6 +130,7 @@ setMode(mode: TopologyMode): void
 getMode(): string
 setSnapToGrid(enabled: boolean): void
 setGuidesEnabled(enabled: boolean): void
+setElementTextClass(id: string | number, className: string, enabled: boolean): boolean
 setBoundsPadding(padding: number): void
 ```
 
@@ -137,6 +138,7 @@ setBoundsPadding(padding: number): void
 - `setMode`: переключает `pan | zoomToArea | edit`;
 - `setSnapToGrid`: включает/выключает snap и визуальную сетку в edit режиме;
 - `setGuidesEnabled`: включает/выключает dynamic guides;
+- `setElementTextClass`: добавляет или удаляет CSS-класс у `nodeName` и `ipaddr` для элемента, найденного по `element.data.id`; `id` может быть `string` или `number`;
 - `setBoundsPadding`: задает отступ ограничений перемещения/панорамирования.
 
 ### Zoom API
