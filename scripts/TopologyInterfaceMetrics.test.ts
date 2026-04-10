@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import * as joint from '@joint/core';
 import { MapDocument } from '../src/core/MapDocument';
 import { Topology } from '../src/Topology';
 import type { Interface, PaperConfig } from '../src/core/types';
@@ -76,5 +77,28 @@ describe('Topology interfaces API', () => {
       paperConfig: { name: 'serialized' },
       viewport: { scale: 2, tx: 30, ty: 40 }
     });
+  });
+
+  it('detects the globally visible node label field from graph elements', () => {
+    const topology = createTopologyInterfacesHarness();
+    topology.diagramService = {
+      getGraph: vi.fn(() => ({
+        getElements: vi.fn(() => [
+          new joint.dia.Element({
+            id: 'node-1',
+            attrs: {
+              nodeName: {
+                display: 'none'
+              },
+              ipaddr: {
+                display: 'block'
+              }
+            }
+          })
+        ])
+      }))
+    };
+
+    expect(topology.getVisibleNodeLabelField()).toBe('ipaddr');
   });
 });

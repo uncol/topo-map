@@ -1,5 +1,6 @@
 import type * as joint from '@joint/core';
 import { applyElementStatus, isStatusSupportedElement, readElementStatus } from './elementStatus';
+import { readDisplayedLabel } from './nodeLabels';
 import type {
   CellData,
   DataApi,
@@ -65,6 +66,25 @@ function extractPortIds(data: unknown): string[] {
   });
 }
 
+function extractLinkPortIds(data: unknown): [string | undefined, string | undefined] {
+  if (!isRecord(data) || !Array.isArray(data.ports)) {
+    return [undefined, undefined];
+  }
+
+  return [
+    toOptionalId(data.ports[0]),
+    toOptionalId(data.ports[1])
+  ];
+}
+
+function getLinkEndId(end: unknown): string | undefined {
+  if (!isRecord(end)) {
+    return undefined;
+  }
+
+  return toOptionalId(end.id);
+}
+
 function mergePatchedData(currentData: unknown, patch: CellData): CellData {
   const nextData = isRecord(currentData) ? cloneValue(currentData) : {};
 
@@ -98,7 +118,7 @@ class ElementDataFacade implements ElementDataApi {
   private portToNodeIndex: Map<string, string> | null = null;
 
   public constructor(private readonly graph: joint.dia.Graph) {
-    this.graph.on('add remove reset change:data', () => {
+    this.graph.on('add remove reset change:data change:source change:target', () => {
       this.portToNodeIndex = null;
     });
   }
@@ -135,7 +155,21 @@ class ElementDataFacade implements ElementDataApi {
     });
   }
 
-  public getNodeIdByPortId(portId: PortId): string | null {
+  public getLabelByPortId(portId: PortId): string | null {
+    const nodeId = this.resolveNodeIdByPortId(portId);
+    if (!nodeId) {
+      return null;
+    }
+
+    const cell = this.graph.getCell(nodeId);
+    if (!cell?.isElement()) {
+      return null;
+    }
+
+    return readDisplayedLabel(cell);
+  }
+
+  private resolveNodeIdByPortId(portId: PortId): string | null {
     const expectedPortId = toOptionalId(portId);
     if (!expectedPortId) {
       return null;
@@ -244,6 +278,20 @@ class ElementDataFacade implements ElementDataApi {
       extractPortIds(element.get('data')).forEach((portId) => {
         index.set(portId, String(element.id));
       });
+    });
+
+    this.graph.getLinks().forEach((link) => {
+      const [sourcePortId, targetPortId] = extractLinkPortIds(link.get('data'));
+      const sourceId = getLinkEndId(link.source());
+      const targetId = getLinkEndId(link.target());
+
+      if (sourcePortId && sourceId && !index.has(sourcePortId)) {
+        index.set(sourcePortId, sourceId);
+      }
+
+      if (targetPortId && targetId && !index.has(targetPortId)) {
+        index.set(targetPortId, targetId);
+      }
     });
 
     return index;

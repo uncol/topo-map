@@ -75,12 +75,17 @@ describe('DataFacade', () => {
     expect(api.links.getById<{ type: string; nested: { weight: number } }>('link-1')?.data.nested.weight).toBe(10);
   });
 
-  it('returns node id by port id from element data', () => {
+  it('returns label by port id from element data', () => {
     const graph = createGraph();
     graph.addCells([
       new joint.dia.Element({
         id: 'node-1',
-        type: 'standard.Rectangle',
+        type: 'noc.FontIconElement',
+        attrs: {
+          nodeName: {
+            text: 'alpha'
+          }
+        },
         data: {
           name: 'alpha',
           ports: [
@@ -93,7 +98,12 @@ describe('DataFacade', () => {
       }),
       new joint.dia.Element({
         id: 'node-2',
-        type: 'standard.Rectangle',
+        type: 'noc.FontIconElement',
+        attrs: {
+          nodeName: {
+            text: 'beta'
+          }
+        },
         data: {
           name: 'beta',
           ports: [
@@ -105,11 +115,92 @@ describe('DataFacade', () => {
 
     const api = new DataFacade(graph);
 
-    expect(api.elements.getNodeIdByPortId('port-1')).toBe('node-1');
-    expect(api.elements.getNodeIdByPortId(22)).toBe('node-1');
-    expect(api.elements.getNodeIdByPortId('port-2')).toBe('node-2');
-    expect(api.elements.getNodeIdByPortId('missing')).toBeNull();
-    expect(api.elements.getNodeIdByPortId(Number.NaN)).toBeNull();
+    expect(api.elements.getLabelByPortId('port-1')).toBe('alpha');
+    expect(api.elements.getLabelByPortId(22)).toBe('alpha');
+    expect(api.elements.getLabelByPortId('port-2')).toBe('beta');
+    expect(api.elements.getLabelByPortId('missing')).toBeNull();
+    expect(api.elements.getLabelByPortId(Number.NaN)).toBeNull();
+  });
+
+  it('returns displayed label by port id using link source and target endpoints', () => {
+    const graph = createGraph();
+    graph.addCells([
+      new joint.dia.Element({
+        id: 'node-1',
+        type: 'noc.FontIconElement',
+        attrs: {
+          nodeName: {
+            text: 'Core'
+          },
+          ipaddr: {
+            text: '10.0.0.1',
+            display: 'none'
+          }
+        },
+        data: {
+          name: 'Core',
+          address: '10.0.0.1'
+        }
+      }),
+      new joint.dia.Element({
+        id: 'node-2',
+        type: 'noc.FontIconElement',
+        attrs: {
+          nodeName: {
+            text: 'Edge',
+            display: 'none'
+          },
+          ipaddr: {
+            text: '10.0.0.2',
+            display: 'block'
+          }
+        },
+        data: {
+          name: 'Edge',
+          address: '10.0.0.2'
+        }
+      }),
+      new joint.dia.Link({
+        id: 'link-1',
+        type: 'standard.Link',
+        source: { id: 'node-1' },
+        target: { id: 'node-2' },
+        data: {
+          ports: [101, 202]
+        }
+      })
+    ]);
+
+    const api = new DataFacade(graph);
+
+    expect(api.elements.getLabelByPortId(101)).toBe('Core');
+    expect(api.elements.getLabelByPortId(202)).toBe('10.0.0.2');
+  });
+
+  it('returns visible label text with metrics fallback by port id', () => {
+    const graph = createGraph();
+    graph.addCell(new joint.dia.Element({
+      id: 'node-1',
+      type: 'noc.FontIconElement',
+      attrs: {
+        nodeName: {
+          display: 'block'
+        },
+        ipaddr: {
+          display: 'none'
+        }
+      },
+      data: {
+        ports: [{ id: 77 }],
+        name: 'Router',
+        address: '10.0.0.77',
+        metrics_label: 'CPU<br/>85%'
+      }
+    }));
+
+    const api = new DataFacade(graph);
+
+    expect(api.elements.getLabelByPortId(77)).toBe('Router\nCPU\n85%');
   });
 
   it('rebuilds port id index after element data changes', () => {
@@ -126,14 +217,67 @@ describe('DataFacade', () => {
 
     const api = new DataFacade(graph);
 
-    expect(api.elements.getNodeIdByPortId('port-1')).toBe('node-1');
+    expect(api.elements.getLabelByPortId('port-1')).toBeNull();
 
     element.set('data', {
+      name: 'node-1',
       ports: [{ id: 'port-2' }]
     });
 
-    expect(api.elements.getNodeIdByPortId('port-1')).toBeNull();
-    expect(api.elements.getNodeIdByPortId('port-2')).toBe('node-1');
+    expect(api.elements.getLabelByPortId('port-1')).toBeNull();
+    expect(api.elements.getLabelByPortId('port-2')).toBe('node-1');
+  });
+
+  it('rebuilds port id index after link endpoint changes', () => {
+    const graph = createGraph();
+    graph.addCells([
+      new joint.dia.Element({
+        id: 'node-1',
+        type: 'noc.FontIconElement',
+        attrs: {
+          nodeName: {
+            text: 'Source'
+          }
+        },
+        data: {
+          name: 'Source'
+        }
+      }),
+      new joint.dia.Element({
+        id: 'node-2',
+        type: 'noc.FontIconElement',
+        attrs: {
+          nodeName: {
+            text: 'Target'
+          }
+        },
+        data: {
+          name: 'Target'
+        }
+      })
+    ]);
+
+    const link = new joint.dia.Link({
+      id: 'link-1',
+      type: 'standard.Link',
+      source: { id: 'node-1' },
+      target: { id: 'node-2' },
+      data: {
+        ports: [1, 2]
+      }
+    });
+    graph.addCell(link);
+
+    const api = new DataFacade(graph);
+
+    expect(api.elements.getLabelByPortId(1)).toBe('Source');
+    expect(api.elements.getLabelByPortId(2)).toBe('Target');
+
+    link.source({ id: 'node-2' });
+    link.target({ id: 'node-1' });
+
+    expect(api.elements.getLabelByPortId(1)).toBe('Target');
+    expect(api.elements.getLabelByPortId(2)).toBe('Source');
   });
 
   it('rebuilds port id index after graph reset', () => {
@@ -148,20 +292,25 @@ describe('DataFacade', () => {
 
     const api = new DataFacade(graph);
 
-    expect(api.elements.getNodeIdByPortId('port-1')).toBe('node-1');
+    expect(api.elements.getLabelByPortId('port-1')).toBeNull();
 
     graph.resetCells([
       new joint.dia.Element({
         id: 'node-2',
-        type: 'standard.Rectangle',
+        type: 'noc.FontIconElement',
+        attrs: {
+          nodeName: {
+            text: 'node-2'
+          }
+        },
         data: {
           ports: [{ id: 'port-2' }]
         }
       })
     ]);
 
-    expect(api.elements.getNodeIdByPortId('port-1')).toBeNull();
-    expect(api.elements.getNodeIdByPortId('port-2')).toBe('node-2');
+    expect(api.elements.getLabelByPortId('port-1')).toBeNull();
+    expect(api.elements.getLabelByPortId('port-2')).toBe('node-2');
   });
 
   it('returns link bandwidth by link id', () => {

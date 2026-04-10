@@ -22,6 +22,7 @@ import { clamp } from './core/geometry';
 import { createGraphFromData } from './core/graphFromData';
 import { MapBoundsState } from './core/MapBoundsState';
 import { MapDocument, type MapDocumentJSON } from './core/MapDocument';
+import { getVisibleNodeLabelField } from './core/nodeLabels';
 import type {
   Config,
   DataApi,
@@ -404,24 +405,7 @@ export class Topology {
   }
 
   public getVisibleNodeLabelField(): NodeLabelField {
-    const elements = this.diagramService.getGraph().getElements();
-    const active = elements.find((element) => {
-      const nodeNameDisplay = String(element.attr('nodeName/display') ?? '');
-      const ipaddrDisplay = String(element.attr('ipaddr/display') ?? '');
-      return nodeNameDisplay.length > 0 || ipaddrDisplay.length > 0;
-    });
-
-    if (!active) {
-      return 'nodeName';
-    }
-
-    const nodeNameVisible = active.attr('nodeName/display') !== 'none';
-    const ipaddrVisible = active.attr('ipaddr/display') !== 'none';
-    if (!nodeNameVisible && ipaddrVisible) {
-      return 'ipaddr';
-    }
-
-    return 'nodeName';
+    return getVisibleNodeLabelField(this.diagramService.getGraph().getElements());
   }
 
   public findNodeByVisibleLabel(query: string): NodeSearchResult | null {

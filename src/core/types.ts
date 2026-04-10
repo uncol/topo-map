@@ -124,7 +124,7 @@ export interface ElementDataApi {
   getIdsByDataType(type: string): string[];
   getById<TData extends CellData = CellData>(id: string): ElementRecord<TData> | null;
   getAll<TData extends CellData = CellData>(): ElementRecord<TData>[];
-  getNodeIdByPortId(portId: PortId): string | null;
+  getLabelByPortId(portId: PortId): string | null;
   getStatus(id: string): ElementStatusUpdate | null;
   getStatuses(ids: string[]): ElementStatusRecord[];
   setStatus(id: string, update: ElementStatusUpdate): boolean;
