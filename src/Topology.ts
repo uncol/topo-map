@@ -326,11 +326,11 @@ export class Topology {
   }
 
   public toJSON(): MapDocumentJSON {
-    return this.toDocument().toJSON();
+    return this.saveDocument();
   }
 
   public toDocumentJSON(): MapDocumentJSON {
-    return this.toDocument().toJSON();
+    return this.saveDocument();
   }
 
   public saveDocument(): MapDocumentJSON {
