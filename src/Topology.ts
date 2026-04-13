@@ -333,6 +333,10 @@ export class Topology {
     return this.toDocument().toJSON();
   }
 
+  public saveDocument(): MapDocumentJSON {
+    return this.toDocument().toJSON();
+  }
+
   public loadDocument(input: MapDocument | MapDocumentJSON): void {
     this.logDebug('loadDocument:start');
     this.events.clearInteractionState();

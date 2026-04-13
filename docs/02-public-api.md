@@ -66,12 +66,17 @@ new Topology(config: TopologyConfig)
 
 ```ts
 loadData(nodes: NodeData[], links: LinkData[]): void
+saveDocument(): MapDocumentJSON
+loadDocument(input: MapDocument | MapDocumentJSON): void
 ```
 
 Назначение:
 - очищает и заполняет граф узлами/линками;
 - перестраивает spatial index;
 - применяет ограничения viewport.
+- `saveDocument()` возвращает текущее состояние карты в формате `MapDocumentJSON`, пригодном для сохранения через HTTP;
+- `loadDocument(...)` загружает сериализованный документ целиком: `graph`, `interfaces`, `paperConfig`, `viewport`, `schemaVersion`;
+- для HTTP JSON рекомендуется формат `MapDocumentJSON`, подробно описанный в `/Users/dima/Projects/topo-map/docs/06-load-document-format.md`.
 
 ### Сериализация
 
@@ -86,7 +91,13 @@ fromJSON(data: object): void
 Поведение `fromJSON`:
 - принимает envelope или raw graph JSON;
 - корректно восстанавливает `noc.*` типы через `cellNamespace`;
-- если `preserveViewportOnLoad !== true`, применяет viewport из JSON; если viewport нет и `fitToPageOnLoad === true` — делает `fit to page`, иначе сбрасывает к initial.
+- если `preserveViewportOnLoad !== true`, применяет viewport из JSON;
+- если JSON не содержит `viewport`, он нормализуется в `{ scale: 1, tx: 0, ty: 0 }`;
+- `fitToPageOnLoad` срабатывает только когда в `loadDocument(...)` передан `MapDocument` с `viewport === undefined`.
+
+Важно:
+- для `loadDocument(payload)` и `fromJSON(payload)` при JSON-вводе отсутствие `viewport` нормализуется в `{ scale: 1, tx: 0, ty: 0 }`;
+- из-за этого `fitToPageOnLoad` не срабатывает для HTTP payload без `viewport`, если загрузка идет через JSON, а не через `MapDocument` с `viewport === undefined`.
 
 ### Доступ к данным
 

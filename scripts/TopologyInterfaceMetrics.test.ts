@@ -80,6 +80,28 @@ describe('Topology interfaces API', () => {
     });
   });
 
+  it('returns HTTP-ready MapDocumentJSON via saveDocument()', () => {
+    const topology = createTopologyInterfacesHarness();
+    const interfaces: Interface[] = [
+      {
+        id: '44',
+        tags: {
+          object: 'dist-sw-1',
+          interface: 'ge-0/0/1'
+        }
+      }
+    ];
+
+    topology.interfaces = interfaces;
+    topology.currentPaperConfig = { name: 'saved-map' };
+
+    expect(topology.saveDocument()).toMatchObject({
+      interfaces,
+      paperConfig: { name: 'saved-map' },
+      viewport: { scale: 2, tx: 30, ty: 40 }
+    });
+  });
+
   it('detects the globally visible node label field from graph elements', () => {
     const topology = createTopologyInterfacesHarness();
     topology.diagramService = {

@@ -56,6 +56,7 @@ Open: `http://localhost:8080`
 
 - `new Topology(config)`
 - `loadData(nodes, links)`
+- `saveDocument()`
 - `toJSON()`
 - `fromJSON(data)`
 - `data.elements.getIdsByDataType(type)`
