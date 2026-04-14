@@ -27,7 +27,7 @@ export class InteractionEvents {
 
   private highlightedElementView: joint.dia.ElementView | null = null;
 
-  private pendingCellPointerClickTimer: number | null = null;
+  private pendingCellPointerClickTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
 
   private readonly pendingContextMenuTimers = new Set<number>();
 
